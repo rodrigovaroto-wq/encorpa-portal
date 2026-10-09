@@ -171,10 +171,10 @@ function demoData(period) {
     totals: { leads: Math.round(leads * 1.0) % 600, orders: Math.round(orders) % 60 },
     videos: seg(VIDEOS), segments: { creative: seg(VIDEOS), region: seg(SEGMENTS.region) },
     money: { ...flow, to_receive: flow.net_profit * .4, received: flow.net_profit * .6, prepaid_share: m.prepaid_share.value, cash_left: m.cash_left.value },
-    funnel: { first_msg: leads, reply: leads * pct("reply_rate"), price: leads * pct("price_reach"), link: leads * pct("link_reach"), order: orders, delivered: orders * pct("delivered") },
+    funnel: Object.fromEntries(Object.entries({ first_msg: leads, reply: leads * pct("reply_rate"), price: leads * pct("price_reach"), link: leads * pct("link_reach"), order: orders, delivered: orders * pct("delivered") }).map(([k, v]) => [k, Math.round(v)])),
     channel: { number: "Saudável", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" },
     versions: [12, 13, 14].map((v, i) => ({ version: `v${v}`, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * .2, cost: .8 - i * .08 })),
-    gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: (20 - i * 3) / (3 - i * .3) / 10 })),
+    gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
   };
 }
 
