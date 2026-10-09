@@ -137,3 +137,9 @@ h1 { text-shadow: none; }
 .corner img, .corner:hover img { box-shadow: none; }
 .periods { background: var(--bg); backdrop-filter: none; }
 .banner { background: #1a1408; border-bottom: 1px solid #3a2d0e; }
+
+/* degradê suave (sem textura) */
+body { background: var(--bg) linear-gradient(180deg, #1c0d33 0, var(--bg) 520px) no-repeat; }
+.hero { background: radial-gradient(ellipse 700px 340px at 50% 0, rgba(109,63,209,.4), transparent 70%); }
+.kpi, .card { background: linear-gradient(160deg, #1d1032, #0f0819); border-color: #2f1d4a; }
+.table-wrap, .pause { background: linear-gradient(180deg, #140b21, #0e0817); }
