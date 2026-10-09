@@ -1,0 +1,31 @@
+:root {
+  --bg: #f7f6f4; --card: #fff; --text: #1f1d1b; --muted: #6f6a64;
+  --line: #e4e0db; --accent: #b4455a;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161413; --card: #211e1c; --text: #f1eeea; --muted: #a39d96; --line: #342f2c; --accent: #e07a8f; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, sans-serif; }
+.topbar { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px; }
+h1 { font-size: 1.25rem; margin: 0; }
+h2 { font-size: 1rem; margin: 0 0 12px; }
+.muted { color: var(--muted); font-size: .875rem; }
+.periods { display: flex; gap: 8px; padding: 0 16px 8px; overflow-x: auto; }
+.periods button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
+.periods button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+main { padding: 8px 16px 32px; max-width: 1100px; margin: 0 auto; }
+section { margin-top: 24px; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.card h3 { font-size: .9rem; margin: 0; }
+.card .value { font-size: 1.5rem; font-weight: 600; margin: 4px 0; }
+.chart { width: 100%; height: 90px; display: block; }
+.chart path { fill: none; stroke: var(--accent); stroke-width: 2; }
+.chart line { stroke: var(--line); }
+.table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+.pause { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pause li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; gap: 12px; }
