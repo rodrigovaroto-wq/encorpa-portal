@@ -129,6 +129,7 @@ const state = { period: store.get("period") || "week", segment: "creative", sect
 //   money?, funnel?, channel?, versions?, gates? }
 async function loadData(period) {
   if (state.demo) return demoData(period);
+  if (location.protocol !== "file:") await reloadDataFile(); // publicado: pega o data.js mais novo
   if (window.PORTAL_DATA) return window.PORTAL_DATA[period] || window.PORTAL_DATA;
   if (location.protocol === "file:") return null; // navegador bloqueia fetch em arquivo local
   try {
@@ -137,6 +138,15 @@ async function loadData(period) {
     const all = await r.json();
     return all[period] || all;
   } catch { return null; }
+}
+
+function reloadDataFile() {
+  return new Promise((done) => {
+    const s = document.createElement("script");
+    s.src = `data.js?t=${Date.now()}`;
+    s.onload = s.onerror = () => { s.remove(); done(); };
+    document.head.appendChild(s);
+  });
 }
 
 // ---- dados de exemplo (NÃO são reais) ----
@@ -303,7 +313,7 @@ function segTable(kind, d, names) {
 function render() {
   const d = state.data || {};
   const m = d.metrics || {};
-  $("updated").textContent = state.data ? `${state.data.demo ? "EXEMPLO · " : ""}atualizado ${new Date(state.data.updated || Date.now()).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}` : "Sem dados ainda";
+  $("updated").textContent = state.data ? `${state.data.demo ? "EXEMPLO · " : ""}atualizado ${new Date(state.data.updated || Date.now()).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}` : "Sem dados ainda";
   $("demo").textContent = state.demo ? "Voltar aos dados reais" : "Ver exemplo";
   const note = state.demo ? "Dados de exemplo — números inventados só para ver o portal funcionando. Não são reais." : state.data?.note;
   $("demo-banner").hidden = !note; $("demo-banner").textContent = note || "";
@@ -358,5 +368,5 @@ document.addEventListener("click", (e) => {
 });
 
 refresh();
-setInterval(refresh, 60 * 60 * 1000); // atualiza a cada 1 h
+setInterval(refresh, 30 * 60 * 1000); // relê os dados a cada 30 min (mesmo ritmo da rotina)
 window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
