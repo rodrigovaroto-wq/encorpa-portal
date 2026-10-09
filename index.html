@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Portal Encorpa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <h1>ENCORPA<span>/PORTAL</span></h1>
+    <h1>Encorpa<span>Portal</span></h1>
     <span id="updated" class="badge">Sem dados ainda</span>
   </header>
 
@@ -17,8 +20,13 @@
 
   <main>
     <section>
+      <h2>Piso de amostra do teste</h2>
+      <div id="sample" class="bars"></div>
+    </section>
+
+    <section>
       <h2>Métricas</h2>
-      <div class="grid" id="metrics"></div>
+      <div id="metrics"></div>
     </section>
 
     <section>
@@ -34,6 +42,26 @@
     <section>
       <h2>Quando pausar</h2>
       <ul class="pause" id="pause"></ul>
+    </section>
+
+    <section>
+      <h2>Por criativo e por região</h2>
+      <div class="tabs" id="seg-tabs"></div>
+      <div class="table-wrap"><table id="segments"></table></div>
+    </section>
+
+    <section>
+      <h2>Metas por fase</h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>Fase</th><th>Mínima</th><th>Ideal</th></tr></thead><tbody id="phases"></tbody></table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Decisão no dia 12</h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>Decisão</th><th>Conversão</th><th>CPL</th><th>ROI</th></tr></thead><tbody id="decision"></tbody></table>
+      </div>
     </section>
   </main>
 
