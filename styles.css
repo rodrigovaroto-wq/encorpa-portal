@@ -143,3 +143,22 @@ body { background: var(--bg) linear-gradient(180deg, #1c0d33 0, var(--bg) 520px)
 .hero { background: radial-gradient(ellipse 700px 340px at 50% 0, rgba(109,63,209,.4), transparent 70%); }
 .kpi, .card { background: linear-gradient(160deg, #1d1032, #0f0819); border-color: #2f1d4a; }
 .table-wrap, .pause { background: linear-gradient(180deg, #140b21, #0e0817); }
+
+/* home + seções */
+.sticky { position: sticky; top: 0; z-index: 5; background: rgba(10,7,16,.96); border-bottom: 1px solid var(--line); }
+.periods { position: static; border-bottom: 0; background: none; }
+.menu { display: flex; justify-content: center; gap: 2px; overflow-x: auto; padding: 0 12px; border-top: 1px solid var(--line); }
+.menu a { color: var(--muted); text-decoration: none; font: 500 .8rem system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; padding: 11px 14px; border-bottom: 2px solid transparent; white-space: nowrap; }
+.menu a:hover { color: var(--text); }
+.menu a[aria-current="true"] { color: var(--violet); border-bottom-color: var(--violet); }
+.tiles { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.tile { display: block; text-decoration: none; color: var(--text); padding: 18px 20px; border: 1px solid #2f1d4a; background: linear-gradient(160deg, #1d1032, #0f0819); }
+.tile:hover { border-color: var(--violet); }
+.tile b { display: block; font: 700 1rem Cinzel, Georgia, serif; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 6px; }
+.tile span { color: var(--muted); font-size: .85rem; }
+.back { display: inline-block; color: var(--violet); text-decoration: none; font-size: .85rem; letter-spacing: .1em; margin: 6px 0 14px; }
+.back:hover { text-decoration: underline; }
+.hero.compact { padding: 10px 20px; border-bottom: 0; }
+.hero.compact .wordmark { display: none; }
+.hero.compact .demo { margin-top: 0; }
+[hidden] { display: none !important; }

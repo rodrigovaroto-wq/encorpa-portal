@@ -94,10 +94,7 @@ const SAMPLE_FLOOR = { leads: 500, orders: 50 };
 const KPIS = ["leads", "orders", "conversion", "cpl", "spend", "roi", "net_profit", "handoff"];
 
 // Setores (abas). Cada um é renderizado por uma função abaixo.
-const SECTORS = [
-  ["videos", "Vídeos e criativos"], ["money", "Fluxo de dinheiro"], ["agent", "Agente do WhatsApp"],
-  ["ads", "Anúncio e site"], ["region", "Região"], ["compare", "Comparação"], ["ref", "Referência"],
-];
+const SECTORS = [["meta", "Meta ADS"], ["malu", "Malu AI Agent"], ["ops", "Operacional"]];
 
 // Vídeos: os 6 ganchos/formatos da fase Copy. `headline` vem de eval_attribution.
 const VIDEOS = Array.from({ length: 6 }, (_, i) => `Vídeo ${i + 1}`);
@@ -235,6 +232,11 @@ function chartSvgRaw(series) {
   return `<svg class="chart" viewBox="0 0 ${w} ${h}">${base}<path d="M${pts.join("L")}"/></svg>`;
 }
 
+const TILE_TEXT = { meta: "Vídeos e criativos, anúncio e site, região A × B", malu: "Funil da conversa, saúde da agente, canal, versões e verificações", ops: "Fluxo de dinheiro, caixa, preços, custos, fases do teste, metas e estado do sistema" };
+function currentView() {
+  const v = location.hash.replace(/^#\/?/, "");
+  return SECTORS.some(([k]) => k === v) ? v : "home";
+}
 const metricBy = (id) => ALL.find((x) => x.id === id);
 const tbl = (head, rows) => `<div class="table-wrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
 
@@ -273,7 +275,7 @@ const SECTOR_VIEWS = {
     return `<p class="note">Região medida pelo conjunto (A × B), não pelo endereço. A e B se sobrepõem no Sudeste, Centro-Oeste e Sul: leitura direcional.</p>${segTable("region", d, SEGMENTS.region)}`;
   },
   ref() {
-    return REF.map(([t, rows]) => `<h3 class="group">${t}</h3>${tbl(["Item", "Valor"], rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`))}`).join("");
+    return `<h3 class="group">Metas por fase</h3>${tbl(["Fase", "Mínima", "Ideal"], PHASES.map(([f, a, b]) => `<tr><td>${f}</td><td>${a}</td><td>${b}</td></tr>`))}` + REF.map(([t, rows]) => `<h3 class="group">${t}</h3>${tbl(["Item", "Valor"], rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`))}`).join("");
   },
   compare(d) {
     const m = d.metrics || {};
@@ -283,6 +285,12 @@ const SECTOR_VIEWS = {
       return `<tr><td>${x.label}</td><td>${fmt(v?.value, x.unit)}</td><td>${fmt(v?.previous, x.unit)}</td><td>${delta}</td></tr>`;
     }));
   },
+};
+
+const PAGES = {
+  meta: (d) => `<h3 class="group">Vídeos e criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Anúncio e site</h3>${SECTOR_VIEWS.ads(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`,
+  malu: (d) => SECTOR_VIEWS.agent(d),
+  ops: (d) => `${SECTOR_VIEWS.money(d)}${SECTOR_VIEWS.ref(d)}`,
 };
 
 function cardHtml(x) {
@@ -323,10 +331,18 @@ function render() {
   const dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
   $("verdict").textContent = dec == null ? "" : `Hoje: ${DECISION[dec][0].toUpperCase()}${floorOk ? "" : " (amostra ainda abaixo do piso)"}`;
   $("decision").innerHTML = DECISION.map((r, i) => `<tr class="${i === dec ? "now" : ""}"><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
-  $("phases").innerHTML = PHASES.map(([f, a, b]) => `<tr><td>${f}</td><td>${a}</td><td>${b}</td></tr>`).join("");
 
-  $("sector-tabs").innerHTML = SECTORS.map(([k, l]) => `<button data-sector="${k}" aria-pressed="${k === state.sector}">${l}</button>`).join("");
-  $("sector").innerHTML = SECTOR_VIEWS[state.sector](d);
+  const view = currentView();
+  $("menu").innerHTML = [["home", "Painel"], ...SECTORS].map(([k, l]) => `<a href="#/${k}" aria-current="${k === view}">${l}</a>`).join("");
+  $("home").hidden = view !== "home";
+  $("page").hidden = view === "home";
+  document.querySelector(".hero").classList.toggle("compact", view !== "home");
+  $("compare-wrap").innerHTML = SECTOR_VIEWS.compare(d);
+  $("tiles").innerHTML = SECTORS.map(([k, l]) => `<a class="tile" href="#/${k}"><b>${l}</b><span>${TILE_TEXT[k]}</span></a>`).join("");
+  if (view !== "home") {
+    $("page-title").textContent = SECTORS.find(([k]) => k === view)[1];
+    $("sector").innerHTML = PAGES[view](d);
+  }
 }
 
 async function refresh() {
@@ -338,9 +354,9 @@ document.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   if (b.dataset.id) { state.period = b.dataset.id; store.set("period", state.period); refresh(); }
-  else if (b.dataset.sector) { state.sector = b.dataset.sector; store.set("sector", state.sector); render(); }
   else if (b.id === "demo") { state.demo = !state.demo; store.set("demo", state.demo ? "1" : "0"); refresh(); }
 });
 
 refresh();
 setInterval(refresh, 60 * 60 * 1000); // atualiza a cada 1 h
+window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
