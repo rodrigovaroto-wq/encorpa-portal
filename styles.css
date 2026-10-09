@@ -162,3 +162,19 @@ body { background: var(--bg) linear-gradient(180deg, #1c0d33 0, var(--bg) 520px)
 .hero.compact .wordmark { display: none; }
 .hero.compact .demo { margin-top: 0; }
 [hidden] { display: none !important; }
+
+/* painel geral enxuto */
+.kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.status { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid var(--line); border-left: 4px solid var(--muted); background: var(--panel); }
+.status b { font: 700 1.3rem Cinzel, Georgia, serif; letter-spacing: .1em; text-transform: uppercase; }
+.status span { color: var(--muted); font-size: .88rem; }
+.status.s0 { border-left-color: var(--ok); } .status.s1 { border-left-color: var(--warn); } .status.s2 { border-left-color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line); background: var(--panel); font-size: .85rem; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--steel, #4a4744); }
+.chip.ok i { background: var(--ok); } .chip.warn i { background: var(--warn); } .chip.bad i { background: var(--bad); }
+.chip b { font-weight: 600; color: #f2eaff; }
+h3.group small { color: var(--muted); letter-spacing: .05em; text-transform: none; font-weight: 400; margin-left: 8px; }
+details.more { border: 1px solid var(--line); background: var(--panel); }
+details.more summary { cursor: pointer; padding: 12px 16px; color: var(--violet); }
+details.more .table-wrap { border: 0; border-top: 1px solid var(--line); }

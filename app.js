@@ -28,21 +28,13 @@ const GROUPS = [
     { id: "net_profit", label: "Lucro líquido (comissões recebidas)", unit: "brl", src: "Coinzz/Logzz/Mercado Pago" },
     { id: "roi", label: "ROI", unit: "x", src: "lucro bruto ÷ (anúncio + API)", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "cash_left", label: "Caixa reservado restante", unit: "brl", src: "manual (R$ 1.500)" },
-    { id: "ticket_pieces", label: "Ticket médio (peças)", unit: "n", src: "orders" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
   ]},
-  { title: "Anúncio e site", metrics: [
+  { title: "Anúncio", metrics: [
     { id: "spend", label: "Gasto", unit: "brl", src: "Meta Ads" },
     { id: "cpm", label: "CPM", unit: "brl", src: "Meta Ads" },
     { id: "ctr", label: "CTR do link", unit: "pct", src: "Meta Ads", goal: "≥ 1% mín · 2% ideal" },
-    { id: "cpc", label: "CPC", unit: "brl", src: "Meta Ads" },
-    { id: "view_content", label: "ViewContent ÷ cliques", unit: "pct", src: "Pixel" },
-    { id: "add_to_cart", label: "AddToCart ÷ ViewContent", unit: "pct", src: "Pixel" },
-    { id: "checkout", label: "Pedidos ÷ InitiateCheckout", unit: "pct", src: "Pixel + Coinzz" },
-    { id: "site_conversion", label: "Conversão no site", unit: "pct", src: "Pixel + Coinzz", goal: "> 3%" },
-    { id: "cpa", label: "CPA real", unit: "brl", src: "Meta Ads + Coinzz", goal: "< R$ 35" },
-    { id: "failed_delivery", label: "Entrega frustrada", unit: "pct", src: "Coinzz/Logzz", goal: "< 16,5%" },
   ]},
   { title: "Agente (Malu)", metrics: [
     { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "eval_funnel", goal: "≥ 60% mín · 75% ideal" },
@@ -87,11 +79,11 @@ const DECISION = [
   ["Ajustar", "6%–10%", "R$ 1,25–1,75", "1,5–2,5"],
   ["Parar", "< 6%", "> R$ 1,75", "< 1,5"],
 ];
-const SAMPLE_FLOOR = { leads: 500, orders: 50 };
+const SAMPLE_FLOOR = { leads: 500, orders: 50, spend: 500 };
 
 
 // Painel principal: as 8 que mandam.
-const KPIS = ["leads", "orders", "conversion", "cpl", "spend", "roi", "net_profit", "handoff"];
+const KPIS = ["leads", "orders", "conversion", "cpl", "roi", "net_profit"];
 
 // Setores (abas). Cada um é renderizado por uma função abaixo.
 const SECTORS = [["meta", "Meta ADS"], ["malu", "Malu AI Agent"], ["ops", "Operacional"]];
@@ -177,7 +169,7 @@ function demoData(period) {
   const pct = (id) => m[id].value / 100;
   return {
     demo: true, updated: new Date().toISOString(), metrics, api_over_pct: 3.8,
-    totals: { leads: Math.round(leads * 1.0) % 600, orders: Math.round(orders) % 60 },
+    totals: { leads: Math.round(leads * 1.0) % 600, orders: Math.round(orders) % 60, spend: Math.round(m.spend.value) % 500 },
     videos: seg(VIDEOS), segments: { creative: seg(VIDEOS), region: seg(SEGMENTS.region) },
     money: { ...flow, to_receive: flow.net_profit * .4, received: flow.net_profit * .6, prepaid_share: m.prepaid_share.value, cash_left: m.cash_left.value },
     funnel: Object.fromEntries(Object.entries({ first_msg: leads, reply: leads * pct("reply_rate"), price: leads * pct("price_reach"), link: leads * pct("link_reach"), order: orders, delivered: orders * pct("delivered") }).map(([k, v]) => [k, Math.round(v)])),
@@ -232,7 +224,7 @@ function chartSvgRaw(series) {
   return `<svg class="chart" viewBox="0 0 ${w} ${h}">${base}<path d="M${pts.join("L")}"/></svg>`;
 }
 
-const TILE_TEXT = { meta: "Vídeos e criativos, anúncio e site, região A × B", malu: "Funil da conversa, saúde da agente, canal, versões e verificações", ops: "Fluxo de dinheiro, caixa, preços, custos, fases do teste, metas e estado do sistema" };
+const TILE_TEXT = { meta: "Vídeos e criativos, anúncio e região A × B", malu: "Funil da conversa, saúde da agente, canal, versões e verificações", ops: "Fluxo de dinheiro, caixa, preços, custos, fases do teste, metas e estado do sistema" };
 function currentView() {
   const v = location.hash.replace(/^#\/?/, "");
   return SECTORS.some(([k]) => k === v) ? v : "home";
@@ -288,9 +280,13 @@ const SECTOR_VIEWS = {
 };
 
 const PAGES = {
-  meta: (d) => `<h3 class="group">Vídeos e criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Anúncio e site</h3>${SECTOR_VIEWS.ads(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`,
+  meta: (d) => `<h3 class="group">Vídeos e criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Anúncio</h3>${SECTOR_VIEWS.ads(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`,
   malu: (d) => SECTOR_VIEWS.agent(d),
-  ops: (d) => `${SECTOR_VIEWS.money(d)}${SECTOR_VIEWS.ref(d)}`,
+  ops: (d) => `${SECTOR_VIEWS.money(d)}
+    <h3 class="group">Decisão no dia 12</h3>${tbl(["Decisão", "Conversão", "CPL", "ROI"], DECISION.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`))}
+    <h3 class="group">Critérios de pausa</h3>${tbl(["Critério", "Pausar se"], PAUSE.map((c) => `<tr><td>${c.label}</td><td>${c.limit}</td></tr>`))}
+    <h3 class="group">Comparação entre períodos</h3><details class="more"><summary>Ver todas as métricas contra o período anterior</summary>${SECTOR_VIEWS.compare(d)}</details>
+    ${SECTOR_VIEWS.ref(d)}`,
 };
 
 function cardHtml(x) {
@@ -318,26 +314,30 @@ function render() {
     const delta = v && v.previous ? `${v.value >= v.previous ? "▲" : "▼"} ${Math.abs(((v.value - v.previous) / v.previous) * 100).toFixed(1).replace(".", ",")}%` : "";
     return `<article class="kpi"><h3>${x.label}</h3><div class="big">${fmt(v?.value, x.unit)}</div><div class="delta">${delta || "&nbsp;"}</div>${x.goal ? `<div class="goal">META ${x.goal}</div>` : ""}</article>`; }).join("");
 
-  $("sample").innerHTML = [["Leads atendidos", "leads"], ["Pedidos criados", "orders"]].map(([l, k]) => {
-    const v = d.totals?.[k] ?? 0, pct = Math.min(100, (v / SAMPLE_FLOOR[k]) * 100);
-    return `<div class="bar"><div class="bar-head"><span>${l}</span><span>${v} / ${SAMPLE_FLOOR[k]}+</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
+  $("sample").innerHTML = [["Leads atendidos", "leads", "n", "+"], ["Pedidos criados", "orders", "n", "+"], ["Verba do anúncio", "spend", "brl", ""]].map(([l, k, u, plus]) => {
+    const v = d.totals?.[k] ?? (k === "spend" ? 0 : 0), pct = Math.min(100, (v / SAMPLE_FLOOR[k]) * 100);
+    return `<div class="bar"><div class="bar-head"><span>${l}</span><span>${fmt(v, u)} / ${fmt(SAMPLE_FLOOR[k], u)}${plus}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
   }).join("");
 
-  $("pause").innerHTML = PAUSE.map((c) => {
-    const p = (d.pause || computePause(d))[c.id];
-    return `<li class="${p?.status || ""}"><span>${c.label}<small>PAUSAR SE: ${c.limit}</small></span><span>${p ? p.value : "—"}</span></li>`;
-  }).join("");
+  const pz = d.pause || computePause(d);
+  const count = (s) => PAUSE.filter((c) => pz[c.id]?.status === s).length;
+  $("pause-sum").textContent = Object.keys(pz).length && PAUSE.some((c) => pz[c.id]) ? `${count("bad")} crítico · ${count("warn")} atenção · ${count("ok")} ok` : "";
+  $("pause").innerHTML = PAUSE.map((c) => { const p = pz[c.id];
+    return `<span class="chip ${p?.status || ""}" title="Pausar se: ${c.limit}"><i></i>${c.label}<b>${p ? p.value : "—"}</b></span>`; }).join("");
 
   const dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
-  $("verdict").textContent = dec == null ? "" : `Hoje: ${DECISION[dec][0].toUpperCase()}${floorOk ? "" : " (amostra ainda abaixo do piso)"}`;
-  $("decision").innerHTML = DECISION.map((r, i) => `<tr class="${i === dec ? "now" : ""}"><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
+  const NAME = { conversion: "Conversão", cpl: "CPL", roi: "ROI" };
+  const miss = Object.keys(NAME).filter((id) => m[id]?.value == null).map((id) => NAME[id]);
+  $("status").className = `status s${dec ?? "n"}`;
+  $("status").innerHTML = dec == null
+    ? `<b>Aguardando dados</b><span>Faltam ${miss.join(", ")} para a decisão do dia 12.</span>`
+    : `<b>Hoje: ${DECISION[dec][0]}</b><span>Conversão ${fmt(m.conversion.value, "pct")} · CPL ${fmt(m.cpl.value, "brl")} · ROI ${fmt(m.roi.value, "x")}. A pior das três decide.${floorOk ? "" : " Amostra ainda abaixo do piso."}</span>`;
 
   const view = currentView();
   $("menu").innerHTML = [["home", "Painel"], ...SECTORS].map(([k, l]) => `<a href="#/${k}" aria-current="${k === view}">${l}</a>`).join("");
   $("home").hidden = view !== "home";
   $("page").hidden = view === "home";
   document.querySelector(".hero").classList.toggle("compact", view !== "home");
-  $("compare-wrap").innerHTML = SECTOR_VIEWS.compare(d);
   $("tiles").innerHTML = SECTORS.map(([k, l]) => `<a class="tile" href="#/${k}"><b>${l}</b><span>${TILE_TEXT[k]}</span></a>`).join("");
   if (view !== "home") {
     $("page-title").textContent = SECTORS.find(([k]) => k === view)[1];
