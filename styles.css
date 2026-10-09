@@ -1,33 +1,38 @@
+@font-face { font-family: UnifrakturCook; font-weight: 700; font-display: swap; src: url("fonts/UnifrakturCook-Bold.woff2") format("woff2"); }
 :root {
   --bg: #0c0612; --panel: #150c1f; --line: #2a1b3c; --text: #e8dcf7; --muted: #8d7ea6;
   --violet: #a78bfa; --deep: #6d3fd1; --ok: #7bd9a4; --warn: #e5b25d; --bad: #f0707f;
   --serif: Georgia, "Times New Roman", serif;
+  --gothic: UnifrakturCook, "Old English Text MT", Georgia, serif;
 }
 * { box-sizing: border-box; margin: 0; }
 body { background: var(--bg) radial-gradient(ellipse 900px 500px at 50% 0, #2a1146 0%, transparent 100%) no-repeat; color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
 ::selection { background: var(--deep); }
 
-.topbar { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 36px 32px 8px; max-width: 1200px; margin: 0 auto; }
-h1 { font: 400 clamp(2rem, 6vw, 3.2rem)/1 var(--serif); letter-spacing: .02em; }
-h1 span { color: var(--violet); font-style: italic; }
-.badge { color: var(--muted); font-size: .85rem; }
+.hero { text-align: center; padding: 72px 20px 40px; background: radial-gradient(ellipse 700px 380px at 50% 0, rgba(109,63,209,.45), transparent 70%); border-bottom: 1px solid var(--line); }
+.kicker { text-transform: uppercase; letter-spacing: .4em; font-size: .75rem; color: var(--violet); }
+h1 { font: 700 clamp(3.2rem, 14vw, 8rem)/1 var(--gothic); color: #efe6ff; text-shadow: 0 0 40px rgba(167,139,250,.55), 0 4px 0 #2a1146; margin: 12px 0 4px; }
+h1 span { display: block; font-size: .32em; color: var(--violet); text-shadow: none; letter-spacing: .06em; }
+.orn { color: var(--deep); letter-spacing: .5em; margin: 8px 0; }
+.badge { display: inline-block; color: var(--muted); font-size: .8rem; letter-spacing: .15em; text-transform: uppercase; }
 .muted { color: var(--muted); }
 
-.periods { display: flex; gap: 4px; padding: 16px 32px 0; max-width: 1200px; margin: 0 auto; overflow-x: auto; }
-.periods button { border: 0; background: transparent; color: var(--muted); font: 500 .9rem system-ui, sans-serif; padding: 8px 14px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+.periods { display: flex; justify-content: center; gap: 4px; padding: 0 16px; overflow-x: auto; position: sticky; top: 0; z-index: 5; background: rgba(12,6,18,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+.periods button { border: 0; background: transparent; color: var(--muted); font: 500 .8rem system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; padding: 16px 16px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
 .periods button:hover { color: var(--text); }
 .periods button[aria-pressed="true"] { color: var(--violet); border-bottom-color: var(--violet); }
 
 main { max-width: 1200px; margin: 0 auto; padding: 0 32px 64px; }
 section { padding: 36px 0 8px; }
-h2 { font: 400 1.7rem/1.2 var(--serif); margin-bottom: 20px; }
-h3.group { font: 500 .8rem system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--violet); margin: 28px 0 12px; }
+h2 { font: 700 2.6rem/1.1 var(--gothic); text-align: center; color: #efe6ff; margin-bottom: 28px; }
+h2::after { content: "✦"; display: block; font: 400 .8rem system-ui; color: var(--deep); margin-top: 8px; }
+h3.group { font: 500 .75rem system-ui, sans-serif; letter-spacing: .3em; text-transform: uppercase; color: var(--violet); margin: 28px 0 12px; }
 section h3.group:first-child, .two .group { margin-top: 0; }
 
 .kpis { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
-.kpi h3 { font: 500 .8rem system-ui, sans-serif; color: var(--muted); }
-.kpi .big { font: 400 2.6rem/1.1 var(--serif); color: var(--text); margin: 6px 0 2px; }
+.kpi { background: linear-gradient(160deg, #26123f, #0f0719); border: 1px solid #3a2358; padding: 22px 20px; text-align: center; box-shadow: 0 0 30px rgba(109,63,209,.12); }
+.kpi h3 { font: 500 .7rem system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
+.kpi .big { font: 700 3rem/1.1 var(--gothic); color: var(--text); margin: 6px 0 2px; }
 .kpi .delta { color: var(--violet); font-size: .85rem; min-height: 1.3em; }
 .kpi .goal { font-size: .75rem; color: var(--muted); margin-top: 4px; }
 
@@ -36,7 +41,7 @@ section h3.group:first-child, .two .group { margin-top: 0; }
 .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
 .card h3 { font: 500 .85rem system-ui, sans-serif; color: var(--muted); }
-.card .value { font: 400 2rem/1.2 var(--serif); margin: 4px 0 8px; }
+.card .value { font: 700 2.2rem/1.2 var(--gothic); margin: 4px 0 8px; }
 .card .meta { font-size: .72rem; color: var(--muted); margin-top: 8px; opacity: .8; }
 .chart { width: 100%; height: 56px; display: block; }
 .chart path { fill: none; stroke: var(--violet); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -62,8 +67,8 @@ tr.sum td { color: var(--violet); font-weight: 600; }
 .bar-track { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
 .bar-fill { height: 100%; background: var(--violet); border-radius: 99px; }
 
-.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; background: transparent; color: var(--muted); font: 500 .9rem system-ui, sans-serif; padding: 10px 16px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+.tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: transparent; color: var(--muted); font: 500 .78rem system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; padding: 12px 18px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
 .tabs button:hover { color: var(--text); }
 .tabs button[aria-pressed="true"] { color: var(--violet); border-bottom-color: var(--violet); }
 
@@ -75,4 +80,4 @@ tr.sum td { color: var(--violet); font-weight: 600; }
 .step { display: grid; grid-template-columns: minmax(150px, 220px) 1fr 70px; gap: 12px; align-items: center; font-size: .88rem; }
 .step b { text-align: right; font-weight: 500; }
 
-@media (max-width: 560px) { .topbar, .periods, main { padding-left: 16px; padding-right: 16px; } }
+@media (max-width: 560px) { main { padding-left: 16px; padding-right: 16px; } }
