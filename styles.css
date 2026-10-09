@@ -84,9 +84,10 @@ tr.sum td { color: var(--violet); font-weight: 600; }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .wordmark { display: block; margin: 0 auto; width: min(280px, 70vw); height: auto; }
-.corner { position: fixed; top: 4px; left: 12px; z-index: 10; opacity: .8; }
+.corner { position: fixed; top: 6px; left: 12px; z-index: 10; opacity: .8; }
 .corner:hover { opacity: 1; }
-.corner img { display: block; width: 44px; height: 44px; border: 1px solid #3a2358; }
+.corner img { display: block; width: 56px; height: 56px; border: 1px solid #3a2358; transition: width .2s, height .2s; }
+.corner:hover img { width: 260px; height: 260px; box-shadow: 0 10px 40px rgba(0,0,0,.7); }
 
 .range { display: flex; justify-content: space-between; font-size: .68rem; color: var(--muted); margin-top: 2px; }
 .demo { margin-top: 8px; border: 1px solid var(--deep); background: transparent; color: var(--violet); padding: 6px 16px; font: 500 .75rem system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
