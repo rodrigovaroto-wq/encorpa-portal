@@ -5,7 +5,7 @@ import { buildAll } from "../lib/build.mjs";
 const URL_DEFAULT = "https://hbmkgakzrqmdlsvszjeo.supabase.co";
 
 export default async function handler(req, res) {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
   if (!key) return res.status(500).json({ error: "Falta a variável SUPABASE_SERVICE_ROLE_KEY no Vercel." });
   try {
     const { data } = await buildAll({ url: process.env.SUPABASE_URL || URL_DEFAULT, key });
