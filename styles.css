@@ -123,3 +123,17 @@ h2 { display: block; font: 700 1.15rem/1.3 system-ui, -apple-system, "Segoe UI",
 h2::before, h2::after { content: none; display: none; }
 
 h2 { font: 700 1.6rem/1.2 Cinzel, Georgia, serif; letter-spacing: .22em; }
+
+/* versão simples: preto liso, roxo só nos detalhes */
+:root { --bg: #0a0710; --panel: #120b1c; --line: #251838; }
+body { background: var(--bg); }
+.hero { background: none; border-bottom: 1px solid var(--line); }
+.hero::before, .hero::after { content: none; animation: none; }
+h1 { text-shadow: none; }
+.kpi, .card { background: var(--panel); border: 1px solid var(--line); box-shadow: none; }
+.kpi .big, .card .value { font: 600 2rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; text-shadow: none; color: #f2eaff; }
+.card .value { font-size: 1.6rem; }
+.table-wrap, .pause { box-shadow: none; }
+.corner img, .corner:hover img { box-shadow: none; }
+.periods { background: var(--bg); backdrop-filter: none; }
+.banner { background: #1a1408; border-bottom: 1px solid #3a2d0e; }
