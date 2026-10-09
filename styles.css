@@ -99,7 +99,7 @@ tr.now td { background: rgba(167,139,250,.14); color: #fff; font-weight: 600; }
 
 /* doom: bichinho alado, névoa, divisores */
 .hero { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 24px; }
-.hero .sr + .demon, .hero .demon { width: 120px; height: auto; opacity: .75; filter: drop-shadow(0 0 14px rgba(140,63,217,.7)); animation: hover 5s ease-in-out infinite; }
+.hero .sr + .demon, .hero .demon { width: 150px; height: auto; opacity: .75; filter: drop-shadow(0 0 14px rgba(140,63,217,.7)); animation: hover 5s ease-in-out infinite; }
 .hero .demon.r { transform: scaleX(-1); animation-delay: -2.5s; }
 .hero .badge, .hero .demon-row, .hero .demo { flex-basis: 100%; }
 .hero .demo { flex-basis: auto; }

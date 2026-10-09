@@ -15,7 +15,12 @@ Períodos (dia a 12 meses), painel com 8 números e variação, piso de amostra,
 e decisão do dia 12 calculados sozinhos, e os setores: vídeos, fluxo de dinheiro, agente do WhatsApp,
 anúncio e site, região e comparação. Atualiza sozinho a cada 1 h.
 
-## Ligar dados reais
+## Dados reais
+
+`data.js` traz um snapshot real (06 a 08/10/2026: 4 conversas de teste, só agregados, sem dado de cliente), lido do Supabase pelas views `eval_*`.
+Ele funciona abrindo o arquivo direto. Para atualizar, gere um novo `data.js` com o mesmo formato.
+
+## Ligar dados reais (servidor)
 
 Publique um `data.json` na mesma pasta. Um objeto por período (`day`, `week`, `month`, `3m`, `6m`, `9m`, `12m`):
 

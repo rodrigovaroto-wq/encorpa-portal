@@ -96,7 +96,7 @@ const KPIS = ["leads", "orders", "conversion", "cpl", "spend", "roi", "net_profi
 // Setores (abas). Cada um é renderizado por uma função abaixo.
 const SECTORS = [
   ["videos", "Vídeos e criativos"], ["money", "Fluxo de dinheiro"], ["agent", "Agente do WhatsApp"],
-  ["ads", "Anúncio e site"], ["region", "Região"], ["compare", "Comparação"],
+  ["ads", "Anúncio e site"], ["region", "Região"], ["compare", "Comparação"], ["ref", "Referência"],
 ];
 
 // Vídeos: os 6 ganchos/formatos da fase Copy. `headline` vem de eval_attribution.
@@ -120,15 +120,27 @@ const AGENT_HEALTH = ["handoff", "fallback", "rewrites", "gate_blocks", "optout"
 const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud API"], ["window", "Janela gratuita de 72 h"], ["templates", "Templates aprovados na Meta"]];
 
 
+
+// Fatos fixos dos repositórios (Ricos-com-AI, Encorpa-Website, Encorpa-Campanhas). Datas = quando foram escritos.
+const REF = [
+  ["Oferta (config e site)", [["Produto", "Colete Cinta Modeladora, tamanhos P, M, G, GG e XGG"], ["Pagamento na entrega", "R$ 129,90, frete grátis"], ["Pagamento antecipado", "R$ 110,42 (15% off), frete por conta da cliente, calculado no checkout"], ["Âncora de preço", "R$ 216,50"], ["Garantia", "7 dias"], ["Atendimento", "06:00 às 00:00; fora disso, mensagem automática"], ["Mix previsto", "70% na entrega, 30% antecipado, 1 peça por pedido"]]],
+  ["Economia por pedido (estudo de projeção, não medido)", [["COD entregue", "+ R$ 63,35 (produto R$ 30, transação, handling R$ 4,99, entrega R$ 19,99)"], ["COD recusado", "− R$ 14,98 (recusa R$ 9,99)"], ["Antecipado", "+ R$ 70,21"], ["Média com mix 70/30", "R$ 57,18 por pedido"], ["Recusa na porta (premissa)", "12% a 17%; a Logzz declara 13% a 16%"], ["Devolução pós-envio", "5% a 10% a R$ 25,00"], ["Equilíbrio", "conversão de 3,58% com CPL de R$ 1,25"], ["Comissão da entrega", "libera 14 dias depois do pagamento"]]],
+  ["Medido × premissa", [["Custo de API por conversa", "medido R$ 0,051 (4 conversas de teste, máx R$ 0,073) × premissa do estudo R$ 0,80 por lead"], ["Teto do modelo por conversa", "R$ 0,50 (p50 medido R$ 0,268 e p95 R$ 0,546 no modelo padrão, 30/09)"], ["Custo do WhatsApp por lead", "R$ 0 dentro da janela de 24 h ou da gratuita de 72 h; template UTILITY ~ R$ 0,04 por pedido"]]],
+  ["Teste de tráfego (L3)", [["Fase Copy, dias 1 a 5", "R$ 300, 6 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"], ["Fase Região, dias 6 a 10", "R$ 200, só as 2 copies vencedoras; A = estados com mais de 5 cidades atendidas, B = Sudeste + Centro-Oeste + Sul"], ["Fase Leitura, dias 11 e 12", "R$ 0; as entregas chegam à porta"], ["Verba total", "R$ 500 de anúncio + R$ 1.500 de caixa reservado para o custo do pedido"], ["Piso de amostra", "mais de 500 leads atendidos e mais de 50 pedidos criados"], ["Primeira resposta da agente", "1 minuto depois da mensagem"], ["Régua de silêncio", "silence_3 entre 63 h e 71 h depois da abertura da janela de 72 h"]]],
+  ["Etapas do pipeline (09/10)", [["L0 preparar", "feito; templates da Meta aprovados em 09/10"], ["L1 publicar", "feito; canal ligado e testado em 06/10"], ["L2 provar com dinheiro", "em andamento: teste real do operador e do sócio (antecipado e na entrega)"], ["L3 tráfego", "não começou"], ["L4 Hermes", "em andamento: H1 feito, H2 e H3 em parte, H4 e H5 pendentes"]]],
+  ["Sistema no ar (09/10)", [["Agente (função turn)", "agent_version 15, função v90"], ["WhatsApp", "função whatsapp v24, transcrição de áudio"], ["Qualidade", "28 gates, 7.113 testes, 1.665 conversas simuladas passando"], ["Modelo da conversa", "muse-spark-1.3-contributor (decisão do operador)"], ["n8n", "6 workflows ok"], ["Banco", "Supabase, migrações até a 0025"]]],
+];
+
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 const state = { period: store.get("period") || "week", segment: "creative", sector: store.get("sector") || "videos", demo: store.get("demo") === "1", data: null };
 
-// Dados: lê data.json (mesma pasta) quando existir; o formato está no README.
+// Dados: lê data.js (snapshot embutido, funciona em arquivo local) ou data.json (servidor); o formato está no README.
 // Sem ele, o botão "Ver exemplo" liga dados de mentira (marcados na tela).
 // { updated, metrics:{id:{value,previous,series}}, totals:{leads,orders}, pause?, api_over_pct?, videos?, segments?,
 //   money?, funnel?, channel?, versions?, gates? }
 async function loadData(period) {
   if (state.demo) return demoData(period);
+  if (window.PORTAL_DATA) return window.PORTAL_DATA[period] || window.PORTAL_DATA;
   if (location.protocol === "file:") return null; // navegador bloqueia fetch em arquivo local
   try {
     const r = await fetch("data.json", { cache: "no-store" });
@@ -260,6 +272,9 @@ const SECTOR_VIEWS = {
   region(d) {
     return `<p class="note">Região medida pelo conjunto (A × B), não pelo endereço. A e B se sobrepõem no Sudeste, Centro-Oeste e Sul: leitura direcional.</p>${segTable("region", d, SEGMENTS.region)}`;
   },
+  ref() {
+    return REF.map(([t, rows]) => `<h3 class="group">${t}</h3>${tbl(["Item", "Valor"], rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`))}`).join("");
+  },
   compare(d) {
     const m = d.metrics || {};
     return tbl(["Métrica", "Período atual", "Período anterior", "Variação"], ALL.map((x) => {
@@ -286,7 +301,8 @@ function render() {
   const m = d.metrics || {};
   $("updated").textContent = state.data ? `${state.data.demo ? "EXEMPLO · " : ""}atualizado ${new Date(state.data.updated || Date.now()).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}` : "Sem dados ainda";
   $("demo").textContent = state.demo ? "Voltar aos dados reais" : "Ver exemplo";
-  $("demo-banner").hidden = !state.demo;
+  const note = state.demo ? "Dados de exemplo — números inventados só para ver o portal funcionando. Não são reais." : state.data?.note;
+  $("demo-banner").hidden = !note; $("demo-banner").textContent = note || "";
 
   $("periods").innerHTML = PERIODS.map((p) => `<button data-id="${p.id}" aria-pressed="${p.id === state.period}">${p.label}</button>`).join("");
 
