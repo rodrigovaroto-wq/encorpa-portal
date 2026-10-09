@@ -8,16 +8,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <a class="corner" href="#" aria-label="Topo"><img src="logo.svg" alt="" width="44" height="44"></a>
   <header class="hero">
-    <p class="kicker">Análise de dados e operação</p>
     <h1 class="sr">Encorpa portal</h1>
-    <img class="cover" src="logo.svg" alt="" width="260" height="260">
-    <p class="orn">— ✦ —</p>
+    <img class="wordmark" src="wordmark.svg" alt="" width="420" height="294">
     <span id="updated" class="badge">Sem dados ainda</span>
+    <button id="demo" class="demo">Ver exemplo</button>
   </header>
 
   <nav class="periods" id="periods" aria-label="Período"></nav>
 
+  <p id="demo-banner" class="banner" hidden>Dados de exemplo — números inventados só para ver o portal funcionando. Não são reais.</p>
   <main>
     <section id="painel">
       <h2>Painel</h2>
@@ -27,7 +28,7 @@
         <div><h3 class="group">Quando pausar</h3><ul class="pause" id="pause"></ul></div>
       </div>
       <div class="two">
-        <div><h3 class="group">Decisão no dia 12</h3>
+        <div><h3 class="group">Decisão no dia 12</h3><p id="verdict" class="verdict"></p>
           <div class="table-wrap"><table><thead><tr><th>Decisão</th><th>Conversão</th><th>CPL</th><th>ROI</th></tr></thead><tbody id="decision"></tbody></table></div></div>
         <div><h3 class="group">Metas por fase</h3>
           <div class="table-wrap"><table><thead><tr><th>Fase</th><th>Mínima</th><th>Ideal</th></tr></thead><tbody id="phases"></tbody></table></div></div>

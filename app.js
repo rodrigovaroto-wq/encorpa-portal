@@ -120,12 +120,84 @@ const AGENT_HEALTH = ["handoff", "fallback", "rewrites", "gate_blocks", "optout"
 const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud API"], ["window", "Janela gratuita de 72 h"], ["templates", "Templates aprovados na Meta"]];
 
 
-const state = { period: "week", segment: "creative", sector: "videos", data: null };
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const state = { period: store.get("period") || "week", segment: "creative", sector: store.get("sector") || "videos", demo: store.get("demo") === "1", data: null };
 
-// Retornar { metrics: {id:{value,previous,series}}, pause: {id:{value,status}},
-// segments: {creative|region: {rótulo:{id:valor}}}, totals: {leads,orders} } quando houver backend.
-async function loadData(_period) {
-  return null;
+// Dados: lê data.json (mesma pasta) quando existir; o formato está no README.
+// Sem ele, o botão "Ver exemplo" liga dados de mentira (marcados na tela).
+// { updated, metrics:{id:{value,previous,series}}, totals:{leads,orders}, pause?, api_over_pct?, videos?, segments?,
+//   money?, funnel?, channel?, versions?, gates? }
+async function loadData(period) {
+  if (state.demo) return demoData(period);
+  if (location.protocol === "file:") return null; // navegador bloqueia fetch em arquivo local
+  try {
+    const r = await fetch("data.json", { cache: "no-store" });
+    if (!r.ok) return null;
+    const all = await r.json();
+    return all[period] || all;
+  } catch { return null; }
+}
+
+// ---- dados de exemplo (NÃO são reais) ----
+const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
+const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.4, .9], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
+const SUMMED = new Set(["leads", "orders", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
+
+function rng(seed) { let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+function demoData(period) {
+  const [n, days] = BUCKETS[period];
+  const metrics = {};
+  for (const x of ALL) {
+    const [lo, hi] = RANGE[x.id] || [1, 10], r = rng(period + x.id), k = SUMMED.has(x.id) ? days : 1;
+    const gen = () => Array.from({ length: n }, (_, i) => (lo + (hi - lo) * (0.25 + 0.5 * r() + 0.25 * Math.sin(i / 3))) * k);
+    const cur = gen(), prev = gen();
+    const agg = (s) => (x.id === "cash_left" ? s[s.length - 1] : SUMMED.has(x.id) ? s.reduce((a, b) => a + b, 0) : s.reduce((a, b) => a + b, 0) / s.length);
+    const rd = x.id === "leads" || x.id === "orders" ? Math.round : (v) => v;
+    metrics[x.id] = { value: rd(agg(cur)), previous: rd(agg(prev)), series: cur.map(rd) };
+  }
+  const r = rng("seg" + period), pick = (id, f = 1) => { const [lo, hi] = RANGE[id]; return (lo + (hi - lo) * r()) * f; };
+  const seg = (names) => Object.fromEntries(names.map((nm) => [nm, Object.fromEntries(SEGMENT_METRICS.map(([id]) => [id, pick(id, id === "spend" ? 3 : 1)]))]));
+  const m = metrics, rev = m.revenue.value, leads = m.leads.value, orders = m.orders.value;
+  const flow = { revenue: rev, product_cost: rev * .3, tx_fee: rev * .07, delivery_fee: rev * .15, refusal_cost: rev * .04, return_cost: rev * .02 };
+  flow.gross_profit = rev - flow.product_cost - flow.tx_fee - flow.delivery_fee - flow.refusal_cost - flow.return_cost;
+  flow.spend = m.spend.value; flow.api_cost = leads * m.api_per_lead.value * .3;
+  flow.net_profit = flow.gross_profit - flow.spend - flow.api_cost;
+  m.gross_profit.value = flow.gross_profit; m.net_profit.value = flow.net_profit; m.op_cost.value = rev - flow.gross_profit;
+  m.roi.value = flow.gross_profit / (flow.spend + flow.api_cost);
+  const pct = (id) => m[id].value / 100;
+  return {
+    demo: true, updated: new Date().toISOString(), metrics, api_over_pct: 3.8,
+    totals: { leads: Math.round(leads * 1.0) % 600, orders: Math.round(orders) % 60 },
+    videos: seg(VIDEOS), segments: { creative: seg(VIDEOS), region: seg(SEGMENTS.region) },
+    money: { ...flow, to_receive: flow.net_profit * .4, received: flow.net_profit * .6, prepaid_share: m.prepaid_share.value, cash_left: m.cash_left.value },
+    funnel: { first_msg: leads, reply: leads * pct("reply_rate"), price: leads * pct("price_reach"), link: leads * pct("link_reach"), order: orders, delivered: orders * pct("delivered") },
+    channel: { number: "Saudável", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" },
+    versions: [12, 13, 14].map((v, i) => ({ version: `v${v}`, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * .2, cost: .8 - i * .08 })),
+    gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: (20 - i * 3) / (3 - i * .3) / 10 })),
+  };
+}
+
+// Critérios de pausa (L3): calculados das métricas quando o data.json não traz `pause`.
+function computePause(d) {
+  const m = d.metrics || {}, v = (id) => m[id]?.value;
+  const lvl = (x, warn, bad) => (x == null ? "" : x > bad ? "bad" : x > warn ? "warn" : "ok");
+  const row = (x, s, u) => (x == null ? undefined : { value: fmt(x, u), status: s });
+  return {
+    p_premise: row(v("invalid_premise"), lvl(v("invalid_premise"), 4, 5), "pct"),
+    p_handoff: row(v("handoff"), lvl(v("handoff"), 8, 10), "pct"),
+    p_optout: row(v("optout"), lvl(v("optout"), 2, 2.5), "pct"),
+    p_api: row(d.api_over_pct, lvl(d.api_over_pct, 4, 5), "pct"),
+    p_cash: row(v("cash_left"), v("cash_left") == null ? "" : v("cash_left") < 300 ? "bad" : v("cash_left") < 600 ? "warn" : "ok", "brl"),
+    p_channel: d.channel ? { value: d.channel.number, status: d.channel.number === "Saudável" ? "ok" : "bad" } : undefined,
+  };
+}
+
+// Decisão do dia 12: a pior das três métricas decide (0 escalar, 1 ajustar, 2 parar).
+function computeDecision(m) {
+  const c = m.conversion?.value, p = m.cpl?.value, r = m.roi?.value;
+  if (c == null || p == null || r == null) return null;
+  return Math.max(c > 10 ? 0 : c >= 6 ? 1 : 2, p < 1.25 ? 0 : p <= 1.75 ? 1 : 2, r > 2.5 ? 0 : r >= 1.5 ? 1 : 2);
 }
 
 const $ = (id) => document.getElementById(id);
@@ -138,7 +210,11 @@ const fmt = (v, unit) => {
   return nf.format(v);
 };
 
-function chartSvg(series) {
+function chartSvg(series, unit) {
+  const lab = series && series.length > 1 ? `<div class="range"><span>mín ${fmt(Math.min(...series), unit)}</span><span>máx ${fmt(Math.max(...series), unit)}</span></div>` : "";
+  return chartSvgRaw(series) + lab;
+}
+function chartSvgRaw(series) {
   const w = 300, h = 90;
   const base = `<line x1="0" y1="${h - 1}" x2="${w}" y2="${h - 1}"/>`;
   if (!series || series.length < 2) return `<svg class="chart" viewBox="0 0 ${w} ${h}">${base}</svg>`;
@@ -171,7 +247,7 @@ const SECTOR_VIEWS = {
       return `<div class="step"><span>${l}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div><b>${fmt(n, "n")}</b></div>`;
     }).join("")}</div>
       <h3 class="group">Saúde da agente</h3><div class="grid">${AGENT_HEALTH.map((id) => { const x = metricBy(id);
-      return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(d.metrics?.[id]?.value, x.unit)}</div>${chartSvg(d.metrics?.[id]?.series)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`; }).join("")}</div>
+      return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(d.metrics?.[id]?.value, x.unit)}</div>${chartSvg(d.metrics?.[id]?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`; }).join("")}</div>
       <h3 class="group">Canal</h3>${tbl(["Item", "Estado"], CHANNEL.map(([id, l]) => `<tr><td>${l}</td><td>${d.channel?.[id] ?? "—"}</td></tr>`))}
       <h3 class="group">Antes × depois de cada versão</h3>${tbl(["Versão", "Respostas", "Handoff", "Fallback", "Reescritas", "Custo"], (d.versions || [{}]).map((r) =>
       `<tr><td>${r.version ?? "—"}</td><td>${fmt(r.turns, "n")}</td><td>${fmt(r.handoff, "pct")}</td><td>${fmt(r.fallback, "pct")}</td><td>${fmt(r.rewrites, "n")}</td><td>${fmt(r.cost, "brl")}</td></tr>`))}
@@ -188,7 +264,7 @@ const SECTOR_VIEWS = {
     const m = d.metrics || {};
     return tbl(["Métrica", "Período atual", "Período anterior", "Variação"], ALL.map((x) => {
       const v = m[x.id];
-      const delta = v && v.previous ? `${(((v.value - v.previous) / v.previous) * 100).toFixed(1)}%` : "—";
+      const delta = v && v.previous ? `${(((v.value - v.previous) / v.previous) * 100).toFixed(1).replace(".", ",")}%` : "—";
       return `<tr><td>${x.label}</td><td>${fmt(v?.value, x.unit)}</td><td>${fmt(v?.previous, x.unit)}</td><td>${delta}</td></tr>`;
     }));
   },
@@ -196,7 +272,7 @@ const SECTOR_VIEWS = {
 
 function cardHtml(x) {
   const v = (state.data?.metrics || {})[x.id];
-  return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(v?.value, x.unit)}</div>${chartSvg(v?.series)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`;
+  return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(v?.value, x.unit)}</div>${chartSvg(v?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`;
 }
 
 function segTable(kind, d, names) {
@@ -208,12 +284,14 @@ function segTable(kind, d, names) {
 function render() {
   const d = state.data || {};
   const m = d.metrics || {};
-  $("updated").textContent = state.data ? "Atualizado agora" : "Sem dados ainda";
+  $("updated").textContent = state.data ? `${state.data.demo ? "EXEMPLO · " : ""}atualizado ${new Date(state.data.updated || Date.now()).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}` : "Sem dados ainda";
+  $("demo").textContent = state.demo ? "Voltar aos dados reais" : "Ver exemplo";
+  $("demo-banner").hidden = !state.demo;
 
   $("periods").innerHTML = PERIODS.map((p) => `<button data-id="${p.id}" aria-pressed="${p.id === state.period}">${p.label}</button>`).join("");
 
   $("kpis").innerHTML = KPIS.map((id) => { const x = metricBy(id), v = m[id];
-    const delta = v && v.previous ? `${v.value >= v.previous ? "▲" : "▼"} ${Math.abs(((v.value - v.previous) / v.previous) * 100).toFixed(1)}%` : "";
+    const delta = v && v.previous ? `${v.value >= v.previous ? "▲" : "▼"} ${Math.abs(((v.value - v.previous) / v.previous) * 100).toFixed(1).replace(".", ",")}%` : "";
     return `<article class="kpi"><h3>${x.label}</h3><div class="big">${fmt(v?.value, x.unit)}</div><div class="delta">${delta || "&nbsp;"}</div>${x.goal ? `<div class="goal">META ${x.goal}</div>` : ""}</article>`; }).join("");
 
   $("sample").innerHTML = [["Leads atendidos", "leads"], ["Pedidos criados", "orders"]].map(([l, k]) => {
@@ -222,11 +300,13 @@ function render() {
   }).join("");
 
   $("pause").innerHTML = PAUSE.map((c) => {
-    const p = d.pause?.[c.id];
+    const p = (d.pause || computePause(d))[c.id];
     return `<li class="${p?.status || ""}"><span>${c.label}<small>PAUSAR SE: ${c.limit}</small></span><span>${p ? p.value : "—"}</span></li>`;
   }).join("");
 
-  $("decision").innerHTML = DECISION.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
+  const dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
+  $("verdict").textContent = dec == null ? "" : `Hoje: ${DECISION[dec][0].toUpperCase()}${floorOk ? "" : " (amostra ainda abaixo do piso)"}`;
+  $("decision").innerHTML = DECISION.map((r, i) => `<tr class="${i === dec ? "now" : ""}"><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
   $("phases").innerHTML = PHASES.map(([f, a, b]) => `<tr><td>${f}</td><td>${a}</td><td>${b}</td></tr>`).join("");
 
   $("sector-tabs").innerHTML = SECTORS.map(([k, l]) => `<button data-sector="${k}" aria-pressed="${k === state.sector}">${l}</button>`).join("");
@@ -241,8 +321,10 @@ async function refresh() {
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  if (b.dataset.id) { state.period = b.dataset.id; refresh(); }
-  else if (b.dataset.sector) { state.sector = b.dataset.sector; render(); }
+  if (b.dataset.id) { state.period = b.dataset.id; store.set("period", state.period); refresh(); }
+  else if (b.dataset.sector) { state.sector = b.dataset.sector; store.set("sector", state.sector); render(); }
+  else if (b.id === "demo") { state.demo = !state.demo; store.set("demo", state.demo ? "1" : "0"); refresh(); }
 });
 
 refresh();
+setInterval(refresh, 60 * 60 * 1000); // atualiza a cada 1 h
