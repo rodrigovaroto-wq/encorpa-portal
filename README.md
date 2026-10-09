@@ -15,10 +15,20 @@ Períodos (dia a 12 meses), painel com 8 números e variação, piso de amostra,
 e decisão do dia 12 calculados sozinhos, e os setores: vídeos, fluxo de dinheiro, agente do WhatsApp,
 anúncio e site, região e comparação. Atualiza sozinho a cada 1 h.
 
-## Dados reais
+## Publicado no Vercel
 
-`data.js` traz um snapshot real (06 a 08/10/2026: 4 conversas de teste, só agregados, sem dado de cliente), lido do Supabase pelas views `eval_*`.
-Ele funciona abrindo o arquivo direto. Para atualizar, gere um novo `data.js` com o mesmo formato.
+- `api/data.js` lê o Supabase na hora e guarda a resposta 30 min no cache. A página busca em `/api/data` a cada 30 min e mostra o horário em "atualizado".
+- `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.
+- Variáveis do projeto no Vercel (Settings > Environment Variables):
+  - `SUPABASE_SERVICE_ROLE_KEY` (ou `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
+  - `SUPABASE_URL` (opcional; padrão: o projeto da Encorpa).
+  - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
+- `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Só lê views agregadas e datas: nunca nome, telefone, endereço, CPF ou conversa.
+- `data.js` é uma cópia de segurança (retrato de 09/10). Se `/api/data` falhar, o portal mostra esse retrato.
+
+## Arquivo local
+
+Abrindo `index.html` direto no computador, o portal mostra o retrato de `data.js`.
 
 ## Ligar dados reais (servidor)
 

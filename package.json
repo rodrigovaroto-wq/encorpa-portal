@@ -1,0 +1,7 @@
+{
+  "name": "encorpa-portal",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": { "@vercel/functions": "3.9.11" }
+}

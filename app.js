@@ -129,7 +129,7 @@ const state = { period: store.get("period") || "week", segment: "creative", sect
 //   money?, funnel?, channel?, versions?, gates? }
 async function loadData(period) {
   if (state.demo) return demoData(period);
-  if (location.protocol !== "file:") await reloadDataFile(); // publicado: pega o data.js mais novo
+  if (location.protocol !== "file:") await loadLive(); // publicado: busca na função do Vercel (ou cai no data.js)
   if (window.PORTAL_DATA) return window.PORTAL_DATA[period] || window.PORTAL_DATA;
   if (location.protocol === "file:") return null; // navegador bloqueia fetch em arquivo local
   try {
@@ -138,6 +138,14 @@ async function loadData(period) {
     const all = await r.json();
     return all[period] || all;
   } catch { return null; }
+}
+
+async function loadLive() {
+  try {
+    const r = await fetch("/api/data", { cache: "no-store", credentials: "same-origin" });
+    if (r.ok) { window.PORTAL_DATA = await r.json(); return; }
+  } catch { /* sem função: usa o data.js */ }
+  await reloadDataFile();
 }
 
 function reloadDataFile() {
