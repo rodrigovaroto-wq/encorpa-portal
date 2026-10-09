@@ -81,3 +81,6 @@ tr.sum td { color: var(--violet); font-weight: 600; }
 .step b { text-align: right; font-weight: 500; }
 
 @media (max-width: 560px) { main { padding-left: 16px; padding-right: 16px; } }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.cover { display: block; margin: 18px auto 10px; width: min(260px, 70vw); height: auto; box-shadow: 0 0 60px rgba(109,63,209,.55), 0 20px 40px rgba(0,0,0,.6); }
