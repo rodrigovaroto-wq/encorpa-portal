@@ -19,49 +19,25 @@
   <nav class="periods" id="periods" aria-label="Período"></nav>
 
   <main>
-    <section>
-      <h2>Piso de amostra do teste</h2>
-      <div id="sample" class="bars"></div>
-    </section>
-
-    <section>
-      <h2>Métricas</h2>
-      <div id="metrics"></div>
-    </section>
-
-    <section>
-      <h2>Comparação entre períodos</h2>
-      <div class="table-wrap">
-        <table id="compare">
-          <thead><tr><th>Métrica</th><th>Período atual</th><th>Período anterior</th><th>Variação</th></tr></thead>
-          <tbody></tbody>
-        </table>
+    <section id="painel">
+      <h2>Painel</h2>
+      <div class="kpis" id="kpis"></div>
+      <div class="two">
+        <div><h3 class="group">Piso de amostra</h3><div id="sample" class="bars"></div></div>
+        <div><h3 class="group">Quando pausar</h3><ul class="pause" id="pause"></ul></div>
+      </div>
+      <div class="two">
+        <div><h3 class="group">Decisão no dia 12</h3>
+          <div class="table-wrap"><table><thead><tr><th>Decisão</th><th>Conversão</th><th>CPL</th><th>ROI</th></tr></thead><tbody id="decision"></tbody></table></div></div>
+        <div><h3 class="group">Metas por fase</h3>
+          <div class="table-wrap"><table><thead><tr><th>Fase</th><th>Mínima</th><th>Ideal</th></tr></thead><tbody id="phases"></tbody></table></div></div>
       </div>
     </section>
 
-    <section>
-      <h2>Quando pausar</h2>
-      <ul class="pause" id="pause"></ul>
-    </section>
-
-    <section>
-      <h2>Por criativo e por região</h2>
-      <div class="tabs" id="seg-tabs"></div>
-      <div class="table-wrap"><table id="segments"></table></div>
-    </section>
-
-    <section>
-      <h2>Metas por fase</h2>
-      <div class="table-wrap">
-        <table><thead><tr><th>Fase</th><th>Mínima</th><th>Ideal</th></tr></thead><tbody id="phases"></tbody></table>
-      </div>
-    </section>
-
-    <section>
-      <h2>Decisão no dia 12</h2>
-      <div class="table-wrap">
-        <table><thead><tr><th>Decisão</th><th>Conversão</th><th>CPL</th><th>ROI</th></tr></thead><tbody id="decision"></tbody></table>
-      </div>
+    <section id="setores">
+      <h2>Setores</h2>
+      <div class="tabs" id="sector-tabs"></div>
+      <div id="sector"></div>
     </section>
   </main>
 

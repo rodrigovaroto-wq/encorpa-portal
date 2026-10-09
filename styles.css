@@ -69,3 +69,23 @@ tbody tr:hover td { background: var(--rust); color: var(--acid); }
 .tabs button[aria-pressed="true"] { background: var(--blood); color: var(--bone); }
 
 @media (max-width: 560px) { .topbar { flex-direction: column; } .badge { border-left: 0; border-top: var(--heavy); } }
+
+.kpis { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 24px; }
+.kpi { border: var(--heavy); background: linear-gradient(160deg, var(--rust), var(--soot)); padding: 14px 16px; box-shadow: 6px 6px 0 #000; }
+.kpi h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .14em; color: var(--ash); }
+.kpi .big { font: 400 3.2rem/1.05 var(--slab); color: var(--acid); text-shadow: 0 0 16px rgba(155,255,58,.35); margin: 6px 0 2px; }
+.kpi .delta { color: var(--amber); font-weight: 700; min-height: 1.4em; }
+.kpi .goal { font-size: .7rem; text-transform: uppercase; color: var(--ash); border-top: 1px dashed var(--steel); padding-top: 6px; margin-top: 6px; }
+.two { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); margin-top: 20px; }
+.two .group { margin-top: 0; }
+.card.video dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin-top: 8px; }
+.card.video dt { color: var(--ash); text-transform: uppercase; font-size: .75rem; letter-spacing: .08em; }
+.card.video dd { margin: 0; font-weight: 700; color: var(--acid); text-align: right; }
+.thumb { aspect-ratio: 9 / 4; background: #000 repeating-linear-gradient(45deg, transparent 0 10px, rgba(179,7,15,.18) 10px 20px); border: var(--line); display: grid; place-items: center; font: 400 1.3rem var(--slab); color: var(--blood-hi); letter-spacing: .1em; margin-bottom: 10px; }
+tr.sum td { background: var(--rust); font-weight: 700; color: var(--acid); border-top: 2px solid var(--blood); }
+.note { color: var(--ash); font-size: .8rem; margin: 14px 0; text-transform: uppercase; letter-spacing: .04em; }
+.funnel { display: grid; gap: 10px; }
+.step { display: grid; grid-template-columns: minmax(150px, 220px) 1fr 70px; gap: 12px; align-items: center; text-transform: uppercase; font-size: .85rem; }
+.step b { text-align: right; color: var(--acid); }
+#sector > .table-wrap, #sector > .grid { margin-bottom: 8px; }
+.tabs { flex-wrap: wrap; }
