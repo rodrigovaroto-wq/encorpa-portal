@@ -47,6 +47,9 @@ section h3.group:first-child, .two .group { margin-top: 0; }
 .chart { width: 100%; height: 56px; display: block; }
 .chart path { fill: none; stroke: var(--violet); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .chart line { stroke: var(--line); stroke-width: 1; }
+.chart.bars { height: 90px; }
+.chart rect { fill: var(--violet); }
+.chart text { fill: var(--muted, currentColor); font-size: 9px; }
 
 .table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 table { width: 100%; border-collapse: collapse; }

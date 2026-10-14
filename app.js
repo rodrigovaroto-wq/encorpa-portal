@@ -37,6 +37,10 @@ const GROUPS = [
     { id: "ctr", label: "CTR do link", unit: "pct", src: "Meta Ads", goal: "≥ 1% mín · 2% ideal" },
   ]},
   { title: "Agente (Malu)", metrics: [
+    { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "leads (sem handoff ÷ atendimentos)" },
+    { id: "transfers", label: "Transferidos para pessoa", unit: "n", src: "leads.handoff_at" },
+    { id: "first_response", label: "Tempo até a 1ª resposta", unit: "min", src: "messages (carimbos)" },
+    { id: "handle_time", label: "Tempo de atendimento", unit: "min", src: "messages (carimbos)" },
     { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "eval_funnel", goal: "≥ 60% mín · 75% ideal" },
     { id: "price_reach", label: "% que chega ao preço", unit: "pct", src: "eval_funnel", goal: "≥ 40% mín · 55% ideal" },
     { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "eval_funnel" },
@@ -105,6 +109,8 @@ const MONEY_STATUS = [
 
 // Agente: funil da conversa (eval_funnel) e saúde.
 const FUNNEL = [["first_msg", "Mandou a 1ª mensagem"], ["reply", "Respondeu à agente"], ["price", "Chegou ao preço"], ["link", "Recebeu o link"], ["order", "Pedido criado"], ["delivered", "Entrega concluída"]];
+// Atendimento com as mesmas definições do analytics da Octadesk (caso-portal.md §2.2). "Atendimentos" = leads.
+const SERVICE = [["leads", "Atendimentos"], ["resolution"], ["transfers"], ["first_response"], ["handle_time"]];
 const AGENT_HEALTH = ["handoff", "fallback", "rewrites", "gate_blocks", "optout", "invalid_premise", "api_per_lead", "cpl_api"];
 const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud API"], ["window", "Janela gratuita de 72 h"], ["templates", "Templates aprovados na Meta"]];
 
@@ -160,7 +166,8 @@ function reloadDataFile() {
 // ---- dados de exemplo (NÃO são reais) ----
 const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.4, .9], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
-const SUMMED = new Set(["leads", "orders", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
+Object.assign(RANGE, { resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
+const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
 
 function rng(seed) { let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
@@ -191,6 +198,7 @@ function demoData(period) {
     videos: seg(VIDEOS), segments: { creative: seg(VIDEOS), region: seg(SEGMENTS.region) },
     money: { ...flow, to_receive: flow.net_profit * .4, received: flow.net_profit * .6, prepaid_share: m.prepaid_share.value, cash_left: m.cash_left.value },
     funnel: Object.fromEntries(Object.entries({ first_msg: leads, reply: leads * pct("reply_rate"), price: leads * pct("price_reach"), link: leads * pct("link_reach"), order: orders, delivered: orders * pct("delivered") }).map(([k, v]) => [k, Math.round(v)])),
+    hourly: Array.from({ length: 24 }, (_, h) => Math.round((h < 6 ? 1 : 6) * (1 + Math.sin(h / 4)) * days)),
     channel: { number: "Saudável", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" },
     versions: [12, 13, 14].map((v, i) => ({ version: `v${v}`, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * .2, cost: .8 - i * .08 })),
     gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
@@ -226,12 +234,21 @@ const fmt = (v, unit) => {
   if (unit === "brl") return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
   if (unit === "pct") return `${nf.format(v)}%`;
   if (unit === "x") return `${nf.format(v)}×`;
+  if (unit === "min") return v < 1 ? `${Math.round(v * 60)} s` : `${nf.format(v)} min`;
   return nf.format(v);
 };
 
 function chartSvg(series, unit) {
   const lab = series && series.length > 1 ? `<div class="range"><span>mín ${fmt(Math.min(...series), unit)}</span><span>máx ${fmt(Math.max(...series), unit)}</span></div>` : "";
   return chartSvgRaw(series) + lab;
+}
+// Barras por hora do dia (0 a 23 h, horário de Brasília).
+function hourBars(h) {
+  if (!h) return `<p class="note">Sem dados.</p>`;
+  const w = 300, hh = 90, max = Math.max(1, ...h), bw = w / 24;
+  const bars = h.map((v, i) => `<rect x="${i * bw + 1}" y="${hh - 14 - (v / max) * (hh - 20)}" width="${bw - 2}" height="${(v / max) * (hh - 20)}"><title>${i} h: ${v}</title></rect>`).join("");
+  const ticks = [0, 6, 12, 18].map((i) => `<text x="${i * bw + 1}" y="${hh - 2}">${i} h</text>`).join("");
+  return `<svg class="chart bars" viewBox="0 0 ${w} ${hh}" role="img" aria-label="Mensagens recebidas por hora: pico de ${max}">${bars}${ticks}</svg>`;
 }
 function chartSvgRaw(series) {
   const w = 300, h = 90;
@@ -270,6 +287,8 @@ const SECTOR_VIEWS = {
       const n = f[id], w = top && n != null ? Math.max(2, (n / top) * 100) : 0;
       return `<div class="step"><span>${l}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div><b>${fmt(n, "n")}</b></div>`;
     }).join("")}</div>
+      <h3 class="group">Atendimento</h3><div class="grid">${SERVICE.map(([id, label]) => cardHtml({ ...metricBy(id), ...(label ? { label } : {}) })).join("")}
+      <article class="card"><h3>Volume por hora</h3>${hourBars(d.hourly)}<p class="meta">FONTE: messages (recebidas, horário de Brasília)</p></article></div>
       <h3 class="group">Saúde da agente</h3><div class="grid">${AGENT_HEALTH.map((id) => { const x = metricBy(id);
       return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(d.metrics?.[id]?.value, x.unit)}</div>${chartSvg(d.metrics?.[id]?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`; }).join("")}</div>
       <h3 class="group">Canal</h3>${tbl(["Item", "Estado"], CHANNEL.map(([id, l]) => `<tr><td>${l}</td><td>${d.channel?.[id] ?? "—"}</td></tr>`))}
