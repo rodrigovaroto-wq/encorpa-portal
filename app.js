@@ -538,10 +538,25 @@ const SECTOR_VIEWS = {
 
 // Cada sub-aba aponta para uma view; as que têm nome repetido entre seções ganham prefixo aqui.
 const VIEW = { "money/flow": "money", "auto/flow": "flow", "ads/ads": "metaAds" };
-// Meta Ads: ainda não ligado (falta o token de leitura no Vercel). Cada aba diz o que vai mostrar.
+// Meta Ads (só leitura): campanhas, conjuntos e anúncios com as métricas do período escolhido.
+const AD_STATUS = { ACTIVE: ["Ativo", "ok"], PAUSED: ["Pausado", ""], CAMPAIGN_PAUSED: ["Campanha pausada", ""], ADSET_PAUSED: ["Conjunto pausado", ""], DELETED: ["Apagado", ""], ARCHIVED: ["Arquivado", ""], IN_PROCESS: ["Em análise", "warn"], PENDING_REVIEW: ["Em análise", "warn"], DISAPPROVED: ["Reprovado", "bad"], WITH_ISSUES: ["Com problema", "bad"], PENDING_BILLING_INFO: ["Falta pagamento", "bad"] };
+const GENDER = { 1: "homens", 2: "mulheres" };
+const stat = (s) => { const [l, c] = AD_STATUS[s] || [s, ""]; return `<span class="chip ${c}"><i></i>${l}</span>`; };
+const budget = (x) => (x.daily_budget ? `${fmt(x.daily_budget, "brl")}/dia` : x.lifetime_budget ? `${fmt(x.lifetime_budget, "brl")} no total` : "—");
+const perf = (x) => `<td>${fmt(x.spend, "brl")}</td><td>${fmt(x.impressions, "n")}</td><td>${fmt(x.ctr, "pct")}</td><td>${fmt(x.cpm, "brl")}</td><td>${fmt(x.started, "n")}</td><td>${fmt(x.cpl, "brl")}</td><td>${fmt(x.leads, "n")}</td><td>${fmt(x.orders, "n")}</td>`;
+const PERF = ["Gasto", "Impressões", "CTR", "CPM", "Conversas", "CPL", "Leads", "Pedidos"];
 function metaView(d, kind) {
-  if (!d.meta) return `<p class="note">Meta Ads ainda não ligado. Quando o token de leitura da conta de anúncios estiver no Vercel, esta aba lista ${kind === "campaigns" ? "as campanhas com orçamento, estado, gasto, CPL e pedidos" : kind === "adsets" ? "os conjuntos com público, posicionamento, orçamento e resultado" : "cada anúncio com o criativo e as métricas"}, e anúncio novo ou removido na Meta aparece ou some sozinho.</p>`;
-  return "";
+  const m = d.meta;
+  if (!m) return `<p class="note">Meta Ads ainda não ligado. Falta criar no Vercel as variáveis <code>META_ACCESS_TOKEN</code> (token só de leitura) e <code>META_AD_ACCOUNT_ID</code>. Depois disso esta aba se atualiza sozinha a cada 5 minutos, e anúncio novo ou removido na Meta aparece ou some sozinho.</p>`;
+  if (m.error) return `<p class="note">Não consegui ler a Meta: ${esc(m.error)}</p>`;
+  const camp = Object.fromEntries(m.campaigns.map((c) => [c.id, c.name])), sets = Object.fromEntries(m.adsets.map((s) => [s.id, s.name]));
+  const note = `<p class="note">Métricas do período escolhido no topo. CPL = gasto ÷ conversas iniciadas no WhatsApp. Leads e pedidos vêm do clique no anúncio gravado na conversa (total do anúncio, não do período).</p>`;
+  if (kind === "campaigns") return (m.campaigns.length ? tbl(["Campanha", "Estado", "Objetivo", "Orçamento", "Anúncios", ...PERF], m.campaigns.map((c) => `<tr><td>${esc(c.name)}</td><td>${stat(c.status)}</td><td>${c.objective || "—"}</td><td>${budget(c)}</td><td>${fmt(c.ads, "n")}</td>${perf(c)}</tr>`)) : `<p class="note">Nenhuma campanha na conta.</p>`) + note;
+  if (kind === "adsets") return (m.adsets.length ? tbl(["Conjunto", "Campanha", "Estado", "Orçamento", "Otimização", "Público", ...PERF], m.adsets.map((s) => `<tr><td>${esc(s.name)}</td><td>${esc(camp[s.campaign_id] || "—")}</td><td>${stat(s.status)}</td><td>${budget(s)}</td><td>${s.optimization || "—"}</td><td>${[s.audience.age, (s.audience.genders || []).map((g) => GENDER[g]).join(" e ") || "todos", s.audience.places].filter(Boolean).join(" · ")}</td>${perf(s)}</tr>`)) : `<p class="note">Nenhum conjunto na conta.</p>`) + note;
+  return (m.ads.length ? `<div class="grid">${m.ads.map((a) => `<article class="card ad"><div class="thumb">${a.creative?.thumb ? `<img src="${esc(a.creative.thumb)}" alt="" loading="lazy">` : "sem prévia"}</div>
+    <h3>${esc(a.name)}</h3><p class="meta">${esc(camp[a.campaign_id] || "")} › ${esc(sets[a.adset_id] || "")}</p>${stat(a.status)}
+    <dl>${[["Gasto", a.spend, "brl"], ["CTR", a.ctr, "pct"], ["CPM", a.cpm, "brl"], ["Conversas", a.started, "n"], ["CPL", a.cpl, "brl"], ["Leads", a.leads, "n"], ["Pedidos", a.orders, "n"]].map(([l, v, u]) => `<dt>${l}</dt><dd>${fmt(v, u)}</dd>`).join("")}</dl>
+    ${a.creative?.body ? `<p class="meta">${esc(a.creative.body.slice(0, 140))}${a.creative.body.length > 140 ? "…" : ""}</p>` : ""}</article>`).join("")}</div>` : `<p class="note">Nenhum anúncio na conta.</p>`) + note;
 }
 
 function cardHtml(x) {
@@ -621,5 +636,5 @@ document.addEventListener("click", (e) => {
 });
 
 refresh();
-setInterval(refresh, 30 * 60 * 1000); // relê os dados a cada 30 min (mesmo ritmo da rotina)
+setInterval(refresh, 5 * 60 * 1000); // relê a cada 5 min (o servidor guarda a resposta 5 min)
 window.addEventListener("hashchange", () => { state.filter = "all"; render(); window.scrollTo(0, 0); });

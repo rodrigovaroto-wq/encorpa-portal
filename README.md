@@ -23,7 +23,7 @@ Atualiza sozinho a cada 1 h.
 
 ## Publicado no Vercel
 
-- `api/data.js` lê o Supabase na hora e guarda a resposta 30 min no cache. A página busca em `/api/data` a cada 30 min e mostra o horário em "atualizado".
+- `api/data.js` lê o Supabase, o n8n e a Meta na hora e guarda a resposta 5 min no cache. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
 - `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.
 - Variáveis do projeto no Vercel (Settings > Environment Variables):
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
