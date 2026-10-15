@@ -181,3 +181,8 @@ h3.group small { color: var(--muted); letter-spacing: .05em; text-transform: non
 details.more { border: 1px solid var(--line); background: var(--panel); }
 details.more summary { cursor: pointer; padding: 12px 16px; color: var(--violet); }
 details.more .table-wrap { border: 0; border-top: 1px solid var(--line); }
+
+/* Malu: desfechos */
+.bar-fill.ok { background: var(--ok); } .bar-fill.warn { background: var(--warn); } .bar-fill.bad { background: var(--bad); }
+td .chip { padding: 3px 9px; font-size: .78rem; white-space: nowrap; }
+td code { color: var(--violet); font-size: .82rem; }

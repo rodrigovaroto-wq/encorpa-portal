@@ -16,7 +16,7 @@ const GROUPS = [
     { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "≤ R$ 1,75 mín · R$ 1,25 ideal" },
     { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "eval_conversation_cost", goal: "teto R$ 1,00" },
     { id: "cpl_api", label: "CPL + API", unit: "brl", src: "Meta Ads + eval_conversation_cost" },
-    { id: "handoff", label: "Handoff", unit: "pct", src: "eval_turn_outcomes", goal: "≤ 10%" },
+    { id: "handoff", label: "Handoff (aviso ao operador)", unit: "pct", src: "não resolvidas ÷ conversas encerradas", goal: "≤ 10%" },
     { id: "fallback", label: "Resposta pronta (fallback)", unit: "pct", src: "eval_turn_outcomes" },
     { id: "optout", label: "Opt-out", unit: "pct", src: "leads", goal: "≤ 2,5%" },
     { id: "invalid_premise", label: "Premissa indevida", unit: "pct", src: "Hermes (lote de 50)", goal: "≤ 5%" },
@@ -37,8 +37,9 @@ const GROUPS = [
     { id: "ctr", label: "CTR do link", unit: "pct", src: "Meta Ads", goal: "≥ 1% mín · 2% ideal" },
   ]},
   { title: "Agente (Malu)", metrics: [
-    { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "leads (sem handoff ÷ atendimentos)" },
-    { id: "transfers", label: "Transferidos para pessoa", unit: "n", src: "leads.handoff_at" },
+    { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "conversas que compraram ou encerraram sem compra ÷ encerradas", goal: "≥ 90% (handoff ≤ 10%)" },
+    { id: "market_rate", label: "Taxa no padrão Octadesk", unit: "pct", src: "resolvidas + abandonadas ÷ atendidas (só para comparar)" },
+    { id: "transfers", label: "Não resolvidas (aviso ao operador)", unit: "n", src: "turn_outcomes (handoff ou fallback)" },
     { id: "first_response", label: "Tempo até a 1ª resposta", unit: "min", src: "messages (carimbos)" },
     { id: "handle_time", label: "Tempo de atendimento", unit: "min", src: "messages (carimbos)" },
     { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "eval_funnel", goal: "≥ 60% mín · 75% ideal" },
@@ -110,7 +111,18 @@ const MONEY_STATUS = [
 // Agente: funil da conversa (eval_funnel) e saúde.
 const FUNNEL = [["first_msg", "Mandou a 1ª mensagem"], ["reply", "Respondeu à agente"], ["price", "Chegou ao preço"], ["link", "Recebeu o link"], ["order", "Pedido criado"], ["delivered", "Entrega concluída"]];
 // Atendimento com as mesmas definições do analytics da Octadesk (caso-portal.md §2.2). "Atendimentos" = leads.
-const SERVICE = [["leads", "Atendimentos"], ["resolution"], ["transfers"], ["first_response"], ["handle_time"]];
+const SERVICE = [["leads", "Atendimentos"], ["first_response"], ["handle_time"]];
+// Desfecho de cada conversa (lib/build.mjs › conversationStatus). Diferente da Octadesk, abandono não conta como resolvida.
+const OUTCOMES = [
+  ["bought", "Comprou", "ok", "Pedido criado, em rota ou entregue"],
+  ["declined", "Encerrou sem compra", "ok", "Recusou, desistiu ou a régua encerrou, sem precisar de pessoa"],
+  ["unresolved", "Não resolvida", "bad", "A Malu avisou o operador (handoff ou resposta pronta)"],
+  ["abandoned", "Abandonada", "warn", "Mais de 24 h sem resposta dela, sem decisão"],
+  ["open", "Em andamento", "", "Conversa com movimento nas últimas 24 h"],
+];
+const OUTCOME = Object.fromEntries(OUTCOMES.map(([id, l, c]) => [id, { l, c }]));
+const STAGE = { novo: "Nova", conversando: "Conversando", tamanho_definido: "Tamanho definido", cobertura_conhecida: "Cobertura conhecida", caminho_escolhido: "Pagamento escolhido", link_enviado: "Link enviado", pedido_criado: "Pedido criado", em_rota: "Em rota", entregue_pago: "Entregue e pago", recusado: "Recusado na porta", perdido: "Perdido", bloqueado: "Bloqueado" };
+const MALU_TABS = [["results", "Resultados"], ["conversations", "Conversas"], ["gaps", "Lacunas"], ["service", "Atendimento"], ["health", "Saúde e versões"]];
 const AGENT_HEALTH = ["handoff", "fallback", "rewrites", "gate_blocks", "optout", "invalid_premise", "api_per_lead", "cpl_api"];
 const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud API"], ["window", "Janela gratuita de 72 h"], ["templates", "Templates aprovados na Meta"]];
 
@@ -127,7 +139,7 @@ const REF = [
 ];
 
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-const state = { period: store.get("period") || "week", segment: "creative", sector: store.get("sector") || "videos", demo: store.get("demo") === "1", data: null };
+const state = { period: store.get("period") || "week", segment: "creative", sector: store.get("sector") || "videos", tab: store.get("tab") || "results", filter: "all", demo: store.get("demo") === "1", data: null };
 
 // Dados: lê data.js (snapshot embutido, funciona em arquivo local) ou data.json (servidor); o formato está no README.
 // Sem ele, o botão "Ver exemplo" liga dados de mentira (marcados na tela).
@@ -166,7 +178,7 @@ function reloadDataFile() {
 // ---- dados de exemplo (NÃO são reais) ----
 const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.4, .9], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
-Object.assign(RANGE, { resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
+Object.assign(RANGE, { resolution: [85, 95], market_rate: [90, 98], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
 const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
 
 function rng(seed) { let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -192,15 +204,24 @@ function demoData(period) {
   m.gross_profit.value = flow.gross_profit; m.net_profit.value = flow.net_profit; m.op_cost.value = rev - flow.gross_profit;
   m.roi.value = flow.gross_profit / (flow.spend + flow.api_cost);
   const pct = (id) => m[id].value / 100;
+  const stat = ["bought", "declined", "declined", "unresolved", "abandoned", "abandoned", "abandoned", "open"];
+  const why = ["a cliente quer 6 peças, mais que o maior kit (3)", "a cliente pergunta sobre um pedido existente", "nenhuma reescrita passou", "sem tempo para reescrever"];
+  const stg = { bought: "pedido_criado", declined: "perdido", unresolved: "conversando", abandoned: "link_enviado", open: "tamanho_definido" };
+  const convs = Array.from({ length: 24 }, (_, i) => { const st = stat[Math.floor(r() * stat.length)];
+    return { id: Math.floor(r() * 0xffffffff).toString(16).padStart(8, "0"), start: Date.now() - i * 3.6e6 * 7 * days, status: st, stage: stg[st], messages: 3 + Math.floor(r() * 20), first_response: .2 + r(), version: 13 + (i < 12 ? 1 : 0), reason: st === "unresolved" ? why[Math.floor(r() * why.length)] : null }; });
+  const oc = Object.fromEntries(OUTCOMES.map(([id]) => [id, convs.filter((c) => c.status === id).length]));
+  const closed = convs.length - oc.open;
   return {
-    demo: true, updated: new Date().toISOString(), metrics, api_over_pct: 3.8,
+    demo: true, conversations: convs,
+    outcomes: { attended: convs.length, ...oc, solved: oc.bought + oc.declined, resolution: ((oc.bought + oc.declined) / closed) * 100, market_rate: ((oc.bought + oc.declined + oc.abandoned) / convs.length) * 100 },
+    gaps: why.map((w, i) => ({ reason: w, count: 6 - i, conversations: 5 - i, last: new Date(Date.now() - i * 864e5).toISOString(), version: 14 })), updated: new Date().toISOString(), metrics, api_over_pct: 3.8,
     totals: { leads: Math.round(leads * 1.0) % 600, orders: Math.round(orders) % 60, spend: Math.round(m.spend.value) % 500 },
     videos: seg(VIDEOS), segments: { creative: seg(VIDEOS), region: seg(SEGMENTS.region) },
-    money: { ...flow, to_receive: flow.net_profit * .4, received: flow.net_profit * .6, prepaid_share: m.prepaid_share.value, cash_left: m.cash_left.value },
+    money: { ...flow, api_per_day: flow.api_cost / (n * days), api_30d: (flow.api_cost / (n * days)) * 30, to_receive: flow.net_profit * .4, received: flow.net_profit * .6, prepaid_share: m.prepaid_share.value, cash_left: m.cash_left.value },
     funnel: Object.fromEntries(Object.entries({ first_msg: leads, reply: leads * pct("reply_rate"), price: leads * pct("price_reach"), link: leads * pct("link_reach"), order: orders, delivered: orders * pct("delivered") }).map(([k, v]) => [k, Math.round(v)])),
     hourly: Array.from({ length: 24 }, (_, h) => Math.round((h < 6 ? 1 : 6) * (1 + Math.sin(h / 4)) * days)),
     channel: { number: "Saudável", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" },
-    versions: [12, 13, 14].map((v, i) => ({ version: `v${v}`, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * .2, cost: .8 - i * .08 })),
+    versions: [12, 13, 14].map((v, i) => ({ version: `v${v}`, conversations: 60 + i * 20, resolution: 70 + i * 6, unresolved: 9 - i * 3, abandoned: 12 - i * 2, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * .2, cost: .8 - i * .08 })),
     gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
   };
 }
@@ -259,7 +280,7 @@ function chartSvgRaw(series) {
   return `<svg class="chart" viewBox="0 0 ${w} ${h}">${base}<path d="M${pts.join("L")}"/></svg>`;
 }
 
-const TILE_TEXT = { meta: "Vídeos e criativos, anúncio e região A × B", malu: "Funil da conversa, saúde da agente, canal, versões e verificações", ops: "Fluxo de dinheiro, caixa, preços, custos, fases do teste, metas e estado do sistema" };
+const TILE_TEXT = { meta: "Vídeos e criativos, anúncio e região A × B", malu: "Resultados, conversas, lacunas, atendimento, saúde e versões", ops: "Fluxo de dinheiro, caixa, preços, custos, fases do teste, metas e estado do sistema" };
 function currentView() {
   const v = location.hash.replace(/^#\/?/, "");
   return SECTORS.some(([k]) => k === v) ? v : "home";
@@ -278,18 +299,54 @@ const SECTOR_VIEWS = {
     const m = d.money || {};
     return `<h3 class="group">Do faturamento ao lucro</h3>${tbl(["Etapa", "Valor"], MONEY_FLOW.map(([id, l, s]) =>
       `<tr class="${s === 0 ? "sum" : ""}"><td>${s < 0 ? "− " : ""}${l}</td><td>${fmt(m[id], "brl")}</td></tr>`))}
+      <h3 class="group">Consumo de API (modelo + WhatsApp)</h3><div class="grid">${[["api_cost", "No período"], ["api_per_day", "Média por dia"], ["api_30d", "Projeção para 30 dias"]].map(([id, l]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(m[id], "brl")}</div></article>`).join("")}</div>
       <h3 class="group">Situação do caixa</h3><div class="grid">${MONEY_STATUS.map(([id, l, u]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(m[id], u)}</div></article>`).join("")}</div>
       <p class="note">Fase 1: lucro líquido estimado a partir de orders + taxas do config; conciliação com o extrato depois. Fonte: orders, Mercado Pago, Coinzz/Logzz.</p>`;
   },
-  agent(d) {
+  results(d) {
+    const o = d.outcomes || {}, m = d.metrics || {}, top = o.attended || 0;
+    const delta = (id) => { const v = m[id]; return v && v.previous ? ` · ${v.value >= v.previous ? "▲" : "▼"} ${Math.abs(v.value - v.previous).toFixed(1).replace(".", ",")} p.p. contra o período anterior` : ""; };
+    const card = (l, v, u, sub) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(v, u)}</div><p class="meta">${sub}</p></article>`;
+    return `<div class="grid">${card("Atendidas", o.attended, "n", "Conversas abertas no período")}
+      ${card("Resolvidas pela Malu", o.solved, "n", "Compraram ou encerraram sem compra, sem pessoa")}
+      ${card("Não resolvidas", o.unresolved, "n", "A Malu avisou o operador")}
+      ${card("Abandonadas", o.abandoned, "n", "24 h sem resposta dela, sem decisão")}
+      ${card("Taxa de resolução", o.resolution, "pct", `Resolvidas ÷ encerradas (sem as em andamento). META ≥ 90%${delta("resolution")}`)}
+      ${card("Taxa no padrão Octadesk", o.market_rate, "pct", "Conta abandono como resolvida, como lá. Só para comparar com o mercado")}</div>
+      <h3 class="group">Detalhamento por desfecho</h3><div class="funnel">${OUTCOMES.map(([id, l, , tip]) => {
+        const n = o[id], w = top && n != null ? Math.max(2, (n / top) * 100) : 0;
+        return `<div class="step" title="${tip}"><span>${l}</span><div class="bar-track"><div class="bar-fill ${OUTCOME[id].c}" style="width:${w}%"></div></div><b>${fmt(n, "n")}</b></div>`;
+      }).join("")}</div>
+      <h3 class="group">Resolução por período</h3><article class="card">${chartSvg(m.resolution?.series, "pct")}<p class="meta">Taxa de resolução em cada intervalo do período escolhido</p></article>
+      <h3 class="group">Resultado por versão da Malu</h3>${tbl(["Versão", "Conversas", "Resolução", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"], (d.versions || [{}]).map((r) =>
+      `<tr><td>${r.version ?? "—"}</td><td>${fmt(r.conversations, "n")}</td><td>${fmt(r.resolution, "pct")}</td><td>${fmt(r.unresolved, "n")}</td><td>${fmt(r.abandoned, "n")}</td><td>${fmt(r.fallback, "pct")}</td><td>${fmt(r.cost, "brl")}</td></tr>`))}
+      <p class="note">Abaixo do piso de amostra (500 leads) a diferença entre versões é ruído: leia como direção, não como veredito.</p>`;
+  },
+  conversations(d) {
+    const all = d.conversations || [], rows = state.filter === "all" ? all : all.filter((c) => c.status === state.filter);
+    const count = (id) => all.filter((c) => c.status === id).length;
+    return `<div class="tabs">${[["all", `Todas ${all.length}`], ...OUTCOMES.map(([id, l]) => [id, `${l} ${count(id)}`])].map(([id, l]) => `<button data-filter="${id}" aria-pressed="${state.filter === id}">${l}</button>`).join("")}</div>
+      ${rows.length ? tbl(["Conversa", "Início", "Desfecho", "Etapa", "Mensagens", "1ª resposta", "Versão", "Motivo"], rows.map((c) =>
+      `<tr><td><code>${c.id}</code></td><td>${new Date(c.start).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</td><td><span class="chip ${OUTCOME[c.status]?.c || ""}"><i></i>${OUTCOME[c.status]?.l || c.status}</span></td><td>${STAGE[c.stage] || c.stage || "—"}</td><td>${fmt(c.messages, "n")}</td><td>${fmt(c.first_response, "min")}</td><td>${c.version != null ? `v${c.version}` : "—"}</td><td>${c.reason || "—"}</td></tr>`)) : `<p class="note">Nenhuma conversa neste filtro.</p>`}
+      <p class="note">Sem nome, telefone ou texto da conversa: o código da conversa é o começo do id no Supabase, para abrir lá.</p>`;
+  },
+  gaps(d) {
+    const g = d.gaps || [];
+    return `<p class="note">O que a Malu não resolveu sozinha, agrupado pelo motivo que o código gravou. Cada linha é um contorno a construir para ela resolver sem pessoa (meta R21.1). As mais frequentes primeiro.</p>
+      ${g.length ? tbl(["Motivo", "Ocorrências", "Conversas", "Última vez", "Versão"], g.map((x) =>
+      `<tr><td>${x.reason}</td><td>${fmt(x.count, "n")}</td><td>${fmt(x.conversations, "n")}</td><td>${new Date(x.last).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</td><td>${x.version != null ? `v${x.version}` : "—"}</td></tr>`)) : `<p class="note">Nenhuma lacuna no período.</p>`}`;
+  },
+  service(d) {
     const f = d.funnel || {}, top = f.first_msg || 0;
     return `<h3 class="group">Funil da conversa</h3><div class="funnel">${FUNNEL.map(([id, l]) => {
       const n = f[id], w = top && n != null ? Math.max(2, (n / top) * 100) : 0;
       return `<div class="step"><span>${l}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div><b>${fmt(n, "n")}</b></div>`;
     }).join("")}</div>
       <h3 class="group">Atendimento</h3><div class="grid">${SERVICE.map(([id, label]) => cardHtml({ ...metricBy(id), ...(label ? { label } : {}) })).join("")}
-      <article class="card"><h3>Volume por hora</h3>${hourBars(d.hourly)}<p class="meta">FONTE: messages (recebidas, horário de Brasília)</p></article></div>
-      <h3 class="group">Saúde da agente</h3><div class="grid">${AGENT_HEALTH.map((id) => { const x = metricBy(id);
+      <article class="card"><h3>Volume por hora</h3>${hourBars(d.hourly)}<p class="meta">FONTE: messages (recebidas, horário de Brasília)</p></article></div>`;
+  },
+  health(d) {
+    return `<h3 class="group">Saúde da agente</h3><div class="grid">${AGENT_HEALTH.map((id) => { const x = metricBy(id);
       return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(d.metrics?.[id]?.value, x.unit)}</div>${chartSvg(d.metrics?.[id]?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`; }).join("")}</div>
       <h3 class="group">Canal</h3>${tbl(["Item", "Estado"], CHANNEL.map(([id, l]) => `<tr><td>${l}</td><td>${d.channel?.[id] ?? "—"}</td></tr>`))}
       <h3 class="group">Antes × depois de cada versão</h3>${tbl(["Versão", "Respostas", "Handoff", "Fallback", "Reescritas", "Custo"], (d.versions || [{}]).map((r) =>
@@ -318,7 +375,7 @@ const SECTOR_VIEWS = {
 
 const PAGES = {
   meta: (d) => `<h3 class="group">Vídeos e criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Anúncio</h3>${SECTOR_VIEWS.ads(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`,
-  malu: (d) => SECTOR_VIEWS.agent(d),
+  malu: (d) => `<div class="tabs">${MALU_TABS.map(([k, l]) => `<button data-tab="${k}" aria-pressed="${state.tab === k}">${l}</button>`).join("")}</div>${SECTOR_VIEWS[MALU_TABS.some(([k]) => k === state.tab) ? state.tab : "results"](d)}`,
   ops: (d) => `${SECTOR_VIEWS.money(d)}
     <h3 class="group">Decisão no dia 12</h3>${tbl(["Decisão", "Conversão", "CPL", "ROI"], DECISION.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`))}
     <h3 class="group">Critérios de pausa</h3>${tbl(["Critério", "Pausar se"], PAUSE.map((c) => `<tr><td>${c.label}</td><td>${c.limit}</td></tr>`))}
@@ -390,7 +447,9 @@ async function refresh() {
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  if (b.dataset.id) { state.period = b.dataset.id; store.set("period", state.period); refresh(); }
+  if (b.dataset.tab) { state.tab = b.dataset.tab; state.filter = "all"; store.set("tab", state.tab); render(); }
+  else if (b.dataset.filter) { state.filter = b.dataset.filter; render(); }
+  else if (b.dataset.id) { state.period = b.dataset.id; store.set("period", state.period); refresh(); }
   else if (b.id === "demo") { state.demo = !state.demo; store.set("demo", state.demo ? "1" : "0"); refresh(); }
 });
 

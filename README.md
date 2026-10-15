@@ -12,7 +12,7 @@ no repositório `Ricos-com-AI`. HTML, CSS e JavaScript puros, sem build.
 ## O que já funciona
 
 Períodos (dia a 12 meses), painel com 8 números e variação, piso de amostra, seis critérios de pausa
-e decisão do dia 12 calculados sozinhos, e os setores: vídeos, fluxo de dinheiro, agente do WhatsApp,
+e decisão do dia 12 calculados sozinhos, e os setores: vídeos, fluxo de dinheiro, agente do WhatsApp (abas Resultados, Conversas, Lacunas, Atendimento, Saúde e versões; desfecho de cada conversa em `lib/build.mjs` › `conversationStatus`),
 anúncio e site, região e comparação. Atualiza sozinho a cada 1 h.
 
 ## Publicado no Vercel
