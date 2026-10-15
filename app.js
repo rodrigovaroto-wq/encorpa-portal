@@ -38,7 +38,6 @@ const GROUPS = [
   ]},
   { title: "Agente (Malu)", metrics: [
     { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "conversas que compraram ou encerraram sem compra ÷ encerradas", goal: "≥ 90% (handoff ≤ 10%)" },
-    { id: "market_rate", label: "Taxa no padrão Octadesk", unit: "pct", src: "resolvidas + abandonadas ÷ atendidas (só para comparar)" },
     { id: "transfers", label: "Não resolvidas (aviso ao operador)", unit: "n", src: "turn_outcomes (handoff ou fallback)" },
     { id: "first_response", label: "Tempo até a 1ª resposta", unit: "min", src: "messages (carimbos)" },
     { id: "handle_time", label: "Tempo de atendimento", unit: "min", src: "messages (carimbos)" },
@@ -87,11 +86,8 @@ const DECISION = [
 const SAMPLE_FLOOR = { leads: 500, orders: 50, spend: 500 };
 
 
-// Painel principal: as 8 que mandam.
-const KPIS = ["leads", "orders", "conversion", "cpl", "roi", "net_profit"];
-
-// Setores (abas). Cada um é renderizado por uma função abaixo.
-const SECTORS = [["meta", "Meta ADS"], ["malu", "Malu AI Agent"], ["ops", "Operacional"]];
+// Painel principal: as 8 que mandam, 4 por linha.
+const KPIS = ["leads", "orders", "conversion", "revenue", "resolution", "transfers", "api_per_lead", "net_profit"];
 
 // Vídeos: os 6 ganchos/formatos da fase Copy. `headline` vem de eval_attribution.
 const VIDEOS = Array.from({ length: 6 }, (_, i) => `Vídeo ${i + 1}`);
@@ -112,7 +108,7 @@ const MONEY_STATUS = [
 const FUNNEL = [["first_msg", "Mandou a 1ª mensagem"], ["reply", "Respondeu à agente"], ["price", "Chegou ao preço"], ["link", "Recebeu o link"], ["order", "Pedido criado"], ["delivered", "Entrega concluída"]];
 // Atendimento com as mesmas definições do analytics da Octadesk (caso-portal.md §2.2). "Atendimentos" = leads.
 const SERVICE = [["leads", "Atendimentos"], ["first_response"], ["handle_time"]];
-// Desfecho de cada conversa (lib/build.mjs › conversationStatus). Diferente da Octadesk, abandono não conta como resolvida.
+// Desfecho de cada conversa (lib/build.mjs › conversationStatus). Abandono não conta como resolvida.
 const OUTCOMES = [
   ["bought", "Comprou", "ok", "Pedido criado, em rota ou entregue"],
   ["declined", "Encerrou sem compra", "ok", "Recusou, desistiu ou a régua encerrou, sem precisar de pessoa"],
@@ -122,7 +118,32 @@ const OUTCOMES = [
 ];
 const OUTCOME = Object.fromEntries(OUTCOMES.map(([id, l, c]) => [id, { l, c }]));
 const STAGE = { novo: "Nova", conversando: "Conversando", tamanho_definido: "Tamanho definido", cobertura_conhecida: "Cobertura conhecida", caminho_escolhido: "Pagamento escolhido", link_enviado: "Link enviado", pedido_criado: "Pedido criado", em_rota: "Em rota", entregue_pago: "Entregue e pago", recusado: "Recusado na porta", perdido: "Perdido", bloqueado: "Bloqueado" };
-const MALU_TABS = [["results", "Resultados"], ["conversations", "Conversas"], ["gaps", "Lacunas"], ["service", "Atendimento"], ["health", "Saúde e versões"]];
+// Menu lateral: seção › sub-abas. desc = a linha que explica a página (como o cabeçalho de cada tela da Octadesk).
+// badge(d) = contador ao lado da sub-aba, só quando pede atenção.
+const NAV = [
+  { id: "home", label: "Painel", desc: "Os números que mandam e o que pede atenção agora." },
+  { id: "malu", label: "Malu (agente)", subs: [
+    ["results", "Resultados", "Quantas conversas a Malu resolveu sozinha, por desfecho e por versão."],
+    ["conversations", "Conversas", "Cada conversa com o desfecho, a etapa e o motivo, sem dado pessoal.", (d) => d.outcomes?.unresolved],
+    ["gaps", "Lacunas", "O que a Malu ainda não resolve sozinha: cada linha é um contorno a construir.", (d) => d.gaps?.length],
+    ["service", "Atendimento", "Funil da conversa, tempos de resposta e volume por hora."],
+    ["health", "Saúde e versões", "Resposta pronta, reescritas, gates, canal e o antes × depois de cada versão."]] },
+  { id: "auto", label: "Automações", subs: [
+    ["workflows", "Workflows", "Os workflows do n8n desenhados como fluxo, com estado e última execução.", (d) => d.automations?.workflows?.filter((w) => w.active && w.errors).length],
+    ["flow", "Fluxo da Malu", "O caminho de uma mensagem dela até a resposta, e onde cada desfecho nasce."],
+    ["runs", "Execuções", "As últimas execuções do n8n, com estado e duração.", (d) => d.automations?.runs?.filter((r) => r.status === "error" || r.status === "crashed").length]] },
+  { id: "money", label: "Financeiro", subs: [
+    ["flow", "Do faturamento ao lucro", "Para onde vai cada real que entra e a situação do caixa."],
+    ["api", "Consumo de API", "Custo do modelo e do WhatsApp no período, por dia, por lead e a projeção do mês."],
+    ["compare", "Comparação", "Todas as métricas contra o período anterior."]] },
+  { id: "test", label: "Teste de anúncios", subs: [
+    ["status", "Andamento", "Decisão do dia 12, piso de amostra e critérios de pausa do teste L3."],
+    ["creatives", "Criativos", "Os 6 vídeos da fase Copy, lado a lado."],
+    ["ads", "Anúncio", "Gasto, CPM e CTR do Meta Ads."],
+    ["region", "Região", "Conjunto A × B da fase Região."],
+    ["rules", "Metas e decisão", "Metas por fase, regra de decisão e critérios de pausa."],
+    ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
+];
 const AGENT_HEALTH = ["handoff", "fallback", "rewrites", "gate_blocks", "optout", "invalid_premise", "api_per_lead", "cpl_api"];
 const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud API"], ["window", "Janela gratuita de 72 h"], ["templates", "Templates aprovados na Meta"]];
 
@@ -134,12 +155,10 @@ const REF = [
   ["Economia por pedido (estudo de projeção, não medido)", [["COD entregue", "+ R$ 63,35 (produto R$ 30, transação, handling R$ 4,99, entrega R$ 19,99)"], ["COD recusado", "− R$ 14,98 (recusa R$ 9,99)"], ["Antecipado", "+ R$ 70,21"], ["Média com mix 70/30", "R$ 57,18 por pedido"], ["Recusa na porta (premissa)", "12% a 17%; a Logzz declara 13% a 16%"], ["Devolução pós-envio", "5% a 10% a R$ 25,00"], ["Equilíbrio", "conversão de 3,58% com CPL de R$ 1,25"], ["Comissão da entrega", "libera 14 dias depois do pagamento"]]],
   ["Medido × premissa", [["Custo de API por conversa", "medido R$ 0,051 (4 conversas de teste, máx R$ 0,073) × premissa do estudo R$ 0,80 por lead"], ["Teto do modelo por conversa", "R$ 0,50 (p50 medido R$ 0,268 e p95 R$ 0,546 no modelo padrão, 30/09)"], ["Custo do WhatsApp por lead", "R$ 0 dentro da janela de 24 h ou da gratuita de 72 h; template UTILITY ~ R$ 0,04 por pedido"]]],
   ["Teste de tráfego (L3)", [["Fase Copy, dias 1 a 5", "R$ 300, 6 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"], ["Fase Região, dias 6 a 10", "R$ 200, só as 2 copies vencedoras; A = estados com mais de 5 cidades atendidas, B = Sudeste + Centro-Oeste + Sul"], ["Fase Leitura, dias 11 e 12", "R$ 0; as entregas chegam à porta"], ["Verba total", "R$ 500 de anúncio + R$ 1.500 de caixa reservado para o custo do pedido"], ["Piso de amostra", "mais de 500 leads atendidos e mais de 50 pedidos criados"], ["Primeira resposta da agente", "1 minuto depois da mensagem"], ["Régua de silêncio", "silence_3 entre 63 h e 71 h depois da abertura da janela de 72 h"]]],
-  ["Etapas do pipeline (09/10)", [["L0 preparar", "feito; templates da Meta aprovados em 09/10"], ["L1 publicar", "feito; canal ligado e testado em 06/10"], ["L2 provar com dinheiro", "em andamento: teste real do operador e do sócio (antecipado e na entrega)"], ["L3 tráfego", "não começou"], ["L4 Hermes", "em andamento: H1 feito, H2 e H3 em parte, H4 e H5 pendentes"]]],
-  ["Sistema no ar (09/10)", [["Agente (função turn)", "agent_version 15, função v90"], ["WhatsApp", "função whatsapp v24, transcrição de áudio"], ["Qualidade", "28 gates, 7.113 testes, 1.665 conversas simuladas passando"], ["Modelo da conversa", "muse-spark-1.3-contributor (decisão do operador)"], ["n8n", "6 workflows ok"], ["Banco", "Supabase, migrações até a 0025"]]],
 ];
 
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-const state = { period: store.get("period") || "week", segment: "creative", sector: store.get("sector") || "videos", tab: store.get("tab") || "results", filter: "all", demo: store.get("demo") === "1", data: null };
+const state = { period: store.get("period") || "week", filter: "all", demo: store.get("demo") === "1", data: null };
 
 // Dados: lê data.js (snapshot embutido, funciona em arquivo local) ou data.json (servidor); o formato está no README.
 // Sem ele, o botão "Ver exemplo" liga dados de mentira (marcados na tela).
@@ -178,7 +197,7 @@ function reloadDataFile() {
 // ---- dados de exemplo (NÃO são reais) ----
 const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.4, .9], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
-Object.assign(RANGE, { resolution: [85, 95], market_rate: [90, 98], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
+Object.assign(RANGE, { resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
 const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
 
 function rng(seed) { let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -213,7 +232,12 @@ function demoData(period) {
   const closed = convs.length - oc.open;
   return {
     demo: true, conversations: convs,
-    outcomes: { attended: convs.length, ...oc, solved: oc.bought + oc.declined, resolution: ((oc.bought + oc.declined) / closed) * 100, market_rate: ((oc.bought + oc.declined + oc.abandoned) / convs.length) * 100 },
+    automations: { workflows: [
+      { name: "Encorpa — Turno da agente", active: true, runs: 140, errors: 0, last: { status: "success", at: new Date().toISOString() }, nodes: [["Mensagem chega", "webhook", 0, 0], ["Chama a função turn", "httpRequest", 220, 0], ["Deu certo?", "if", 440, 0], ["Responde", "respondToWebhook", 660, -60], ["Avisa o operador", "emailSend", 660, 60]].map(([name, type, x, y]) => ({ name, type, x, y })), edges: [["Mensagem chega", "Chama a função turn"], ["Chama a função turn", "Deu certo?"], ["Deu certo?", "Responde"], ["Deu certo?", "Avisa o operador"]] },
+      { name: "Encorpa — Relógio da régua", active: true, runs: 96, errors: 1, last: { status: "error", at: new Date().toISOString() }, nodes: [["A cada 10 min", "scheduleTrigger", 0, 0], ["Varre follow-ups", "httpRequest", 220, 0], ["Avisa o operador", "emailSend", 440, 0]].map(([name, type, x, y]) => ({ name, type, x, y })), edges: [["A cada 10 min", "Varre follow-ups"], ["Varre follow-ups", "Avisa o operador"]] },
+      { name: "TEMP — teste", active: false, runs: 0, errors: 0, last: null, nodes: [{ name: "Manual", type: "manualTrigger", x: 0, y: 0 }], edges: [] }],
+      runs: Array.from({ length: 12 }, (_, i) => ({ workflow: i % 3 ? "Encorpa — Turno da agente" : "Encorpa — Relógio da régua", status: i === 4 ? "error" : "success", mode: i % 3 ? "webhook" : "trigger", at: new Date(Date.now() - i * 6e5).toISOString(), ms: 400 + i * 90 })) },
+    outcomes: { attended: convs.length, ...oc, solved: oc.bought + oc.declined, resolution: ((oc.bought + oc.declined) / closed) * 100 },
     gaps: why.map((w, i) => ({ reason: w, count: 6 - i, conversations: 5 - i, last: new Date(Date.now() - i * 864e5).toISOString(), version: 14 })), updated: new Date().toISOString(), metrics, api_over_pct: 3.8,
     totals: { leads: Math.round(leads * 1.0) % 600, orders: Math.round(orders) % 60, spend: Math.round(m.spend.value) % 500 },
     videos: seg(VIDEOS), segments: { creative: seg(VIDEOS), region: seg(SEGMENTS.region) },
@@ -237,7 +261,7 @@ function computePause(d) {
     p_optout: row(v("optout"), lvl(v("optout"), 2, 2.5), "pct"),
     p_api: row(d.api_over_pct, lvl(d.api_over_pct, 4, 5), "pct"),
     p_cash: row(v("cash_left"), v("cash_left") == null ? "" : v("cash_left") < 300 ? "bad" : v("cash_left") < 600 ? "warn" : "ok", "brl"),
-    p_channel: d.channel ? { value: d.channel.number, status: d.channel.number === "Saudável" ? "ok" : "bad" } : undefined,
+    p_channel: d.channel ? { value: d.channel.number, status: /restrit|banid|fora|erro|desconect/i.test(d.channel.number) ? "bad" : "ok" } : undefined,
   };
 }
 
@@ -280,10 +304,29 @@ function chartSvgRaw(series) {
   return `<svg class="chart" viewBox="0 0 ${w} ${h}">${base}<path d="M${pts.join("L")}"/></svg>`;
 }
 
-const TILE_TEXT = { meta: "Vídeos e criativos, anúncio e região A × B", malu: "Resultados, conversas, lacunas, atendimento, saúde e versões", ops: "Fluxo de dinheiro, caixa, preços, custos, fases do teste, metas e estado do sistema" };
-function currentView() {
-  const v = location.hash.replace(/^#\/?/, "");
-  return SECTORS.some(([k]) => k === v) ? v : "home";
+function route() {
+  const [sec, sub] = location.hash.replace(/^#\/?/, "").split("/");
+  const nav = NAV.find((n) => n.id === sec) || NAV[0];
+  const s = nav.subs ? (nav.subs.find(([k]) => k === sub) || nav.subs.find(([k]) => k === store.get(`sub:${nav.id}`)) || nav.subs[0]) : null;
+  return { nav, sub: s };
+}
+const STATUS_RUN = { success: "sucesso", error: "erro", crashed: "falhou", running: "rodando", waiting: "esperando", canceled: "cancelada" };
+const MODE = { trigger: "gatilho", webhook: "webhook", manual: "manual", integrated: "chamado por outro", retry: "nova tentativa", cli: "linha de comando" };
+const NODE = { webhook: "Webhook", httpRequest: "Chamada HTTP", if: "Condição", code: "Código", emailSend: "E-mail", wait: "Espera", scheduleTrigger: "Relógio", formTrigger: "Formulário (início)", form: "Formulário", executeWorkflow: "Chama workflow", executeWorkflowTrigger: "Chamado por workflow", respondToWebhook: "Responde webhook", splitInBatches: "Lotes", manualTrigger: "Manual" };
+const when = (s) => (s ? new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }) : "—");
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+// Desenho de um workflow do n8n: posição real dos nós, reescalada; gatilhos em verde.
+function flowSvg(w) {
+  if (!w.nodes.length) return "";
+  const W = 168, H = 46, xs = w.nodes.map((n) => n.x), ys = w.nodes.map((n) => n.y);
+  const minX = Math.min(...xs), minY = Math.min(...ys), k = 0.85;
+  const pos = Object.fromEntries(w.nodes.map((n) => [n.name, { x: (n.x - minX) * k + 10, y: (n.y - minY) * k + 10 }]));
+  const vw = Math.max(...Object.values(pos).map((p) => p.x)) + W + 10, vh = Math.max(...Object.values(pos).map((p) => p.y)) + H + 10;
+  const edges = w.edges.filter(([a, b]) => pos[a] && pos[b]).map(([a, b]) => { const p = pos[a], q = pos[b], x1 = p.x + W, y1 = p.y + H / 2, x2 = q.x, y2 = q.y + H / 2, c = Math.max(30, Math.abs(x2 - x1) / 2);
+    return `<path d="M${x1},${y1} C${x1 + c},${y1} ${x2 - c},${y2} ${x2},${y2}"/>`; }).join("");
+  const nodes = w.nodes.map((n) => { const p = pos[n.name], trig = /Trigger$|^webhook$/.test(n.type);
+    return `<g class="${trig ? "trig" : ""}" transform="translate(${p.x},${p.y})"><rect width="${W}" height="${H}" rx="8"/><text x="10" y="19">${esc(n.name.length > 24 ? n.name.slice(0, 23) + "…" : n.name)}</text><text class="t" x="10" y="35">${NODE[n.type] || n.type}</text><title>${esc(n.name)}</title></g>`; }).join("");
+  return `<div class="flow-wrap"><svg class="wf" viewBox="0 0 ${vw} ${vh}" style="width:${vw}px" role="img" aria-label="Fluxo do workflow ${esc(w.name)}">${edges}${nodes}</svg></div>`;
 }
 const metricBy = (id) => ALL.find((x) => x.id === id);
 const tbl = (head, rows) => `<div class="table-wrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
@@ -299,7 +342,6 @@ const SECTOR_VIEWS = {
     const m = d.money || {};
     return `<h3 class="group">Do faturamento ao lucro</h3>${tbl(["Etapa", "Valor"], MONEY_FLOW.map(([id, l, s]) =>
       `<tr class="${s === 0 ? "sum" : ""}"><td>${s < 0 ? "− " : ""}${l}</td><td>${fmt(m[id], "brl")}</td></tr>`))}
-      <h3 class="group">Consumo de API (modelo + WhatsApp)</h3><div class="grid">${[["api_cost", "No período"], ["api_per_day", "Média por dia"], ["api_30d", "Projeção para 30 dias"]].map(([id, l]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(m[id], "brl")}</div></article>`).join("")}</div>
       <h3 class="group">Situação do caixa</h3><div class="grid">${MONEY_STATUS.map(([id, l, u]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(m[id], u)}</div></article>`).join("")}</div>
       <p class="note">Fase 1: lucro líquido estimado a partir de orders + taxas do config; conciliação com o extrato depois. Fonte: orders, Mercado Pago, Coinzz/Logzz.</p>`;
   },
@@ -311,8 +353,7 @@ const SECTOR_VIEWS = {
       ${card("Resolvidas pela Malu", o.solved, "n", "Compraram ou encerraram sem compra, sem pessoa")}
       ${card("Não resolvidas", o.unresolved, "n", "A Malu avisou o operador")}
       ${card("Abandonadas", o.abandoned, "n", "24 h sem resposta dela, sem decisão")}
-      ${card("Taxa de resolução", o.resolution, "pct", `Resolvidas ÷ encerradas (sem as em andamento). META ≥ 90%${delta("resolution")}`)}
-      ${card("Taxa no padrão Octadesk", o.market_rate, "pct", "Conta abandono como resolvida, como lá. Só para comparar com o mercado")}</div>
+      ${card("Taxa de resolução", o.resolution, "pct", `Resolvidas ÷ encerradas (sem as em andamento). META ≥ 90%${delta("resolution")}`)}</div>
       <h3 class="group">Detalhamento por desfecho</h3><div class="funnel">${OUTCOMES.map(([id, l, , tip]) => {
         const n = o[id], w = top && n != null ? Math.max(2, (n / top) * 100) : 0;
         return `<div class="step" title="${tip}"><span>${l}</span><div class="bar-track"><div class="bar-fill ${OUTCOME[id].c}" style="width:${w}%"></div></div><b>${fmt(n, "n")}</b></div>`;
@@ -361,7 +402,46 @@ const SECTOR_VIEWS = {
     return `<p class="note">Região medida pelo conjunto (A × B), não pelo endereço. A e B se sobrepõem no Sudeste, Centro-Oeste e Sul: leitura direcional.</p>${segTable("region", d, SEGMENTS.region)}`;
   },
   ref() {
-    return `<h3 class="group">Metas por fase</h3>${tbl(["Fase", "Mínima", "Ideal"], PHASES.map(([f, a, b]) => `<tr><td>${f}</td><td>${a}</td><td>${b}</td></tr>`))}` + REF.map(([t, rows]) => `<h3 class="group">${t}</h3>${tbl(["Item", "Valor"], rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`))}`).join("");
+    return REF.map(([t, rows]) => `<h3 class="group">${t}</h3>${tbl(["Item", "Valor"], rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`))}`).join("");
+  },
+  workflows(d) {
+    const a = d.automations;
+    if (!a) return `<p class="note">Automações ainda não ligadas: no Vercel, crie a variável <code>N8N_API_KEY</code> (chave da API do n8n, só leitura de workflows e execuções). O portal nunca lê os parâmetros dos nós, onde ficam URLs e credenciais.</p>`;
+    if (a.error) return `<p class="note">Não consegui ler o n8n: ${a.error}</p>`;
+    const on = a.workflows.filter((w) => w.active);
+    return `<div class="grid">${[["Ativos", on.length], ["Desligados", a.workflows.length - on.length], ["Execuções lidas", a.read ?? a.runs.length], ["Ativos com erro recente", on.filter((w) => w.errors).length]].map(([l, v]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(v, "n")}</div></article>`).join("")}</div>
+      ${a.workflows.map((w) => `<details class="flow" ${w.active ? "open" : ""}><summary><span class="chip ${w.active ? (w.errors ? "bad" : "ok") : ""}"><i></i>${w.active ? (w.errors ? `${w.errors} com erro` : "Ativo") : "Desligado"}</span><b>${w.name}</b><small>${w.nodes.length} etapas · ${w.last ? `última ${STATUS_RUN[w.last.status] || w.last.status} ${when(w.last.at)}` : "sem execução entre as últimas lidas"}</small></summary>${flowSvg(w)}</details>`).join("")}`;
+  },
+  flow(d) {
+    const o = d.outcomes || {}, wf = (k) => d.automations?.workflows?.find((w) => w.name.includes(k));
+    const step = (t, sub, k) => { const w = k && wf(k); return `<div class="node"><b>${t}</b><span>${sub}</span>${w ? `<small class="chip ${w.active ? "ok" : ""}"><i></i>n8n: ${w.name.replace(/^Encorpa — /, "")}</small>` : ""}</div>`; };
+    return `<div class="pipe">${step("Mensagem dela", "WhatsApp Cloud API (texto ou áudio transcrito)")}<i>→</i>${step("Entrada", "webhook recebe e enfileira", "Turno")}<i>→</i>${step("Turno", "Edge Function turn: estado, fatos do lead, régua")}<i>→</i>${step("Modelo escreve", "o modelo só escreve texto")}<i>→</i>${step("Gates verificam", "tamanho, endereço, preço, cobertura, checkout; até 5 reescritas")}</div>
+      <h3 class="group">Onde cada desfecho nasce</h3><div class="grid">
+      <article class="card"><h3>Gate aprovou</h3><div class="value">${fmt(o.solved, "n")}</div><p class="meta">Resposta enviada. Conversas resolvidas no período (compraram ou encerraram sem compra).</p></article>
+      <article class="card"><h3>Gate vetou 5 vezes ou faltou contorno</h3><div class="value">${fmt(o.unresolved, "n")}</div><p class="meta">Resposta pronta segura para ela e e-mail ao operador (R22.1). Vira linha em Lacunas.</p></article>
+      <article class="card"><h3>Silêncio dela</h3><div class="value">${fmt(o.abandoned, "n")}</div><p class="meta">A régua de follow-up assume${wf("Relógio") ? " (n8n: Relógio da régua)" : ""}.</p></article>
+      <article class="card"><h3>Venda</h3><div class="value">${fmt(o.bought, "n")}</div><p class="meta">Pedido criado; confirmação da Coinzz${wf("Venda") ? " (n8n: Venda confirmada)" : ""}.</p></article></div>
+      <p class="note">O fluxo da conversa é código com teste, não editor de arrasta-e-solta (decisão R11.1): esta tela mostra, não altera.</p>`;
+  },
+  runs(d) {
+    const r = d.automations?.runs;
+    if (!r) return SECTOR_VIEWS.workflows(d);
+    return tbl(["Workflow", "Estado", "Início", "Duração", "Disparo"], r.map((x) => `<tr><td>${x.workflow}</td><td><span class="chip ${x.status === "success" ? "ok" : x.status === "error" || x.status === "crashed" ? "bad" : "warn"}"><i></i>${STATUS_RUN[x.status] || x.status}</span></td><td>${when(x.at)}</td><td>${x.ms == null ? "—" : x.ms < 1000 ? `${x.ms} ms` : `${nf.format(x.ms / 1000)} s`}</td><td>${MODE[x.mode] || x.mode}</td></tr>`));
+  },
+  status(d) {
+    return `<div id="status-box"></div><div class="two"><div><h3 class="group">Progresso do teste</h3><div class="bars">${sampleBars(d)}</div></div>
+      <div><h3 class="group">Critérios de pausa <small>${pauseSum(d)}</small></h3><div class="chips">${pauseChips(d)}</div></div></div>`;
+  },
+  creatives(d) { return SECTOR_VIEWS.videos(d); },
+  rules() {
+    return `<h3 class="group">Decisão no dia 12</h3>${tbl(["Decisão", "Conversão", "CPL", "ROI"], DECISION.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`))}
+      <h3 class="group">Critérios de pausa</h3>${tbl(["Critério", "Pausar se"], PAUSE.map((c) => `<tr><td>${c.label}</td><td>${c.limit}</td></tr>`))}
+      <h3 class="group">Metas por fase</h3>${tbl(["Fase", "Mínima", "Ideal"], PHASES.map(([f, a, b]) => `<tr><td>${f}</td><td>${a}</td><td>${b}</td></tr>`))}`;
+  },
+  api(d) {
+    const m = d.money || {};
+    return `<div class="grid">${[["api_cost", "No período"], ["api_per_day", "Média por dia"], ["api_30d", "Projeção para 30 dias"]].map(([id, l]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(m[id], "brl")}</div></article>`).join("")}
+      ${["api_per_lead", "cpl_api"].map((id) => cardHtml(metricBy(id))).join("")}</div>`;
   },
   compare(d) {
     const m = d.metrics || {};
@@ -373,15 +453,8 @@ const SECTOR_VIEWS = {
   },
 };
 
-const PAGES = {
-  meta: (d) => `<h3 class="group">Vídeos e criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Anúncio</h3>${SECTOR_VIEWS.ads(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`,
-  malu: (d) => `<div class="tabs">${MALU_TABS.map(([k, l]) => `<button data-tab="${k}" aria-pressed="${state.tab === k}">${l}</button>`).join("")}</div>${SECTOR_VIEWS[MALU_TABS.some(([k]) => k === state.tab) ? state.tab : "results"](d)}`,
-  ops: (d) => `${SECTOR_VIEWS.money(d)}
-    <h3 class="group">Decisão no dia 12</h3>${tbl(["Decisão", "Conversão", "CPL", "ROI"], DECISION.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`))}
-    <h3 class="group">Critérios de pausa</h3>${tbl(["Critério", "Pausar se"], PAUSE.map((c) => `<tr><td>${c.label}</td><td>${c.limit}</td></tr>`))}
-    <h3 class="group">Comparação entre períodos</h3><details class="more"><summary>Ver todas as métricas contra o período anterior</summary>${SECTOR_VIEWS.compare(d)}</details>
-    ${SECTOR_VIEWS.ref(d)}`,
-};
+// Cada sub-aba aponta para uma view; as que têm nome repetido entre seções ganham prefixo aqui.
+const VIEW = { "money/flow": "money", "auto/flow": "flow" };
 
 function cardHtml(x) {
   const v = (state.data?.metrics || {})[x.id];
@@ -407,36 +480,55 @@ function render() {
   $("kpis").innerHTML = KPIS.map((id) => { const x = metricBy(id), v = m[id];
     const delta = v && v.previous ? `${v.value >= v.previous ? "▲" : "▼"} ${Math.abs(((v.value - v.previous) / v.previous) * 100).toFixed(1).replace(".", ",")}%` : "";
     return `<article class="kpi"><h3>${x.label}</h3><div class="big">${fmt(v?.value, x.unit)}</div><div class="delta">${delta || "&nbsp;"}</div>${x.goal ? `<div class="goal">META ${x.goal}</div>` : ""}</article>`; }).join("");
+  $("attention").innerHTML = attention(d);
 
-  $("sample").innerHTML = [["Leads atendidos", "leads", "n", "+"], ["Pedidos criados", "orders", "n", "+"], ["Verba do anúncio", "spend", "brl", ""]].map(([l, k, u, plus]) => {
-    const v = d.totals?.[k] ?? (k === "spend" ? 0 : 0), pct = Math.min(100, (v / SAMPLE_FLOOR[k]) * 100);
+  const { nav, sub } = route();
+  if (sub) store.set(`sub:${nav.id}`, sub[0]);
+  $("side").innerHTML = NAV.map((n) => `<div class="sec ${n === nav ? "on" : ""}"><a href="#/${n.id}" aria-current="${n === nav && !n.subs}">${n.label}</a>${n.subs && n === nav ? n.subs.map(([k, l, , badge]) => { const c = badge?.(d);
+    return `<a class="sub" href="#/${n.id}/${k}" aria-current="${sub?.[0] === k}">${l}${c ? `<em>${c}</em>` : ""}</a>`; }).join("") : ""}</div>`).join("");
+  const home = nav.id === "home";
+  $("home").hidden = !home; $("page").hidden = home;
+  document.querySelector(".hero").classList.toggle("compact", !home);
+  if (!home) {
+    $("crumb").textContent = `${nav.label} › ${sub[1]}`;
+    $("page-title").textContent = sub[1];
+    $("page-desc").textContent = sub[2];
+    $("sector").innerHTML = SECTOR_VIEWS[VIEW[`${nav.id}/${sub[0]}`] || sub[0]](d);
+    if ($("status-box")) $("status-box").outerHTML = statusBox(d);
+  }
+}
+
+// O que pede atenção agora (a faixa "tempo excedido / não respondidas" da Octadesk, com o que importa aqui).
+function attention(d) {
+  const o = d.outcomes || {}, a = d.automations, items = [];
+  if (o.unresolved) items.push(["bad", `${o.unresolved} conversa${o.unresolved > 1 ? "s" : ""} que a Malu não resolveu`, "#/malu/conversations"]);
+  if (d.gaps?.length) items.push(["warn", `${d.gaps.length} lacuna${d.gaps.length > 1 ? "s" : ""} para virar contorno`, "#/malu/gaps"]);
+  if (o.abandoned) items.push(["warn", `${o.abandoned} abandonada${o.abandoned > 1 ? "s" : ""} (a régua está cuidando)`, "#/malu/conversations"]);
+  const bad = a?.workflows?.filter((w) => w.active && w.errors) || [];
+  if (bad.length) items.push(["bad", `${bad.length} workflow${bad.length > 1 ? "s" : ""} com erro recente`, "#/auto/workflows"]);
+  if (o.open) items.push(["", `${o.open} em andamento agora`, "#/malu/conversations"]);
+  return items.length ? items.map(([c, t, h]) => `<a class="chip ${c}" href="${h}"><i></i>${t}</a>`).join("") : `<span class="chip ok"><i></i>Nada pendente no período</span>`;
+}
+
+function sampleBars(d) {
+  return [["Leads atendidos", "leads", "n", "+"], ["Pedidos criados", "orders", "n", "+"], ["Verba do anúncio", "spend", "brl", ""]].map(([l, k, u, plus]) => {
+    const v = d.totals?.[k] ?? 0, pct = Math.min(100, (v / SAMPLE_FLOOR[k]) * 100);
     return `<div class="bar"><div class="bar-head"><span>${l}</span><span>${fmt(v, u)} / ${fmt(SAMPLE_FLOOR[k], u)}${plus}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
   }).join("");
-
+}
+function pauseSum(d) {
+  const pz = d.pause || computePause(d), count = (s) => PAUSE.filter((c) => pz[c.id]?.status === s).length;
+  return PAUSE.some((c) => pz[c.id]) ? `${count("bad")} crítico · ${count("warn")} atenção · ${count("ok")} ok` : "";
+}
+function pauseChips(d) {
   const pz = d.pause || computePause(d);
-  const count = (s) => PAUSE.filter((c) => pz[c.id]?.status === s).length;
-  $("pause-sum").textContent = Object.keys(pz).length && PAUSE.some((c) => pz[c.id]) ? `${count("bad")} crítico · ${count("warn")} atenção · ${count("ok")} ok` : "";
-  $("pause").innerHTML = PAUSE.map((c) => { const p = pz[c.id];
-    return `<span class="chip ${p?.status || ""}" title="Pausar se: ${c.limit}"><i></i>${c.label}<b>${p ? p.value : "—"}</b></span>`; }).join("");
-
-  const dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
-  const NAME = { conversion: "Conversão", cpl: "CPL", roi: "ROI" };
-  const miss = Object.keys(NAME).filter((id) => m[id]?.value == null).map((id) => NAME[id]);
-  $("status").className = `status s${dec ?? "n"}`;
-  $("status").innerHTML = dec == null
-    ? `<b>Aguardando dados</b><span>Faltam ${miss.join(", ")} para a decisão do dia 12.</span>`
-    : `<b>Hoje: ${DECISION[dec][0]}</b><span>Conversão ${fmt(m.conversion.value, "pct")} · CPL ${fmt(m.cpl.value, "brl")} · ROI ${fmt(m.roi.value, "x")}. A pior das três decide.${floorOk ? "" : " Amostra ainda abaixo do piso."}</span>`;
-
-  const view = currentView();
-  $("menu").innerHTML = [["home", "Painel"], ...SECTORS].map(([k, l]) => `<a href="#/${k}" aria-current="${k === view}">${l}</a>`).join("");
-  $("home").hidden = view !== "home";
-  $("page").hidden = view === "home";
-  document.querySelector(".hero").classList.toggle("compact", view !== "home");
-  $("tiles").innerHTML = SECTORS.map(([k, l]) => `<a class="tile" href="#/${k}"><b>${l}</b><span>${TILE_TEXT[k]}</span></a>`).join("");
-  if (view !== "home") {
-    $("page-title").textContent = SECTORS.find(([k]) => k === view)[1];
-    $("sector").innerHTML = PAGES[view](d);
-  }
+  return PAUSE.map((c) => { const p = pz[c.id]; return `<span class="chip ${p?.status || ""}" title="Pausar se: ${c.limit}"><i></i>${c.label}<b>${p ? p.value : "—"}</b></span>`; }).join("");
+}
+function statusBox(d) {
+  const m = d.metrics || {}, dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
+  const NAME = { conversion: "Conversão", cpl: "CPL", roi: "ROI" }, miss = Object.keys(NAME).filter((id) => m[id]?.value == null).map((id) => NAME[id]);
+  return `<div class="status s${dec ?? "n"}">${dec == null ? `<b>Aguardando dados</b><span>Faltam ${miss.join(", ")} para a decisão do dia 12.</span>`
+    : `<b>Hoje: ${DECISION[dec][0]}</b><span>Conversão ${fmt(m.conversion.value, "pct")} · CPL ${fmt(m.cpl.value, "brl")} · ROI ${fmt(m.roi.value, "x")}. A pior das três decide.${floorOk ? "" : " Amostra ainda abaixo do piso."}</span>`}</div>`;
 }
 
 async function refresh() {
@@ -447,12 +539,11 @@ async function refresh() {
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  if (b.dataset.tab) { state.tab = b.dataset.tab; state.filter = "all"; store.set("tab", state.tab); render(); }
-  else if (b.dataset.filter) { state.filter = b.dataset.filter; render(); }
+  if (b.dataset.filter) { state.filter = b.dataset.filter; render(); }
   else if (b.dataset.id) { state.period = b.dataset.id; store.set("period", state.period); refresh(); }
   else if (b.id === "demo") { state.demo = !state.demo; store.set("demo", state.demo ? "1" : "0"); refresh(); }
 });
 
 refresh();
 setInterval(refresh, 30 * 60 * 1000); // relê os dados a cada 30 min (mesmo ritmo da rotina)
-window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { state.filter = "all"; render(); window.scrollTo(0, 0); });

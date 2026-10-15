@@ -16,35 +16,30 @@
     <button id="demo" class="demo">Ver exemplo</button>
   </header>
 
-  <div class="sticky">
-    <nav class="periods" id="periods" aria-label="Período"></nav>
-    <nav class="menu" id="menu" aria-label="Seções"></nav>
-  </div>
-
-  <p id="demo-banner" class="banner" hidden></p>
-  <main>
-    <div id="home">
-      <section>
-        <h2>Painel geral</h2>
-        <div id="status" class="status"></div>
-        <div class="kpis" id="kpis"></div>
-        <div class="two">
-          <div><h3 class="group">Progresso do teste</h3><div id="sample" class="bars"></div></div>
-          <div><h3 class="group">Critérios de pausa <small id="pause-sum"></small></h3><div id="pause" class="chips"></div></div>
+  <div class="layout">
+    <nav class="side" id="side" aria-label="Seções"></nav>
+    <div class="content">
+      <div class="sticky"><nav class="periods" id="periods" aria-label="Período"></nav></div>
+      <p id="demo-banner" class="banner" hidden></p>
+      <main>
+        <div id="home">
+          <section>
+            <h2>Painel geral</h2>
+            <div class="kpis" id="kpis"></div>
+            <h3 class="group">Atenção agora</h3>
+            <div id="attention" class="chips"></div>
+          </section>
         </div>
-      </section>
-      <section>
-        <h2>Páginas</h2>
-        <div class="tiles" id="tiles"></div>
-      </section>
-    </div>
 
-    <section id="page" hidden>
-      <a class="back" href="#/home">← Voltar ao painel</a>
-      <h2 id="page-title"></h2>
-      <div id="sector"></div>
-    </section>
-  </main>
+        <section id="page" hidden>
+          <p id="crumb" class="crumb"></p>
+          <h2 id="page-title"></h2>
+          <p id="page-desc" class="desc"></p>
+          <div id="sector"></div>
+        </section>
+      </main>
+    </div>
+  </div>
 
   <script src="data.js"></script>
   <script src="app.js"></script>

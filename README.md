@@ -11,9 +11,15 @@ no repositório `Ricos-com-AI`. HTML, CSS e JavaScript puros, sem build.
 
 ## O que já funciona
 
-Períodos (dia a 12 meses), painel com 8 números e variação, piso de amostra, seis critérios de pausa
-e decisão do dia 12 calculados sozinhos, e os setores: vídeos, fluxo de dinheiro, agente do WhatsApp (abas Resultados, Conversas, Lacunas, Atendimento, Saúde e versões; desfecho de cada conversa em `lib/build.mjs` › `conversationStatus`),
-anúncio e site, região e comparação. Atualiza sozinho a cada 1 h.
+Períodos (dia a 12 meses) e menu lateral com sub-abas:
+
+- **Painel:** 8 números (4 por linha) e "Atenção agora".
+- **Malu:** Resultados, Conversas, Lacunas, Atendimento, Saúde e versões. Desfecho de cada conversa em `lib/build.mjs` › `conversationStatus`.
+- **Automações:** workflows do n8n desenhados, fluxo da Malu, execuções.
+- **Financeiro:** do faturamento ao lucro, consumo de API, comparação entre períodos.
+- **Teste de anúncios:** tudo do L3 (andamento, criativos, anúncio, região, metas e decisão, premissas).
+
+Atualiza sozinho a cada 1 h.
 
 ## Publicado no Vercel
 
@@ -22,6 +28,7 @@ anúncio e site, região e comparação. Atualiza sozinho a cada 1 h.
 - Variáveis do projeto no Vercel (Settings > Environment Variables):
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
   - `SUPABASE_URL` (opcional; padrão: o projeto da Encorpa).
+  - `N8N_API_KEY` (opcional): chave da API do n8n para a seção Automações (workflows e execuções). `N8N_URL` opcional; padrão: o n8n da Encorpa no PikaPods. O portal lê só nome, tipo, posição e ligação dos nós, nunca os parâmetros.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Só lê views agregadas e datas: nunca nome, telefone, endereço, CPF ou conversa.
 - `data.js` é uma cópia de segurança (retrato de 09/10). Se `/api/data` falhar, o portal mostra esse retrato.
