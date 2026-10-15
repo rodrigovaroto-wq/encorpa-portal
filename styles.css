@@ -228,3 +228,36 @@ svg.wf text { fill: var(--text); font: 600 12px system-ui, sans-serif; } svg.wf 
 .pipe > i { align-self: center; color: var(--violet); font-style: normal; }
 .pipe .node { flex: 1 1 160px; display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid #2f1d4a; background: linear-gradient(160deg, #1d1032, #0f0819); border-radius: 10px; }
 .pipe .node span { color: var(--muted); font-size: .82rem; } .pipe .node small { align-self: flex-start; font-size: .72rem; padding: 3px 8px; }
+
+/* faixa do topo: logo pequena na horizontal, em todas as páginas */
+.hero, .hero.compact { flex-wrap: nowrap; justify-content: space-between; padding: 8px 20px 8px 84px; min-height: 56px; border-bottom: 1px solid var(--line); background: radial-gradient(ellipse 600px 120px at 50% 0, rgba(109,63,209,.35), transparent 70%); }
+.hero .wordmark, .hero.compact .wordmark { display: block; width: auto; height: 40px; margin: 0; }
+.hero .badge, .hero .demo { flex-basis: auto; margin: 0; }
+.corner img { width: 40px; height: 40px; }
+.periods[hidden] { display: none; }
+/* variação contra o período anterior */
+.delta { font-size: .8rem; color: var(--muted); }
+.delta.good { color: var(--ok); } .delta.bad { color: var(--bad); }
+.delta span { color: var(--muted); font-size: .72rem; }
+.card .delta { margin: -4px 0 6px; }
+.charts { margin-top: 16px; }
+.hc { position: relative; }
+.chart.big { height: 110px; }
+.chart .area { fill: rgba(167,139,250,.12); stroke: none; }
+.chart .cross { stroke: var(--violet); stroke-dasharray: 3 3; }
+.hc .tip { position: absolute; top: -6px; padding: 4px 10px; background: #1d1032; border: 1px solid var(--violet); font-size: .78rem; white-space: nowrap; pointer-events: none; }
+.hc .tip b { color: #f2eaff; }
+/* critérios de pausa legíveis */
+.pause li b { text-align: right; font-weight: 600; } .pause li b small { display: block; font-weight: 400; }
+.pause li b.na { color: var(--muted); max-width: 45%; }
+.pause li.bad b small { color: var(--bad); font-weight: 600; }
+/* workflows: nó arrastável */
+svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
+.reset { margin-top: 8px; border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 5px 12px; font-size: .75rem; cursor: pointer; }
+.reset:hover { color: var(--violet); border-color: var(--violet); }
+@media (max-width: 700px) { .hero .badge { display: none; } }
+.hero .wordmark, .hero.compact .wordmark { height: 50px; }
+.kpi .delta.none, .delta.none { color: var(--muted); font-size: .76rem; }
+.kpi .delta.good { color: var(--ok); } .kpi .delta.bad { color: var(--bad); }
+@media (max-width: 700px) { .hero, .hero.compact { padding-left: 60px; } .hero .wordmark, .hero.compact .wordmark { height: 34px; } .hero .demo { padding: 6px 10px; letter-spacing: .1em; } }
+html, body { overflow-x: clip; }

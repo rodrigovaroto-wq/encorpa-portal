@@ -26,6 +26,7 @@ const GROUPS = [
     { id: "op_cost", label: "Custo operacional", unit: "brl", src: "orders + config" },
     { id: "gross_profit", label: "Lucro bruto", unit: "brl", src: "orders + config" },
     { id: "net_profit", label: "Lucro líquido (comissões recebidas)", unit: "brl", src: "Coinzz/Logzz/Mercado Pago" },
+    { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(contribuição dos pedidos − anúncio − API) ÷ faturamento", goal: "> 0%" },
     { id: "roi", label: "ROI", unit: "x", src: "lucro bruto ÷ (anúncio + API)", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "cash_left", label: "Caixa reservado restante", unit: "brl", src: "manual (R$ 1.500)" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
@@ -52,13 +53,14 @@ const GROUPS = [
 const ALL = GROUPS.flatMap((g) => g.metrics);
 
 // Os seis critérios do L3 (manuais). dir: "max" = pausar acima do limite.
+// Os seis critérios de pausa do teste. what = o que mede, em uma frase; missing = por que está sem número.
 const PAUSE = [
-  { id: "p_premise", label: "Premissa indevida", limit: "> 5% das conversas" },
-  { id: "p_handoff", label: "Handoff", limit: "> 10% das conversas" },
-  { id: "p_optout", label: "Opt-out", limit: "> 2,5%" },
-  { id: "p_api", label: "Custo de API", limit: "> R$ 1,00 em mais de 5% dos últimos 100 leads" },
-  { id: "p_cash", label: "Caixa reservado", limit: "acabando" },
-  { id: "p_channel", label: "Saúde do canal", limit: "número restrito ou Cloud API fora" },
+  { id: "p_premise", label: "Conversas com premissa indevida", what: "a Malu afirmou algo que a cliente não disse (lido pelo Hermes, em lotes de 50)", limit: "pausar acima de 5% das conversas", missing: "o Hermes ainda não leu um lote de 50 conversas" },
+  { id: "p_handoff", label: "Conversas que a Malu não resolveu", what: "a Malu precisou avisar o operador", limit: "pausar acima de 10% das conversas", missing: "nenhuma conversa encerrada no período" },
+  { id: "p_optout", label: "Clientes que pediram para sair", what: "pediram para não receber mais mensagem", limit: "pausar acima de 2,5% dos leads", missing: "nenhum lead no período" },
+  { id: "p_api", label: "Conversas caras de API", what: "das últimas 100 conversas, quantas custaram mais de R$ 1,00 de modelo", limit: "pausar acima de 5% delas", missing: "nenhuma conversa com custo registrado" },
+  { id: "p_cash", label: "Caixa reservado para pedidos", what: "quanto sobra dos R$ 1.500 separados para o custo dos pedidos", limit: "pausar abaixo de R$ 300", missing: "falta ligar o extrato (Coinzz/Logzz/Mercado Pago); por enquanto não há valor gasto registrado" },
+  { id: "p_channel", label: "Número do WhatsApp", what: "o número está liberado pela Meta e a Cloud API responde", limit: "pausar se restrito, banido ou fora do ar", missing: "estado do canal não informado" },
 ];
 
 // Métricas por criativo (fase Copy) e por região (fase Região): 12 do §8.
@@ -87,7 +89,17 @@ const SAMPLE_FLOOR = { leads: 500, orders: 50, spend: 500 };
 
 
 // Painel principal: as 8 que mandam, 4 por linha.
-const KPIS = ["leads", "orders", "conversion", "revenue", "resolution", "transfers", "api_per_lead", "net_profit"];
+const KPIS = ["leads", "orders", "conversion", "revenue", "resolution", "api_per_lead", "net_profit", "op_margin"];
+// Métricas em que subir é ruim: a variação delas fica vermelha ao subir.
+const LOWER = new Set(["cpl", "api_per_lead", "cpl_api", "handoff", "fallback", "optout", "invalid_premise", "op_cost", "refusal", "spend", "cpm", "rewrites", "gate_blocks", "transfers", "first_response", "handle_time"]);
+// Variação contra o mesmo período anterior: % para contagem e dinheiro, pontos percentuais para taxa.
+function deltaHtml(id, unit) {
+  const v = state.data?.metrics?.[id];
+  if (!v || v.value == null || v.previous == null) return `<div class="delta none">sem dado do período anterior</div>`;
+  const diff = v.value - v.previous, up = diff >= 0, good = diff === 0 ? "" : up !== LOWER.has(id) ? "good" : "bad";
+  const txt = unit === "pct" ? `${nf.format(Math.abs(diff))} p.p.` : v.previous ? `${nf.format(Math.abs((diff / Math.abs(v.previous)) * 100))}%` : fmt(Math.abs(diff), unit);
+  return `<div class="delta ${good}">${diff === 0 ? "=" : up ? "▲" : "▼"} ${txt} <span>vs período anterior</span></div>`;
+}
 
 // Vídeos: os 6 ganchos/formatos da fase Copy. `headline` vem de eval_attribution.
 const VIDEOS = Array.from({ length: 6 }, (_, i) => `Vídeo ${i + 1}`);
@@ -136,11 +148,11 @@ const NAV = [
     ["flow", "Do faturamento ao lucro", "Para onde vai cada real que entra e a situação do caixa."],
     ["api", "Consumo de API", "Custo do modelo e do WhatsApp no período, por dia, por lead e a projeção do mês."],
     ["compare", "Comparação", "Todas as métricas contra o período anterior."]] },
-  { id: "test", label: "Teste de anúncios", subs: [
-    ["status", "Andamento", "Decisão do dia 12, piso de amostra e critérios de pausa do teste L3."],
-    ["creatives", "Criativos", "Os 6 vídeos da fase Copy, lado a lado."],
-    ["ads", "Anúncio", "Gasto, CPM e CTR do Meta Ads."],
-    ["region", "Região", "Conjunto A × B da fase Região."],
+  { id: "ads", label: "Anúncios", subs: [
+    ["campaigns", "Campanhas", "Campanhas do Meta Ads com orçamento, estado e resultado, atualizadas sozinhas."],
+    ["adsets", "Conjuntos", "Conjuntos de anúncios: público, posicionamento, orçamento e resultado."],
+    ["ads", "Anúncios e criativos", "Cada anúncio com o criativo e as métricas: gasto, CTR, CPL, conversas e pedidos."],
+    ["tests", "Testes de Criativos", "Decisão do dia 12, piso de amostra, critérios de pausa, criativos e região do teste L3."],
     ["rules", "Metas e decisão", "Metas por fase, regra de decisão e critérios de pausa."],
     ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
 ];
@@ -197,7 +209,7 @@ function reloadDataFile() {
 // ---- dados de exemplo (NÃO são reais) ----
 const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.4, .9], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
-Object.assign(RANGE, { resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
+Object.assign(RANGE, { op_margin: [8, 22], resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25] });
 const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
 
 function rng(seed) { let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -295,6 +307,26 @@ function hourBars(h) {
   const ticks = [0, 6, 12, 18].map((i) => `<text x="${i * bw + 1}" y="${hh - 2}">${i} h</text>`).join("");
   return `<svg class="chart bars" viewBox="0 0 ${w} ${hh}" role="img" aria-label="Mensagens recebidas por hora: pico de ${max}">${bars}${ticks}</svg>`;
 }
+// Gráfico com leitura ao passar o mouse: ponto, valor e intervalo (o tooltip flutuante).
+function hoverChart(series, unit, id) {
+  if (!series || series.length < 2) return `<p class="note">Sem série no período.</p>`;
+  const w = 300, h = 110, min = Math.min(...series), max = Math.max(...series), span = max - min || 1;
+  const P = series.map((v, i) => [(i / (series.length - 1)) * w, h - 8 - ((v - min) / span) * (h - 20)]);
+  const area = `M0,${h} L${P.map((p) => p.join(",")).join(" L")} L${w},${h} Z`;
+  return `<div class="hc" data-series='${JSON.stringify(series)}' data-unit="${unit}"><svg class="chart big" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path class="area" d="${area}"/><path d="M${P.map((p) => p.join(",")).join("L")}"/><line class="cross" x1="0" x2="0" y1="0" y2="${h}" hidden/></svg><div class="tip" hidden></div>
+    <div class="range"><span>mín ${fmt(min, unit)}</span><span>máx ${fmt(max, unit)}</span></div></div>`;
+}
+document.addEventListener("pointermove", (e) => {
+  const hc = e.target.closest?.(".hc");
+  document.querySelectorAll(".hc .tip:not([hidden])").forEach((t) => { if (t.parentElement !== hc) { t.hidden = true; t.parentElement.querySelector(".cross").setAttribute("hidden", ""); } });
+  if (!hc) return;
+  const s = JSON.parse(hc.dataset.series), r = hc.getBoundingClientRect(), i = Math.max(0, Math.min(s.length - 1, Math.round(((e.clientX - r.left) / r.width) * (s.length - 1))));
+  const [n, days] = BUCKETS[state.period], back = (s.length - 1 - i) * days, tip = hc.querySelector(".tip"), cross = hc.querySelector(".cross");
+  const label = days < 1 ? `há ${Math.round(back * 24)} h` : back === 0 ? "intervalo atual" : `há ${back} dia${back > 1 ? "s" : ""}`;
+  tip.hidden = false; tip.innerHTML = `<b>${fmt(s[i], hc.dataset.unit)}</b> ${label}`;
+  tip.style.left = `${Math.min(r.width - 120, Math.max(0, (i / (s.length - 1)) * r.width - 50))}px`;
+  cross.removeAttribute("hidden"); cross.setAttribute("x1", (i / (s.length - 1)) * 300); cross.setAttribute("x2", (i / (s.length - 1)) * 300);
+});
 function chartSvgRaw(series) {
   const w = 300, h = 90;
   const base = `<line x1="0" y1="${h - 1}" x2="${w}" y2="${h - 1}"/>`;
@@ -315,19 +347,67 @@ const MODE = { trigger: "gatilho", webhook: "webhook", manual: "manual", integra
 const NODE = { webhook: "Webhook", httpRequest: "Chamada HTTP", if: "Condição", code: "Código", emailSend: "E-mail", wait: "Espera", scheduleTrigger: "Relógio", formTrigger: "Formulário (início)", form: "Formulário", executeWorkflow: "Chama workflow", executeWorkflowTrigger: "Chamado por workflow", respondToWebhook: "Responde webhook", splitInBatches: "Lotes", manualTrigger: "Manual" };
 const when = (s) => (s ? new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }) : "—");
 const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-// Desenho de um workflow do n8n: posição real dos nós, reescalada; gatilhos em verde.
+// Desenho de um workflow do n8n: posição real dos nós, sem sobreposição; gatilhos em verde.
+// Os nós podem ser arrastados (só mover: ligação e nó não se apagam). A posição fica neste navegador.
+const FLOWS = {};
+const NW = 168, NH = 46;
+function layout(w) {
+  const saved = (() => { try { return JSON.parse(store.get(`flow:${w.id || w.name}`) || "{}"); } catch { return {}; } })();
+  const minX = Math.min(...w.nodes.map((n) => n.x)), minY = Math.min(...w.nodes.map((n) => n.y));
+  const pos = {};
+  for (const n of [...w.nodes].sort((a, b) => a.x - b.x || a.y - b.y)) {
+    if (saved[n.name]) { pos[n.name] = saved[n.name]; continue; }
+    const p = { x: (n.x - minX) * 0.85 + 10, y: (n.y - minY) * 0.85 + 10 };
+    // empurra para baixo enquanto encostar em outro nó já posicionado
+    for (let hit = true; hit; ) { hit = Object.values(pos).some((q) => Math.abs(q.x - p.x) < NW + 14 && Math.abs(q.y - p.y) < NH + 14); if (hit) p.y += NH + 16; }
+    pos[n.name] = p;
+  }
+  return pos;
+}
+function edgePath(p, q) {
+  const x1 = p.x + NW, y1 = p.y + NH / 2, x2 = q.x, y2 = q.y + NH / 2, c = Math.max(40, Math.abs(x2 - x1) / 2);
+  return `M${x1},${y1} C${x1 + c},${y1} ${x2 - c},${y2} ${x2},${y2}`;
+}
 function flowSvg(w) {
   if (!w.nodes.length) return "";
-  const W = 168, H = 46, xs = w.nodes.map((n) => n.x), ys = w.nodes.map((n) => n.y);
-  const minX = Math.min(...xs), minY = Math.min(...ys), k = 0.85;
-  const pos = Object.fromEntries(w.nodes.map((n) => [n.name, { x: (n.x - minX) * k + 10, y: (n.y - minY) * k + 10 }]));
-  const vw = Math.max(...Object.values(pos).map((p) => p.x)) + W + 10, vh = Math.max(...Object.values(pos).map((p) => p.y)) + H + 10;
-  const edges = w.edges.filter(([a, b]) => pos[a] && pos[b]).map(([a, b]) => { const p = pos[a], q = pos[b], x1 = p.x + W, y1 = p.y + H / 2, x2 = q.x, y2 = q.y + H / 2, c = Math.max(30, Math.abs(x2 - x1) / 2);
-    return `<path d="M${x1},${y1} C${x1 + c},${y1} ${x2 - c},${y2} ${x2},${y2}"/>`; }).join("");
-  const nodes = w.nodes.map((n) => { const p = pos[n.name], trig = /Trigger$|^webhook$/.test(n.type);
-    return `<g class="${trig ? "trig" : ""}" transform="translate(${p.x},${p.y})"><rect width="${W}" height="${H}" rx="8"/><text x="10" y="19">${esc(n.name.length > 24 ? n.name.slice(0, 23) + "…" : n.name)}</text><text class="t" x="10" y="35">${NODE[n.type] || n.type}</text><title>${esc(n.name)}</title></g>`; }).join("");
-  return `<div class="flow-wrap"><svg class="wf" viewBox="0 0 ${vw} ${vh}" style="width:${vw}px" role="img" aria-label="Fluxo do workflow ${esc(w.name)}">${edges}${nodes}</svg></div>`;
+  const key = w.id || w.name, pos = layout(w);
+  FLOWS[key] = { pos, edges: w.edges.filter(([a, b]) => pos[a] && pos[b]) };
+  const vw = Math.max(...Object.values(pos).map((p) => p.x)) + NW + 200, vh = Math.max(...Object.values(pos).map((p) => p.y)) + NH + 120;
+  const edges = FLOWS[key].edges.map(([a, b], i) => `<path data-e="${i}" d="${edgePath(pos[a], pos[b])}"/>`).join("");
+  const types = Object.fromEntries(w.nodes.map((n) => [n.name, n.type]));
+  const nodes = Object.entries(pos).map(([name, p]) => { const type = types[name], trig = /Trigger$|^webhook$/.test(type);
+    return `<g class="nd ${trig ? "trig" : ""}" data-n="${esc(name)}" transform="translate(${p.x},${p.y})"><rect width="${NW}" height="${NH}" rx="8"/><text x="10" y="19">${esc(name.length > 23 ? name.slice(0, 22) + "…" : name)}</text><text class="t" x="10" y="35">${NODE[type] || type}</text><title>${esc(name)}</title></g>`; }).join("");
+  return `<div class="flow-wrap"><svg class="wf" data-flow="${esc(key)}" viewBox="0 0 ${vw} ${vh}" style="width:${vw}px" role="img" aria-label="Fluxo do workflow ${esc(w.name)}">${edges}${nodes}</svg><button class="reset" data-reset="${esc(key)}">Voltar ao desenho original</button></div>`;
 }
+let drag = null;
+document.addEventListener("pointerdown", (e) => {
+  const g = e.target.closest?.("svg.wf g.nd");
+  if (!g) return;
+  const svg = g.ownerSVGElement, f = FLOWS[svg.dataset.flow], m = svg.getScreenCTM().inverse();
+  const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m), p = f.pos[g.dataset.n];
+  drag = { g, svg, f, name: g.dataset.n, dx: pt.x - p.x, dy: pt.y - p.y, m };
+  g.setPointerCapture(e.pointerId); e.preventDefault();
+});
+document.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(drag.m), p = drag.f.pos[drag.name];
+  p.x = Math.max(0, pt.x - drag.dx); p.y = Math.max(0, pt.y - drag.dy);
+  drag.g.setAttribute("transform", `translate(${p.x},${p.y})`);
+  drag.f.edges.forEach(([a, b], i) => { if (a === drag.name || b === drag.name) drag.svg.querySelector(`path[data-e="${i}"]`).setAttribute("d", edgePath(drag.f.pos[a], drag.f.pos[b])); });
+});
+document.addEventListener("pointerup", () => {
+  if (!drag) return;
+  const { f, name, svg } = drag, p = f.pos[name];
+  // soltou em cima de outro nó: volta para baixo dele, para nunca ficar sobreposto
+  for (let hit = true; hit; ) { hit = Object.entries(f.pos).some(([k, q]) => k !== name && Math.abs(q.x - p.x) < NW + 8 && Math.abs(q.y - p.y) < NH + 8); if (hit) p.y += NH + 16; }
+  drag.g.setAttribute("transform", `translate(${p.x},${p.y})`);
+  f.edges.forEach(([a, b], i) => svg.querySelector(`path[data-e="${i}"]`).setAttribute("d", edgePath(f.pos[a], f.pos[b])));
+  store.set(`flow:${svg.dataset.flow}`, JSON.stringify(f.pos));
+  // a área do desenho cresce até caber o nó movido
+  const vw = Math.max(...Object.values(f.pos).map((q) => q.x)) + NW + 200, vh = Math.max(...Object.values(f.pos).map((q) => q.y)) + NH + 120;
+  svg.setAttribute("viewBox", `0 0 ${vw} ${vh}`); svg.style.width = `${vw}px`;
+  drag = null;
+});
 const metricBy = (id) => ALL.find((x) => x.id === id);
 const tbl = (head, rows) => `<div class="table-wrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
 
@@ -353,7 +433,7 @@ const SECTOR_VIEWS = {
       ${card("Resolvidas pela Malu", o.solved, "n", "Compraram ou encerraram sem compra, sem pessoa")}
       ${card("Não resolvidas", o.unresolved, "n", "A Malu avisou o operador")}
       ${card("Abandonadas", o.abandoned, "n", "24 h sem resposta dela, sem decisão")}
-      ${card("Taxa de resolução", o.resolution, "pct", `Resolvidas ÷ encerradas (sem as em andamento). META ≥ 90%${delta("resolution")}`)}</div>
+      ${card("Taxa de resolução", o.resolution, "pct", `Resolvidas ÷ encerradas (sem as em andamento). META ≥ 90%`).replace("</div><p", `</div>${deltaHtml("resolution", "pct")}<p`)}</div>
       <h3 class="group">Detalhamento por desfecho</h3><div class="funnel">${OUTCOMES.map(([id, l, , tip]) => {
         const n = o[id], w = top && n != null ? Math.max(2, (n / top) * 100) : 0;
         return `<div class="step" title="${tip}"><span>${l}</span><div class="bar-track"><div class="bar-fill ${OUTCOME[id].c}" style="width:${w}%"></div></div><b>${fmt(n, "n")}</b></div>`;
@@ -388,7 +468,7 @@ const SECTOR_VIEWS = {
   },
   health(d) {
     return `<h3 class="group">Saúde da agente</h3><div class="grid">${AGENT_HEALTH.map((id) => { const x = metricBy(id);
-      return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(d.metrics?.[id]?.value, x.unit)}</div>${chartSvg(d.metrics?.[id]?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`; }).join("")}</div>
+      return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(d.metrics?.[id]?.value, x.unit)}</div>${deltaHtml(id, x.unit)}${chartSvg(d.metrics?.[id]?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`; }).join("")}</div>
       <h3 class="group">Canal</h3>${tbl(["Item", "Estado"], CHANNEL.map(([id, l]) => `<tr><td>${l}</td><td>${d.channel?.[id] ?? "—"}</td></tr>`))}
       <h3 class="group">Antes × depois de cada versão</h3>${tbl(["Versão", "Respostas", "Handoff", "Fallback", "Reescritas", "Custo"], (d.versions || [{}]).map((r) =>
       `<tr><td>${r.version ?? "—"}</td><td>${fmt(r.turns, "n")}</td><td>${fmt(r.handoff, "pct")}</td><td>${fmt(r.fallback, "pct")}</td><td>${fmt(r.rewrites, "n")}</td><td>${fmt(r.cost, "brl")}</td></tr>`))}
@@ -428,14 +508,17 @@ const SECTOR_VIEWS = {
     if (!r) return SECTOR_VIEWS.workflows(d);
     return tbl(["Workflow", "Estado", "Início", "Duração", "Disparo"], r.map((x) => `<tr><td>${x.workflow}</td><td><span class="chip ${x.status === "success" ? "ok" : x.status === "error" || x.status === "crashed" ? "bad" : "warn"}"><i></i>${STATUS_RUN[x.status] || x.status}</span></td><td>${when(x.at)}</td><td>${x.ms == null ? "—" : x.ms < 1000 ? `${x.ms} ms` : `${nf.format(x.ms / 1000)} s`}</td><td>${MODE[x.mode] || x.mode}</td></tr>`));
   },
-  status(d) {
+  campaigns: (d) => metaView(d, "campaigns"),
+  adsets: (d) => metaView(d, "adsets"),
+  tests(d) {
     return `<div id="status-box"></div><div class="two"><div><h3 class="group">Progresso do teste</h3><div class="bars">${sampleBars(d)}</div></div>
-      <div><h3 class="group">Critérios de pausa <small>${pauseSum(d)}</small></h3><div class="chips">${pauseChips(d)}</div></div></div>`;
+      <div><h3 class="group">Critérios de pausa <small>${pauseSum(d)}</small></h3>${pauseChips(d)}</div></div>
+      <h3 class="group">Criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`;
   },
-  creatives(d) { return SECTOR_VIEWS.videos(d); },
+  metaAds: (d) => metaView(d, "ads"),
   rules() {
     return `<h3 class="group">Decisão no dia 12</h3>${tbl(["Decisão", "Conversão", "CPL", "ROI"], DECISION.map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((c) => `<td>${c}</td>`).join("")}</tr>`))}
-      <h3 class="group">Critérios de pausa</h3>${tbl(["Critério", "Pausar se"], PAUSE.map((c) => `<tr><td>${c.label}</td><td>${c.limit}</td></tr>`))}
+      <h3 class="group">Critérios de pausa</h3>${tbl(["Critério", "O que mede", "Quando pausar"], PAUSE.map((c) => `<tr><td>${c.label}</td><td>${c.what}</td><td>${c.limit}</td></tr>`))}
       <h3 class="group">Metas por fase</h3>${tbl(["Fase", "Mínima", "Ideal"], PHASES.map(([f, a, b]) => `<tr><td>${f}</td><td>${a}</td><td>${b}</td></tr>`))}`;
   },
   api(d) {
@@ -454,11 +537,16 @@ const SECTOR_VIEWS = {
 };
 
 // Cada sub-aba aponta para uma view; as que têm nome repetido entre seções ganham prefixo aqui.
-const VIEW = { "money/flow": "money", "auto/flow": "flow" };
+const VIEW = { "money/flow": "money", "auto/flow": "flow", "ads/ads": "metaAds" };
+// Meta Ads: ainda não ligado (falta o token de leitura no Vercel). Cada aba diz o que vai mostrar.
+function metaView(d, kind) {
+  if (!d.meta) return `<p class="note">Meta Ads ainda não ligado. Quando o token de leitura da conta de anúncios estiver no Vercel, esta aba lista ${kind === "campaigns" ? "as campanhas com orçamento, estado, gasto, CPL e pedidos" : kind === "adsets" ? "os conjuntos com público, posicionamento, orçamento e resultado" : "cada anúncio com o criativo e as métricas"}, e anúncio novo ou removido na Meta aparece ou some sozinho.</p>`;
+  return "";
+}
 
 function cardHtml(x) {
   const v = (state.data?.metrics || {})[x.id];
-  return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(v?.value, x.unit)}</div>${chartSvg(v?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`;
+  return `<article class="card"><h3>${x.label}</h3><div class="value">${fmt(v?.value, x.unit)}</div>${deltaHtml(x.id, x.unit)}${chartSvg(v?.series, x.unit)}<p class="meta">${x.goal ? `META: ${x.goal}<br>` : ""}FONTE: ${x.src}</p></article>`;
 }
 
 function segTable(kind, d, names) {
@@ -472,23 +560,21 @@ function render() {
   const m = d.metrics || {};
   $("updated").textContent = state.data ? `${state.data.demo ? "EXEMPLO · " : ""}atualizado ${new Date(state.data.updated || Date.now()).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}` : "Sem dados ainda";
   $("demo").textContent = state.demo ? "Voltar aos dados reais" : "Ver exemplo";
-  const note = state.demo ? "Dados de exemplo — números inventados só para ver o portal funcionando. Não são reais." : state.data?.note;
-  $("demo-banner").hidden = !note; $("demo-banner").textContent = note || "";
 
   $("periods").innerHTML = PERIODS.map((p) => `<button data-id="${p.id}" aria-pressed="${p.id === state.period}">${p.label}</button>`).join("");
 
   $("kpis").innerHTML = KPIS.map((id) => { const x = metricBy(id), v = m[id];
-    const delta = v && v.previous ? `${v.value >= v.previous ? "▲" : "▼"} ${Math.abs(((v.value - v.previous) / v.previous) * 100).toFixed(1).replace(".", ",")}%` : "";
-    return `<article class="kpi"><h3>${x.label}</h3><div class="big">${fmt(v?.value, x.unit)}</div><div class="delta">${delta || "&nbsp;"}</div>${x.goal ? `<div class="goal">META ${x.goal}</div>` : ""}</article>`; }).join("");
-  $("attention").innerHTML = attention(d);
+    return `<article class="kpi"><h3>${x.label}</h3><div class="big">${fmt(v?.value, x.unit)}</div>${deltaHtml(id, x.unit)}${x.goal ? `<div class="goal">META ${x.goal}</div>` : ""}</article>`; }).join("");
+  $("charts").innerHTML = KPIS.map((id) => { const x = metricBy(id), v = m[id];
+    return `<article class="card"><h3>${x.label}</h3>${hoverChart(v?.series, x.unit, id)}</article>`; }).join("");
 
   const { nav, sub } = route();
   if (sub) store.set(`sub:${nav.id}`, sub[0]);
   $("side").innerHTML = NAV.map((n) => `<div class="sec ${n === nav ? "on" : ""}"><a href="#/${n.id}" aria-current="${n === nav && !n.subs}">${n.label}</a>${n.subs && n === nav ? n.subs.map(([k, l, , badge]) => { const c = badge?.(d);
     return `<a class="sub" href="#/${n.id}/${k}" aria-current="${sub?.[0] === k}">${l}${c ? `<em>${c}</em>` : ""}</a>`; }).join("") : ""}</div>`).join("");
   const home = nav.id === "home";
+  $("periods").hidden = nav.id === "auto"; // workflows e execuções não dependem do período
   $("home").hidden = !home; $("page").hidden = home;
-  document.querySelector(".hero").classList.toggle("compact", !home);
   if (!home) {
     $("crumb").textContent = `${nav.label} › ${sub[1]}`;
     $("page-title").textContent = sub[1];
@@ -496,18 +582,6 @@ function render() {
     $("sector").innerHTML = SECTOR_VIEWS[VIEW[`${nav.id}/${sub[0]}`] || sub[0]](d);
     if ($("status-box")) $("status-box").outerHTML = statusBox(d);
   }
-}
-
-// O que pede atenção agora (a faixa "tempo excedido / não respondidas" da Octadesk, com o que importa aqui).
-function attention(d) {
-  const o = d.outcomes || {}, a = d.automations, items = [];
-  if (o.unresolved) items.push(["bad", `${o.unresolved} conversa${o.unresolved > 1 ? "s" : ""} que a Malu não resolveu`, "#/malu/conversations"]);
-  if (d.gaps?.length) items.push(["warn", `${d.gaps.length} lacuna${d.gaps.length > 1 ? "s" : ""} para virar contorno`, "#/malu/gaps"]);
-  if (o.abandoned) items.push(["warn", `${o.abandoned} abandonada${o.abandoned > 1 ? "s" : ""} (a régua está cuidando)`, "#/malu/conversations"]);
-  const bad = a?.workflows?.filter((w) => w.active && w.errors) || [];
-  if (bad.length) items.push(["bad", `${bad.length} workflow${bad.length > 1 ? "s" : ""} com erro recente`, "#/auto/workflows"]);
-  if (o.open) items.push(["", `${o.open} em andamento agora`, "#/malu/conversations"]);
-  return items.length ? items.map(([c, t, h]) => `<a class="chip ${c}" href="${h}"><i></i>${t}</a>`).join("") : `<span class="chip ok"><i></i>Nada pendente no período</span>`;
 }
 
 function sampleBars(d) {
@@ -521,8 +595,9 @@ function pauseSum(d) {
   return PAUSE.some((c) => pz[c.id]) ? `${count("bad")} crítico · ${count("warn")} atenção · ${count("ok")} ok` : "";
 }
 function pauseChips(d) {
-  const pz = d.pause || computePause(d);
-  return PAUSE.map((c) => { const p = pz[c.id]; return `<span class="chip ${p?.status || ""}" title="Pausar se: ${c.limit}"><i></i>${c.label}<b>${p ? p.value : "—"}</b></span>`; }).join("");
+  const pz = d.pause || computePause(d), SIT = { ok: "dentro do limite", warn: "perto do limite", bad: "PAUSAR" };
+  return `<ul class="pause">${PAUSE.map((c) => { const p = pz[c.id];
+    return `<li class="${p?.status || ""}"><span>${c.label}<small>${c.what}. ${c.limit[0].toUpperCase() + c.limit.slice(1)}.</small></span>${p ? `<b>${p.value}<small>${SIT[p.status] || ""}</small></b>` : `<b class="na">sem número<small>${c.missing}</small></b>`}</li>`; }).join("")}</ul>`;
 }
 function statusBox(d) {
   const m = d.metrics || {}, dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
@@ -539,7 +614,8 @@ async function refresh() {
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  if (b.dataset.filter) { state.filter = b.dataset.filter; render(); }
+  if (b.dataset.reset) { try { localStorage.removeItem(`flow:${b.dataset.reset}`); } catch {} render(); }
+  else if (b.dataset.filter) { state.filter = b.dataset.filter; render(); }
   else if (b.dataset.id) { state.period = b.dataset.id; store.set("period", state.period); refresh(); }
   else if (b.id === "demo") { state.demo = !state.demo; store.set("demo", state.demo ? "1" : "0"); refresh(); }
 });
