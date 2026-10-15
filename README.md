@@ -11,13 +11,13 @@ no repositório `Ricos-com-AI`. HTML, CSS e JavaScript puros, sem build.
 
 ## O que já funciona
 
-Períodos (dia a 12 meses) e menu lateral com sub-abas:
+Períodos (dia a 12 meses) e menu lateral com sub-abas. Se a leitura ao vivo falhar, o portal mostra o último retrato bom de cada período guardado no navegador, e só sem ele o `data.js`.
 
 - **Painel:** 8 números (4 por linha) e "Atenção agora".
 - **Malu:** Resultados, Conversas, Lacunas, Atendimento, Saúde e versões. Desfecho de cada conversa em `lib/build.mjs` › `conversationStatus`.
 - **Automações:** workflows do n8n desenhados, fluxo da Malu, execuções.
 - **Financeiro:** do faturamento ao lucro, consumo de API, comparação entre períodos.
-- **Teste de anúncios:** tudo do L3 (andamento, criativos, anúncio, região, metas e decisão, premissas).
+- **Anúncios:** campanhas, conjuntos e anúncios da Meta (só leitura, a cada 5 min), comparação entre anúncios com o vencedor de cada métrica em verde, conversão por estado, Testes de Criativos (região A × B pelos conjuntos, piso de amostra, critérios de pausa), metas e premissas.
 
 Atualiza sozinho a cada 1 h.
 

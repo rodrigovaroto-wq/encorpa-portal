@@ -59,7 +59,7 @@ const PAUSE = [
   { id: "p_handoff", label: "Conversas que a Malu não resolveu", what: "a Malu precisou avisar o operador", limit: "pausar acima de 10% das conversas", missing: "nenhuma conversa encerrada no período" },
   { id: "p_optout", label: "Clientes que pediram para sair", what: "pediram para não receber mais mensagem", limit: "pausar acima de 2,5% dos leads", missing: "nenhum lead no período" },
   { id: "p_api", label: "Conversas caras de API", what: "das últimas 100 conversas, quantas custaram mais de R$ 1,00 de modelo", limit: "pausar acima de 5% delas", missing: "nenhuma conversa com custo registrado" },
-  { id: "p_cash", label: "Caixa reservado para pedidos", what: "quanto sobra dos R$ 1.500 separados para o custo dos pedidos", limit: "pausar abaixo de R$ 300", missing: "falta ligar o extrato (Coinzz/Logzz/Mercado Pago); por enquanto não há valor gasto registrado" },
+  { id: "p_cash", label: "Necessidade de caixa", what: "quanto está adiantado em pedidos na entrega ainda não repassados (produto, entrega, manuseio e taxa; volta 14 dias depois de completo)", limit: "pausar acima de R$ 1.075 (o caixa utilizável do teste)", missing: "nenhum pedido no período" },
   { id: "p_channel", label: "Número do WhatsApp", what: "o número está liberado pela Meta e a Cloud API responde", limit: "pausar se restrito, banido ou fora do ar", missing: "estado do canal não informado" },
 ];
 
@@ -151,8 +151,8 @@ const NAV = [
   { id: "ads", label: "Anúncios", subs: [
     ["campaigns", "Campanhas", "Campanhas do Meta Ads com orçamento, estado e resultado, atualizadas sozinhas."],
     ["adsets", "Conjuntos", "Conjuntos de anúncios: público, posicionamento, orçamento e resultado."],
-    ["ads", "Anúncios e criativos", "Cada anúncio com o criativo e as métricas: gasto, CTR, CPL, conversas e pedidos."],
-    ["tests", "Testes de Criativos", "Decisão do dia 12, piso de amostra, critérios de pausa, criativos e região do teste L3."],
+    ["ads", "Anúncios e criativos", "Cada anúncio com o criativo e as métricas, a comparação entre eles e a conversão por estado."],
+    ["tests", "Testes de Criativos", "Os anúncios reais lado a lado, o vencedor de cada métrica, a região A × B, o piso de amostra e os critérios de pausa."],
     ["rules", "Metas e decisão", "Metas por fase, regra de decisão e critérios de pausa."],
     ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
 ];
@@ -192,8 +192,11 @@ async function loadData(period) {
 async function loadLive() {
   try {
     const r = await fetch("/api/data", { cache: "no-store", credentials: "same-origin" });
-    if (r.ok) { window.PORTAL_DATA = await r.json(); return; }
+    if (r.ok) { window.PORTAL_DATA = await r.json(); try { for (const [k, v] of Object.entries(window.PORTAL_DATA)) localStorage.setItem(`last:${k}`, JSON.stringify(v)); } catch {} return; }
   } catch { /* sem função: usa o data.js */ }
+  // Sem resposta ao vivo: o último retrato bom de cada período, guardado neste navegador; só sem ele, o data.js.
+  try { const cached = Object.fromEntries(PERIODS.map((p) => [p.id, JSON.parse(localStorage.getItem(`last:${p.id}`) || "null")]).filter(([, v]) => v));
+    if (Object.keys(cached).length) { window.PORTAL_DATA = cached; return; } } catch {}
   await reloadDataFile();
 }
 
@@ -272,7 +275,7 @@ function computePause(d) {
     p_handoff: row(v("handoff"), lvl(v("handoff"), 8, 10), "pct"),
     p_optout: row(v("optout"), lvl(v("optout"), 2, 2.5), "pct"),
     p_api: row(d.api_over_pct, lvl(d.api_over_pct, 4, 5), "pct"),
-    p_cash: row(v("cash_left"), v("cash_left") == null ? "" : v("cash_left") < 300 ? "bad" : v("cash_left") < 600 ? "warn" : "ok", "brl"),
+    p_cash: row(d.cash_need, lvl(d.cash_need, 800, 1075), "brl"),
     p_channel: d.channel ? { value: d.channel.number, status: /restrit|banid|fora|erro|desconect/i.test(d.channel.number) ? "bad" : "ok" } : undefined,
   };
 }
@@ -422,6 +425,7 @@ const SECTOR_VIEWS = {
     const m = d.money || {};
     return `<h3 class="group">Do faturamento ao lucro</h3>${tbl(["Etapa", "Valor"], MONEY_FLOW.map(([id, l, s]) =>
       `<tr class="${s === 0 ? "sum" : ""}"><td>${s < 0 ? "− " : ""}${l}</td><td>${fmt(m[id], "brl")}</td></tr>`))}
+      <h3 class="group">Necessidade de caixa</h3><div class="grid"><article class="card"><h3>Adiantado em pedidos na entrega</h3><div class="value">${fmt(d.cash_need, "brl")}</div><p class="meta">Produto, entrega, manuseio e taxa dos pedidos ainda não repassados. Limite do teste: R$ 1.075.</p></article></div>
       <h3 class="group">Situação do caixa</h3><div class="grid">${MONEY_STATUS.map(([id, l, u]) => `<article class="card"><h3>${l}</h3><div class="value">${fmt(m[id], u)}</div></article>`).join("")}</div>
       <p class="note">Fase 1: lucro líquido estimado a partir de orders + taxas do config; conciliação com o extrato depois. Fonte: orders, Mercado Pago, Coinzz/Logzz.</p>`;
   },
@@ -511,9 +515,9 @@ const SECTOR_VIEWS = {
   campaigns: (d) => metaView(d, "campaigns"),
   adsets: (d) => metaView(d, "adsets"),
   tests(d) {
-    return `<div id="status-box"></div><div class="two"><div><h3 class="group">Progresso do teste</h3><div class="bars">${sampleBars(d)}</div></div>
+    return `<div class="two"><div><h3 class="group">Progresso do teste</h3><div class="bars">${sampleBars(d)}</div></div>
       <div><h3 class="group">Critérios de pausa <small>${pauseSum(d)}</small></h3>${pauseChips(d)}</div></div>
-      <h3 class="group">Criativos</h3>${SECTOR_VIEWS.videos(d)}<h3 class="group">Região</h3>${SECTOR_VIEWS.region(d)}`;
+      <h3 class="group">Criativos</h3>${metaView(d, "tests")}<h3 class="group">Região (conjuntos A × B)</h3>${metaView(d, "region")}`;
   },
   metaAds: (d) => metaView(d, "ads"),
   rules() {
@@ -545,6 +549,24 @@ const stat = (s) => { const [l, c] = AD_STATUS[s] || [s, ""]; return `<span clas
 const budget = (x) => (x.daily_budget ? `${fmt(x.daily_budget, "brl")}/dia` : x.lifetime_budget ? `${fmt(x.lifetime_budget, "brl")} no total` : "—");
 const perf = (x) => `<td>${fmt(x.spend, "brl")}</td><td>${fmt(x.impressions, "n")}</td><td>${fmt(x.ctr, "pct")}</td><td>${fmt(x.cpm, "brl")}</td><td>${fmt(x.started, "n")}</td><td>${fmt(x.cpl, "brl")}</td><td>${fmt(x.leads, "n")}</td><td>${fmt(x.orders, "n")}</td>`;
 const PERF = ["Gasto", "Impressões", "CTR", "CPM", "Conversas", "CPL", "Leads", "Pedidos"];
+// Comparação lado a lado. dir: 1 = maior vence, -1 = menor vence, 0 = sem vencedor. A melhor célula de cada linha fica verde.
+const COMPARE = [["spend", "Gasto", "brl", 0], ["impressions", "Impressões", "n", 0], ["ctr", "CTR", "pct", 1], ["cpm", "CPM", "brl", -1], ["started", "Conversas", "n", 1], ["cpl", "CPL", "brl", -1], ["leads", "Leads", "n", 1], ["orders", "Pedidos", "n", 1], ["conv", "Conversão lead → pedido", "pct", 1], ["cpo", "Custo por pedido", "brl", -1]];
+function compareTable(items, label) {
+  if (items.length < 2) return "";
+  const rows = items.map((x) => ({ ...x, conv: x.leads ? (x.orders / x.leads) * 100 : null, cpo: x.orders ? x.spend / x.orders : null }));
+  return `<div class="table-wrap"><table class="cmp"><thead><tr><th>Métrica</th>${rows.map((x) => `<th>${esc(x.name)}</th>`).join("")}</tr></thead><tbody>${COMPARE.map(([id, l, u, dir]) => {
+    const vals = rows.map((x) => x[id]), ok = vals.filter((v) => v != null && (dir < 0 ? v > 0 : true));
+    const best = dir && ok.length > 1 ? (dir > 0 ? Math.max(...ok) : Math.min(...ok)) : null;
+    return `<tr><td>${l}</td>${vals.map((v) => `<td class="${best != null && v === best && (dir > 0 ? v > 0 : true) ? "win" : ""}">${fmt(v, u)}</td>`).join("")}</tr>`; }).join("")}</tbody></table></div>
+    <p class="note">Verde = melhor ${label} em cada métrica até agora, no período escolhido. Com poucos leads a diferença ainda é ruído.</p>`;
+}
+function stateTable(d) {
+  const st = d.states || [];
+  if (!st.length) return `<p class="note">Nenhum lead no período.</p>`;
+  const ok = st.filter((x) => x.state !== "sem estado" && x.conversion != null && x.leads > 0), best = ok.length > 1 ? Math.max(...ok.map((x) => x.conversion)) : null;
+  return tbl(["Estado", "Leads", "Pedidos", "Conversão"], st.map((x) => `<tr><td>${x.state}</td><td>${fmt(x.leads, "n")}</td><td>${fmt(x.orders, "n")}</td><td class="${best && x.conversion === best ? "win" : ""}">${fmt(x.conversion, "pct")}</td></tr>`)) +
+    `<p class="note">Estado do CEP que a cliente informou na conversa (não o público do anúncio). "sem estado" = ainda não passou o CEP.</p>`;
+}
 function metaView(d, kind) {
   const m = d.meta;
   if (!m) return `<p class="note">Meta Ads ainda não ligado. Falta criar no Vercel as variáveis <code>META_ACCESS_TOKEN</code> (token só de leitura) e <code>META_AD_ACCOUNT_ID</code>. Depois disso esta aba se atualiza sozinha a cada 5 minutos, e anúncio novo ou removido na Meta aparece ou some sozinho.</p>`;
@@ -553,10 +575,15 @@ function metaView(d, kind) {
   const note = `<p class="note">Métricas do período escolhido no topo. CPL = gasto ÷ conversas iniciadas no WhatsApp. Leads e pedidos vêm do clique no anúncio gravado na conversa (total do anúncio, não do período).</p>`;
   if (kind === "campaigns") return (m.campaigns.length ? tbl(["Campanha", "Estado", "Objetivo", "Orçamento", "Anúncios", ...PERF], m.campaigns.map((c) => `<tr><td>${esc(c.name)}</td><td>${stat(c.status)}</td><td>${c.objective || "—"}</td><td>${budget(c)}</td><td>${fmt(c.ads, "n")}</td>${perf(c)}</tr>`)) : `<p class="note">Nenhuma campanha na conta.</p>`) + note;
   if (kind === "adsets") return (m.adsets.length ? tbl(["Conjunto", "Campanha", "Estado", "Orçamento", "Otimização", "Público", ...PERF], m.adsets.map((s) => `<tr><td>${esc(s.name)}</td><td>${esc(camp[s.campaign_id] || "—")}</td><td>${stat(s.status)}</td><td>${budget(s)}</td><td>${s.optimization || "—"}</td><td>${[s.audience.age, (s.audience.genders || []).map((g) => GENDER[g]).join(" e ") || "todos", s.audience.places].filter(Boolean).join(" · ")}</td>${perf(s)}</tr>`)) : `<p class="note">Nenhum conjunto na conta.</p>`) + note;
-  return (m.ads.length ? `<div class="grid">${m.ads.map((a) => `<article class="card ad"><div class="thumb">${a.creative?.thumb ? `<img src="${esc(a.creative.thumb)}" alt="" loading="lazy">` : "sem prévia"}</div>
+  if (kind === "tests") return m.ads.length ? adCards(m, camp, sets) + `<h3 class="group">Comparação entre os criativos</h3>${compareTable(m.ads.filter((a) => a.status !== "DELETED" && a.status !== "ARCHIVED"), "criativo")}` : `<p class="note">Nenhum anúncio na conta.</p>`;
+  if (kind === "region") return m.adsets.length > 1 ? compareTable(m.adsets, "conjunto") : `<p class="note">A comparação de região aparece quando houver mais de um conjunto (A e B) na conta.</p>`;
+  return (m.ads.length ? adCards(m, camp, sets) + `<h3 class="group">Comparação entre os anúncios</h3>${compareTable(m.ads, "anúncio")}` : `<p class="note">Nenhum anúncio na conta.</p>`) + note + `<h3 class="group">Conversão por estado</h3>${stateTable(d)}`;
+}
+function adCards(m, camp, sets) {
+  return `<div class="grid">${m.ads.map((a) => `<article class="card ad"><div class="thumb">${a.creative?.thumb ? `<img src="${esc(a.creative.thumb)}" alt="" loading="lazy">` : "sem prévia"}</div>
     <h3>${esc(a.name)}</h3><p class="meta">${esc(camp[a.campaign_id] || "")} › ${esc(sets[a.adset_id] || "")}</p>${stat(a.status)}
     <dl>${[["Gasto", a.spend, "brl"], ["CTR", a.ctr, "pct"], ["CPM", a.cpm, "brl"], ["Conversas", a.started, "n"], ["CPL", a.cpl, "brl"], ["Leads", a.leads, "n"], ["Pedidos", a.orders, "n"]].map(([l, v, u]) => `<dt>${l}</dt><dd>${fmt(v, u)}</dd>`).join("")}</dl>
-    ${a.creative?.body ? `<p class="meta">${esc(a.creative.body.slice(0, 140))}${a.creative.body.length > 140 ? "…" : ""}</p>` : ""}</article>`).join("")}</div>` : `<p class="note">Nenhum anúncio na conta.</p>`) + note;
+    ${a.creative?.body ? `<p class="meta">${esc(a.creative.body.slice(0, 140))}${a.creative.body.length > 140 ? "…" : ""}</p>` : ""}</article>`).join("")}</div>`;
 }
 
 function cardHtml(x) {
@@ -595,7 +622,6 @@ function render() {
     $("page-title").textContent = sub[1];
     $("page-desc").textContent = sub[2];
     $("sector").innerHTML = SECTOR_VIEWS[VIEW[`${nav.id}/${sub[0]}`] || sub[0]](d);
-    if ($("status-box")) $("status-box").outerHTML = statusBox(d);
   }
 }
 
@@ -613,12 +639,6 @@ function pauseChips(d) {
   const pz = d.pause || computePause(d), SIT = { ok: "dentro do limite", warn: "perto do limite", bad: "PAUSAR" };
   return `<ul class="pause">${PAUSE.map((c) => { const p = pz[c.id];
     return `<li class="${p?.status || ""}"><span>${c.label}<small>${c.what}. ${c.limit[0].toUpperCase() + c.limit.slice(1)}.</small></span>${p ? `<b>${p.value}<small>${SIT[p.status] || ""}</small></b>` : `<b class="na">sem número<small>${c.missing}</small></b>`}</li>`; }).join("")}</ul>`;
-}
-function statusBox(d) {
-  const m = d.metrics || {}, dec = computeDecision(m), floorOk = (d.totals?.leads ?? 0) >= SAMPLE_FLOOR.leads && (d.totals?.orders ?? 0) >= SAMPLE_FLOOR.orders;
-  const NAME = { conversion: "Conversão", cpl: "CPL", roi: "ROI" }, miss = Object.keys(NAME).filter((id) => m[id]?.value == null).map((id) => NAME[id]);
-  return `<div class="status s${dec ?? "n"}">${dec == null ? `<b>Aguardando dados</b><span>Faltam ${miss.join(", ")} para a decisão do dia 12.</span>`
-    : `<b>Hoje: ${DECISION[dec][0]}</b><span>Conversão ${fmt(m.conversion.value, "pct")} · CPL ${fmt(m.cpl.value, "brl")} · ROI ${fmt(m.roi.value, "x")}. A pior das três decide.${floorOk ? "" : " Amostra ainda abaixo do piso."}</span>`}</div>`;
 }
 
 async function refresh() {

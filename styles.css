@@ -266,3 +266,6 @@ html, body { overflow-x: clip; }
 .card.ad dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin-top: 10px; font-size: .85rem; }
 .card.ad dt { color: var(--muted); } .card.ad dd { margin: 0; text-align: right; }
 .card.ad .chip { margin-top: 6px; padding: 3px 9px; font-size: .75rem; }
+
+td.win { color: var(--ok); font-weight: 600; background: rgba(123,217,164,.08); }
+table.cmp th { white-space: nowrap; }
