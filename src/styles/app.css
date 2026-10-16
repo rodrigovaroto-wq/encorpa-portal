@@ -450,3 +450,12 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .chart-picker button { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--glass-hi); color: var(--muted); font-size: .8rem; transition: all .15s; }
 .chart-picker button:hover { color: var(--text); border-color: var(--line-hi); }
 .chart-picker button.on { background: linear-gradient(135deg, var(--accent), #8b5cf6); border-color: transparent; color: #fff; }
+
+/* gráfico com as duas roscas à direita; cada rosca 30% mais alta que os cartões de cima (168 px → 218 px) */
+.home-chart-row { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: stretch; }
+.home-side { display: flex; flex-direction: column; gap: 16px; }
+.home-side .donut-block { min-height: 218px; flex: 1; }
+.home-side .donut-block .donut .big { font-size: 14px; } .home-side .donut-block .donut li { font-size: .8rem; }
+.home-chart-row .main-chart .bars-chart { flex: 1 1 0; height: auto !important; min-height: 260px; }
+.home-chart-row .main-chart .bars-svg { position: absolute; inset: 0 0 22px 56px; width: calc(100% - 56px); height: calc(100% - 22px); }
+@media (max-width: 1100px) { .home-chart-row { grid-template-columns: 1fr; } .home-chart-row .main-chart .bars-chart { min-height: 300px; } }
