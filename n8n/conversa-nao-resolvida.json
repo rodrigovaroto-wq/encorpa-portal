@@ -1,0 +1,272 @@
+{
+  "name": "Encorpa — Portal: conversa não resolvida",
+  "nodes": [
+    {
+      "name": "A cada 5 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Janela",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Janela fixa de 5 min alinhada ao relógio: cada falha cai em exatamente uma rodada, sem guardar estado.\nconst step = 5 * 60 * 1000, end = Math.floor(Date.now() / step) * step;\nreturn [{ json: { start: new Date(end - step).toISOString(), end: new Date(end).toISOString() } }];"
+      }
+    },
+    {
+      "name": "Falhas na janela",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        400,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uNGrb6LchX9rT743",
+          "name": "Supabase service_role"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "=https://hbmkgakzrqmdlsvszjeo.supabase.co/rest/v1/turn_outcomes?outcome=in.(handoff,fallback)&created_at=gte.{{ $('Janela').first().json.start }}&created_at=lt.{{ $('Janela').first().json.end }}&select=conversation_id,outcome,reason,created_at",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhibWtnYWt6cnFtZGxzdnN6amVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NjQ1NDIsImV4cCI6MjEwNDI0MDU0Mn0.ziI5P3a4SDKv3LzJuIg2-UkR9TI7K0vIpP12HcUkLAA"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      }
+    },
+    {
+      "name": "Conversas novas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Conversas que tiveram passagem ao operador ou resposta pronta nesta janela (a regra de \"não resolvida\" do portal).\nconst first = {};\nfor (const i of $input.all()) { const o = i.json; if (!o.conversation_id) continue; if (!first[o.conversation_id] || o.created_at < first[o.conversation_id].created_at) first[o.conversation_id] = o; }\nconst ids = Object.keys(first);\nreturn ids.length ? [{ json: { ids, first } }] : [];"
+      }
+    },
+    {
+      "name": "Falhas anteriores",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uNGrb6LchX9rT743",
+          "name": "Supabase service_role"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "=https://hbmkgakzrqmdlsvszjeo.supabase.co/rest/v1/turn_outcomes?outcome=in.(handoff,fallback)&created_at=lt.{{ $('Janela').first().json.start }}&conversation_id=in.({{ $json.ids.join(',') }})&select=conversation_id",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhibWtnYWt6cnFtZGxzdnN6amVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NjQ1NDIsImV4cCI6MjEwNDI0MDU0Mn0.ziI5P3a4SDKv3LzJuIg2-UkR9TI7K0vIpP12HcUkLAA"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      }
+    },
+    {
+      "name": "Fichas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1000,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uNGrb6LchX9rT743",
+          "name": "Supabase service_role"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "=https://hbmkgakzrqmdlsvszjeo.supabase.co/rest/v1/conversations?id=in.({{ $('Conversas novas').first().json.ids.join(',') }})&select=id,stage,leads(name,phone)",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhibWtnYWt6cnFtZGxzdnN6amVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NjQ1NDIsImV4cCI6MjEwNDI0MDU0Mn0.ziI5P3a4SDKv3LzJuIg2-UkR9TI7K0vIpP12HcUkLAA"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      }
+    },
+    {
+      "name": "Monta os e-mails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Um e-mail por conversa que ficou \"não resolvida\" agora: sem falha antes desta janela e sem compra (mesma regra de lib/build.mjs).\nconst PORTAL = 'https://encorpa-portal.vercel.app';\nconst BOUGHT = new Set(['pedido_criado', 'em_rota', 'entregue_pago']);\nconst { first } = $('Conversas novas').first().json;\nconst before = new Set($('Falhas anteriores').all().map((i) => i.json.conversation_id).filter(Boolean));\nconst ficha = Object.fromEntries($('Fichas').all().filter((i) => i.json.id).map((i) => [i.json.id, i.json]));\nconst out = [];\nfor (const [id, o] of Object.entries(first)) {\n  const c = ficha[id];\n  if (before.has(id) || !c || BOUGHT.has(c.stage)) continue;\n  const name = c.leads?.name || 'cliente sem nome';\n  const tail = c.leads?.phone ? '…' + String(c.leads.phone).slice(-4) : '';\n  const motivo = String(o.reason || 'sem motivo').split(':')[0].trim().slice(0, 120);\n  const link = `${PORTAL}/#/chat?c=${id}`;\n  out.push({ json: {\n    subject: `Conversa não resolvida: ${name} ${tail} — entre no portal e continue`,\n    text: `A Malu não resolveu sozinha a conversa de ${name} ${tail}.\\n\\nEntre no portal nesta conversa e continue de onde ela parou para resolver a questão:\\n${link}\\n\\nMotivo: ${motivo} (${o.outcome === 'handoff' ? 'passagem ao operador' : 'resposta pronta'})\\n\\nAo enviar a primeira mensagem pelo portal, a Malu pausa nesta conversa. Para devolver, use \"Devolver para a Malu\" na conversa.\\nO WhatsApp só aceita texto livre até 24 h depois da última mensagem dela.`,\n  } });\n}\nreturn out;"
+      }
+    },
+    {
+      "name": "Avisa o operador",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1400,
+        0
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "clsHlXLQ1IwxQpqE",
+          "name": "SMTP e-mail"
+        }
+      },
+      "parameters": {
+        "fromEmail": "Portal Encorpa <rodrigo.varoto@gmail.com>",
+        "toEmail": "rodrigo.varoto@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "A cada 5 minutos": {
+      "main": [
+        [
+          {
+            "node": "Janela",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Janela": {
+      "main": [
+        [
+          {
+            "node": "Falhas na janela",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Falhas na janela": {
+      "main": [
+        [
+          {
+            "node": "Conversas novas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversas novas": {
+      "main": [
+        [
+          {
+            "node": "Falhas anteriores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Falhas anteriores": {
+      "main": [
+        [
+          {
+            "node": "Fichas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fichas": {
+      "main": [
+        [
+          {
+            "node": "Monta os e-mails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta os e-mails": {
+      "main": [
+        [
+          {
+            "node": "Avisa o operador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -15,7 +15,8 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `src/components/`: fundo em ondas, menu lateral que recolhe, topo (período, busca ⌘K, notificações, preferências), gráficos e peças de vidro.
 - `src/lib/`: constantes das métricas, carregamento dos dados, formatação e o menu.
 - `lib/build.mjs` (servidor): monta os dados a partir do Supabase, do n8n e da Meta. `lib/meta.mjs`: leitura do Meta Ads.
-- `api/data.js`: função do Vercel. `middleware.js`: login do site todo.
+- `api/data.js`: função do Vercel. `api/chat.js`: resposta do operador e a chave da Malu por conversa. `middleware.js`: login do site todo.
+- `n8n/`: os dois workflows do n8n que são do portal (cópia do que está ativo no PikaPods).
 
 ## Publicado no Vercel
 
@@ -29,3 +30,25 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
 - `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.
+
+## Responder pelo portal (desde 16/10)
+
+- Em Conversas, a caixa no pé da conversa envia pelo WhatsApp. `api/chat.js` primeiro pausa a Malu naquela conversa
+  (`leads.handoff_at`, a chave que o turno e a régua já respeitam) e depois chama o webhook `portal-responder` do n8n.
+- O workflow **Encorpa — Portal responder** (`n8n/portal-responder.json`) confere a `N8N_API_KEY` do portal contra a API do
+  próprio n8n, passa pela mesma regra do formulário "Responder cliente" (`turn` › `human_reply`: janela de 24 h, texto,
+  duplicata), grava a mensagem na conversa e entrega ao "WhatsApp envio". Se a Meta recusar, chega o e-mail de falha de envio.
+- "Devolver para a Malu" limpa `handoff_at`: ela volta a responder a partir da próxima mensagem da cliente.
+- Precisa de `N8N_API_KEY` no Vercel (a mesma da seção Automações).
+
+## E-mail de conversa não resolvida (desde 16/10)
+
+- O workflow **Encorpa — Portal: conversa não resolvida** (`n8n/conversa-nao-resolvida.json`) roda a cada 5 min e manda um
+  e-mail ao operador quando uma conversa passa a ser "não resolvida" pela regra do portal (passagem ao operador ou resposta
+  pronta, sem compra), com o link direto dela no portal. Janela fixa de 5 min: cada conversa gera um e-mail só.
+
+## Malu › Hermes
+
+- Rodadas (`hermes_runs`), propostas com motivo, evidência, decisão e o que mudou (`hermes_proposals`) e quantos leads faltam
+  para a próxima rodada (`hermes_backlog`). O Hermes roda pela Action `hermes.yml` do Ricos-com-AI; o botão leva para lá.
+- `public/data.js` não leva a evidência nem a mudança proposta das propostas.

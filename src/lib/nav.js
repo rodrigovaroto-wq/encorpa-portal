@@ -11,7 +11,8 @@ export const NAV = [
       ["results", "Resultados", "Quantas conversas a Malu resolveu sozinha, por desfecho e por versão."],
       ["gaps", "Lacunas", "O que a Malu ainda não resolve sozinha: cada linha é um contorno a construir."],
       ["service", "Atendimento", "Funil da conversa, tempos de resposta e volume por hora."],
-      ["health", "Saúde e versões", "Resposta pronta, reescritas, gates, canal e o antes × depois de cada versão."]] },
+      ["health", "Saúde e versões", "Resposta pronta, reescritas, gates, canal e o antes × depois de cada versão."],
+      ["hermes", "Hermes", "O supervisor offline: cada rodada, as propostas com motivo e evidência, a decisão e o que mudou na Malu."]] },
     { id: "ads", label: "Anúncios", icon: "ads", subs: [
       ["campaigns", "Campanhas", "Campanhas do Meta Ads com orçamento, estado e resultado, atualizadas a cada 5 minutos."],
       ["adsets", "Conjuntos", "Conjuntos de anúncios: público, posicionamento, orçamento e resultado."],

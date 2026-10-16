@@ -93,7 +93,7 @@ export function demoData() {
     return {
       id: `demo-${i}`, short: `d3m0${i}abc`.slice(0, 8), name, phone: `…${1000 + i * 37}`, state: UFS[i % UFS.length], size: ["P", "M", "G", "GG"][i % 4], origin: i % 3 ? "anúncio" : "orgânico",
       stage: { bought: "pedido_criado", declined: "perdido", unresolved: "conversando", abandoned: "link_enviado", open: "tamanho_definido" }[st], status: st, version: 26, cost: 0.05 + i * 0.01,
-      last: new Date(base).toISOString(), rewrites: i % 4, fallbacks: st === "unresolved" ? 1 : 0, reasons: st === "unresolved" ? [WHY[i % 4]] : [], orders: st === "bought" ? [{ status: "Agendado", method: "cod", amount: 129.9, units: 1 }] : [],
+      last: new Date(base).toISOString(), paused: i === 2, pausedAt: i === 2 ? new Date(base - 3e5).toISOString() : null, windowOpen: i < 4, optedOut: false, rewrites: i % 4, fallbacks: st === "unresolved" ? 1 : 0, reasons: st === "unresolved" ? [WHY[i % 4]] : [], orders: st === "bought" ? [{ status: "Agendado", method: "cod", amount: 129.9, units: 1 }] : [],
       messages: [
         { out: false, text: "Oi, vi o anúncio do colete. Quanto custa?", at: new Date(base - 9e5).toISOString() },
         { out: true, text: "Oi! Tudo bem? 💜 O colete sai por R$ 129,90 com pagamento na entrega e frete grátis. Qual a sua cintura em cm?", at: new Date(base - 8.4e5).toISOString() },
@@ -116,6 +116,15 @@ export function demoData() {
       versions: [24, 25, 26].map((v, i) => ({ version: `v${v}`, conversations: 60 + i * 20, resolution: 70 + i * 6, unresolved: 9 - i * 3, abandoned: 12 - i * 2, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * 0.2, cost: 0.8 - i * 0.08 })),
       gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
       chats, orders,
+      hermes: {
+        every: 50, backlog: { leads: 32, lastRun: new Date(now - 3 * 864e5).toISOString(), due: false },
+        runs: [{ id: "r1", created_at: new Date(now - 3 * 864e5).toISOString(), started_at: new Date(now - 3 * 864e5 - 4.2e5).toISOString(), source: "production", model: "muse-spark-1.3", conversations_seen: 50, leads_seen: 50, proposals_ok: 2, proposals_rejected: 1, cost_usd: 0.42, premise_conversations: 2, commit_sha: "a1b2c3d", proposals: ["H-7", "H-8"] }],
+        proposals: [
+          { id: "p1", code: "H-8", target: "prompt", status: "proposed", rationale: "Três clientes perguntaram se o colete marca na roupa e a Malu não respondeu a pergunta.", diff: "+ Quando ela perguntar se marca na roupa: responder que é fino e não aparece por baixo de blusa justa.", evidence: { o_que: "3 conversas com a pergunta sem resposta", trechos: ["\"marca na roupa?\""] }, leads_seen: 50, run_id: "r1", created_at: new Date(now - 3 * 864e5).toISOString() },
+          { id: "p2", code: "H-7", target: "gate", status: "published", rationale: "A Malu prometeu prazo de entrega sem consultar a cobertura.", evidence: { o_que: "2 conversas" }, leads_seen: 50, run_id: "r1", created_at: new Date(now - 3 * 864e5).toISOString(), decided_at: new Date(now - 2.8 * 864e5).toISOString(), decision_reason: "Aprovado: prazo só depois da cobertura.", executed_at: new Date(now - 2.7 * 864e5).toISOString(), execution_ref: "f00ba12 (turn v26)", published_at: new Date(now - 2.6 * 864e5).toISOString(), result: "Guarda: teste prazo-sem-cobertura." },
+          { id: "p3", code: "H-6", target: "prompt", status: "rejected", rationale: "Sugeriu oferecer desconto para quem hesita.", leads_seen: 50, run_id: null, created_at: new Date(now - 9 * 864e5).toISOString(), decided_at: new Date(now - 8.9 * 864e5).toISOString(), decision_reason: "Recusado: desconto não sustenta a margem." },
+        ],
+      },
       health: { supabase: { ok: true, detail: "dados de exemplo" }, n8n: { ok: true, detail: "7 workflows ativos" }, meta: { ok: true, detail: "1 campanha, 3 anúncios" }, whatsapp: { ok: true, detail: `última mensagem da Malu ${new Date(now - 6e5).toISOString()}` }, malu: { ok: true, detail: "versão 26", version: 26 }, hermes: { ok: true, detail: "última rodada ontem" } },
       automations: {
         read: 300,
