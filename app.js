@@ -19,7 +19,7 @@ const GROUPS = [
     { id: "handoff", label: "Handoff (aviso ao operador)", unit: "pct", src: "não resolvidas ÷ conversas encerradas", goal: "≤ 10%" },
     { id: "fallback", label: "Resposta pronta (fallback)", unit: "pct", src: "eval_turn_outcomes" },
     { id: "optout", label: "Opt-out", unit: "pct", src: "leads", goal: "≤ 2,5%" },
-    { id: "invalid_premise", label: "Premissa indevida", unit: "pct", src: "Hermes (lote de 50)", goal: "≤ 5%" },
+    { id: "invalid_premise", label: "Premissa indevida", unit: "pct", src: "hermes_runs: conversas com premissa ÷ conversas lidas na última rodada", goal: "≤ 5%" },
   ]},
   { title: "Financeiro", metrics: [
     { id: "revenue", label: "Faturamento", unit: "brl", src: "orders" },
@@ -55,7 +55,7 @@ const ALL = GROUPS.flatMap((g) => g.metrics);
 // Os seis critérios do L3 (manuais). dir: "max" = pausar acima do limite.
 // Os seis critérios de pausa do teste. what = o que mede, em uma frase; missing = por que está sem número.
 const PAUSE = [
-  { id: "p_premise", label: "Conversas com premissa indevida", what: "a Malu afirmou algo que a cliente não disse (lido pelo Hermes, em lotes de 50)", limit: "pausar acima de 5% das conversas", missing: "o Hermes ainda não leu um lote de 50 conversas" },
+  { id: "p_premise", label: "Conversas com premissa indevida", what: "a Malu afirmou algo que a cliente não disse (lido pelo Hermes, em lotes de 50)", limit: "pausar acima de 5% das conversas", missing: "nenhuma rodada do Hermes no período ainda (ele roda a cada 50 leads)" },
   { id: "p_handoff", label: "Conversas que a Malu não resolveu", what: "a Malu precisou avisar o operador", limit: "pausar acima de 10% das conversas", missing: "nenhuma conversa encerrada no período" },
   { id: "p_optout", label: "Clientes que pediram para sair", what: "pediram para não receber mais mensagem", limit: "pausar acima de 2,5% dos leads", missing: "nenhum lead no período" },
   { id: "p_api", label: "Conversas caras de API", what: "das últimas 100 conversas, quantas custaram mais de R$ 1,00 de modelo", limit: "pausar acima de 5% delas", missing: "nenhuma conversa com custo registrado" },
