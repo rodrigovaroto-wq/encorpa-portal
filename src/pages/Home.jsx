@@ -1,10 +1,10 @@
-// Painel inicial: saudação, 6 cartões (3 por linha) na ordem do operador, dois avisos compactos, faturamento por intervalo com
-// forma de pagamento e peças por pedido ao lado, e um gráfico com eixos (data e valor) por métrica. Metas ficam nas seções próprias.
+// Painel inicial: saudação, grade única de 3 colunas (6 métricas na ordem do operador + 3 avisos), um gráfico grande que mostra a
+// métrica do cartão escolhido, e faturamento por intervalo com forma de pagamento e peças por pedido ao lado. Metas ficam nas seções próprias.
+import { useState } from "react";
 import { BUCKETS, PERIODS } from "../lib/constants.js";
-import { bucketLabels, fmt, metricBy } from "../lib/format.js";
+import { bucketLabels, fmt, metricBy, store } from "../lib/format.js";
 import { Bars, Donut, Lines } from "../components/charts.jsx";
-import { Card, CountUp, Kpi } from "../components/ui.jsx";
-import { Icon } from "../components/icons.jsx";
+import { Card, DeltaBadge, Kpi } from "../components/ui.jsx";
 
 // Ordem pedida pelo operador (16/10): faturamento → conversão → margem → lucro → pedidos → resolução.
 const HOME_KPIS = ["revenue", "conversion", "op_margin", "net_profit", "orders", "resolution"];
@@ -18,27 +18,24 @@ export function Home({ data, period }) {
   const hour = Number(new Date().toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" }));
   const hello = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const label = PERIODS.find((x) => x.id === period)?.label;
+  const [sel, setSelState] = useState(() => (HOME_KPIS.includes(store.get("home:metric")) ? store.get("home:metric") : "revenue"));
+  const setSel = (id) => { setSelState(id); store.set("home:metric", id); };
+  const x = metricBy(sel), series = m[sel]?.series || [];
   return (
     <div className="page home">
       <div className="greeting">
         <h1>{hello}, Rodrigo <span className="wave-hand">👋</span></h1>
-        <p>Isso é o que está acontecendo {label === "Dia" ? "nas últimas 24 horas" : `no período: ${label?.toLowerCase()}`}.</p>
+        <p>Isso é o que está acontecendo {label === "Dia" ? "nas últimas 24 horas" : `no período: ${label?.toLowerCase()}`}. Clique num cartão para ver o gráfico dele.</p>
       </div>
       <div className="kpis k3 home-kpis">
-        {HOME_KPIS.map((id, i) => { const x = metricBy(id); return <Kpi key={id} id={id} label={x.label} metric={m[id]} unit={x.unit} href={HREF[id]} accent={i === 0} />; })}
+        {HOME_KPIS.map((id) => { const k = metricBy(id); return <Kpi key={id} id={id} label={k.label} metric={m[id]} unit={k.unit} href={HREF[id]} selected={sel === id} onSelect={() => setSel(id)} />; })}
+        <Kpi label="Pedidos a caminho" metric={{ value: waiting.length }} unit="n" href="#/orders" sub={`${waiting.filter((o) => o.step === "created").length} aguardando envio · ${waiting.filter((o) => o.step === "en_route").length} em rota`} />
+        <Kpi label="Não resolvidas" metric={{ value: unresolved.length }} unit="n" href="#/chat" sub="conversas que viraram aviso ao operador" />
+        <Kpi label="Necessidade de caixa" metric={{ value: g.cash_need ?? null }} unit="brl" href="#/money/cash" sub={`adiantado em pedidos · limite ${fmt(1075, "brl")}`} />
       </div>
-      <div className="row r-1-1">
-        <a className="glass card mini-stat" href="#/orders">
-          <span className="round icon-badge"><Icon name="box" /></span>
-          <div><h3>Pedidos a caminho</h3><p><em>{waiting.filter((o) => o.step === "created").length} aguardando envio</em> · {waiting.filter((o) => o.step === "en_route").length} em rota</p></div>
-          <b><CountUp value={waiting.length} unit="n" /></b>
-        </a>
-        <a className="glass card mini-stat" href="#/chat">
-          <span className="round icon-badge"><Icon name="chat" /></span>
-          <div><h3>Conversas não resolvidas</h3><p><em className="bad">viraram aviso ao operador</em></p></div>
-          <b><CountUp value={unresolved.length} unit="n" /></b>
-        </a>
-      </div>
+      <Card title={x.label} sub={<span className="big-sub">{fmt(m[sel]?.value, x.unit)} <DeltaBadge metric={m[sel]} unit={x.unit} id={sel} /></span>} className="metric-chart main-chart">
+        <Lines key={sel} series={[{ name: x.label, values: series, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, series.length)} unit={x.unit} height={360} axes />
+      </Card>
       <div className="home-revenue">
         <Card title="Faturamento" sub="por intervalo do período" className="rev-card" onOpen={() => (location.hash = "#/money/result")}>
           <Bars items={rev.map((v, i) => ({ value: v, label: labels[i], short: i % Math.ceil(rev.length / 10) ? "" : labels[i] }))} unit="brl" height={340} />
@@ -49,14 +46,6 @@ export function Home({ data, period }) {
         <Card title="Peças por pedido" sub="kits vendidos no período">
           <Donut items={[1, 2, 3].map((n, i) => ({ label: `${n} peça${n > 1 ? "s" : ""}`, value: p.mix?.units?.[i], color: ["var(--accent-2)", "var(--pink)", "var(--ok)"][i] }))} size={150} />
         </Card>
-      </div>
-      <h2 className="section-title">Cada métrica no período</h2>
-      <div className="row r-1-1">
-        {HOME_KPIS.map((id) => { const x = metricBy(id), s = m[id]?.series || []; return (
-          <Card key={id} title={x.label} sub={fmt(m[id]?.value, x.unit)} className="metric-chart">
-            <Lines series={[{ name: x.label, values: s, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, s.length)} unit={x.unit} height={240} axes />
-          </Card>
-        ); })}
       </div>
     </div>
   );

@@ -44,15 +44,23 @@ export function DeltaBadge({ metric, unit, id, label = true }) {
 }
 
 // Cartão de número (o MetricCard do Glassy CRM): título, seta para abrir o detalhe, número animado, variação e meta.
-export function Kpi({ label, metric, unit, id, goal, href, accent }) {
-  return (
-    <a className={`glass kpi ${accent ? "accent" : ""}`} href={href || undefined}>
-      <div className="kpi-top"><h3>{label}</h3>{href && <span className="round"><Icon name="arrow" /></span>}</div>
+export function Kpi({ label, metric, unit, id, goal, href, accent, onSelect, selected, sub }) {
+  const body = (
+    <>
+      <div className="kpi-top"><h3>{label}</h3>{href && (onSelect
+        ? <a className="round" href={href} onClick={(e) => e.stopPropagation()} aria-label={`Abrir ${label}`}><Icon name="arrow" /></a>
+        : <span className="round"><Icon name="arrow" /></span>)}</div>
       <div className="kpi-value"><CountUp value={metric?.value} unit={unit} /></div>
-      <DeltaBadge metric={metric} unit={unit} id={id} />
+      {sub !== undefined ? <span className="delta none">{sub}</span> : <DeltaBadge metric={metric} unit={unit} id={id} />}
       {goal && <div className="kpi-goal">META {goal}</div>}
-    </a>
+    </>
   );
+  // Com onSelect o cartão escolhe o gráfico grande do Painel; a seta continua abrindo o detalhe.
+  if (onSelect) return (
+    <div className={`glass kpi selectable ${selected ? "accent" : ""}`} role="button" tabIndex={0} aria-pressed={selected}
+      onClick={onSelect} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect())}>{body}</div>
+  );
+  return <a className={`glass kpi ${accent ? "accent" : ""}`} href={href || undefined}>{body}</a>;
 }
 
 export function Tabs({ items, value, onChange, counts }) {

@@ -430,3 +430,11 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 @media (max-width: 560px) { .kpis.k3 { grid-template-columns: 1fr; } .home-kpis .kpi-value { font-size: 2.2rem; } .home-kpis .kpi-top h3 { font-size: 1.2rem; } }
 .home-revenue .rev-card .bars-chart { flex: 1 1 0; height: auto !important; min-height: 0; }
 .home-revenue .rev-card .bars-svg { position: absolute; inset: 0 0 22px 56px; width: calc(100% - 56px); height: calc(100% - 22px); }
+
+/* Painel B + C: cartão escolhível e gráfico grande da métrica escolhida */
+.kpi.selectable { cursor: pointer; transition: transform .2s, border-color .2s, background .3s; }
+.kpi.selectable:hover { transform: translateY(-3px); border-color: var(--line-hi); }
+.kpi.selectable:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.kpi.selectable.accent { box-shadow: 0 10px 40px rgba(109, 63, 209, .45); }
+.main-chart .big-sub { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 1.5rem; font-weight: 700; color: var(--text); }
+.main-chart .big-sub .delta { font-size: .85rem; font-weight: 400; }
