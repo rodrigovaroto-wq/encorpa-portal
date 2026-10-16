@@ -72,6 +72,7 @@ export function demoData() {
       const s = Array.from({ length: n }, (_, i) => Math.round((lo + (hi - lo) * (0.4 + 0.4 * r() + 0.2 * Math.sin(i / 2))) * Math.max(days, 0.3)));
       metrics[id] = { id, value: s.reduce((a, b) => a + b, 0), previous: Math.round(s.reduce((a, b) => a + b, 0) * 0.9), series: s };
     }
+    const api = coherent(metrics);
     const r = rng("o" + period), stat = ["bought", "declined", "declined", "unresolved", "abandoned", "abandoned", "open"];
     const outcomes = Object.fromEntries(OUTCOMES.map(([id]) => [id, 0]));
     for (let i = 0; i < 40; i++) outcomes[stat[Math.floor(r() * stat.length)]]++;
@@ -79,7 +80,8 @@ export function demoData() {
     periods[period] = {
       metrics, outcomes,
       hourly: Array.from({ length: 24 }, (_, h) => Math.round((h < 6 ? 1 : 6) * (1 + Math.sin(h / 4)) * Math.max(days, 1))),
-      mix: { cod: 31, prepay: 12, units: [28, 11, 4], contribution: 3120 },
+      money: { api_cost: api, api_per_day: api / (n * days), api_30d: (api / (n * days)) * 30 },
+      mix: { cod: Math.round(metrics.orders.value * 0.7), prepay: Math.round(metrics.orders.value * 0.3), units: [0.72, 0.2, 0.08].map((f) => Math.round(metrics.orders.value * f)), contribution: metrics.gross_profit.value },
       states: UFS.slice(0, 7).map((s, i) => ({ state: s, leads: 40 - i * 5, orders: Math.max(0, 6 - i), conversion: (Math.max(0, 6 - i) / (40 - i * 5)) * 100 })),
       gaps: WHY.map((w, i) => ({ reason: w, count: 6 - i, conversations: 5 - i, last: new Date(now - i * 864e5).toISOString(), version: 26 })),
       meta: demoMeta(),
@@ -126,6 +128,23 @@ export function demoData() {
       },
     },
   };
+}
+
+// Os números de exemplo saem uns dos outros com as mesmas regras do cálculo real (lib/build.mjs), para fecharem entre si:
+// ticket médio com mix 70% na entrega / 30% antecipado e alguns kits; margem por pedido já descontando recusa (17%) e devolução;
+// anúncio = leads × CPL com imposto da Meta; API = leads × custo por lead + R$ 0,04 por pedido.
+const TICKET = 132, MARGIN_PER_ORDER = 61, META_TAX = 0.1383;
+function derive(leads, orders, cpl, apl) {
+  const revenue = orders * TICKET, gross = orders * MARGIN_PER_ORDER, spend = leads * cpl, api = leads * apl + orders * 0.04;
+  const cost = spend * (1 + META_TAX) + api, net = gross - cost;
+  return { api, revenue, gross_profit: gross, op_cost: revenue - gross, spend, net_profit: net, op_margin: revenue ? (net / revenue) * 100 : null, roi: cost ? gross / cost : null, conversion: leads ? (orders / leads) * 100 : null, cpl_api: cpl + apl };
+}
+function coherent(m) {
+  const n = m.leads.series.length, keys = ["revenue", "gross_profit", "op_cost", "spend", "net_profit", "op_margin", "roi", "conversion", "cpl_api"];
+  const per = Array.from({ length: n }, (_, i) => derive(m.leads.series[i], m.orders.series[i], m.cpl.series[i], m.api_per_lead.series[i]));
+  const cur = derive(m.leads.value, m.orders.value, m.cpl.value, m.api_per_lead.value), prev = derive(m.leads.previous, m.orders.previous, m.cpl.previous, m.api_per_lead.previous);
+  for (const k of keys) m[k] = { id: k, value: cur[k], previous: prev[k], series: per.map((x) => x[k]) };
+  return cur.api;
 }
 
 function demoMeta() {

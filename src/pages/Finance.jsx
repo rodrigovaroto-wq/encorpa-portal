@@ -5,7 +5,7 @@ import { Gauge, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
-const META_TAX = 0.1383, CASH_LIMIT = 1075;
+const META_TAX = 0.1383, CASH_LIMIT = 1075; // mesmos valores de lib/build.mjs
 
 export function Finance({ data, period, route, tabs }) {
   const p = data.periods[period] || {}, g = data.global, sub = route.sub[0];
@@ -22,16 +22,17 @@ export function Finance({ data, period, route, tabs }) {
 }
 
 function Result({ p }) {
-  const m = p.metrics || {}, rev = m.revenue?.value || 0, contrib = p.mix?.contribution ?? m.gross_profit?.value ?? 0;
-  const spend = m.spend?.value, api = p.money?.api_cost || 0, adCost = spend == null ? null : spend * (1 + META_TAX);
-  const net = adCost == null ? null : contrib - adCost - api;
+  // Os mesmos números dos cartões (lib/build.mjs › profit): nenhuma conta própria aqui, para nunca divergirem.
+  const m = p.metrics || {}, v = (id) => m[id]?.value;
+  const rev = v("revenue") ?? 0, contrib = v("gross_profit"), spend = v("spend"), api = p.money?.api_cost ?? 0;
+  const adCost = spend == null ? null : spend * (1 + META_TAX);
   const lines = [
     { label: "Faturamento (pedidos válidos)", value: rev, sign: 1 },
-    { label: "Custo dos pedidos (produto, entrega, manuseio, taxa, recusas e devoluções)", value: rev - contrib, sign: -1 },
+    { label: "Custo dos pedidos (produto, entrega, manuseio, taxa, recusas e devoluções)", value: contrib == null ? null : rev - contrib, sign: -1 },
     { label: "= Margem dos pedidos", value: contrib, sum: true },
     { label: "Anúncio com imposto da Meta (13,83%)", value: adCost, sign: -1 },
-    { label: "API (modelo e WhatsApp)", value: api, sign: -1 },
-    { label: "= Resultado", value: net, sum: true },
+    { label: "API (modelo + WhatsApp pós-venda)", value: api, sign: -1 },
+    { label: "= Resultado", value: v("net_profit") ?? null, sum: true },
   ];
   const max = Math.max(1, ...lines.map((l) => Math.abs(l.value || 0)));
   return (

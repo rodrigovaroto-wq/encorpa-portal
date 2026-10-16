@@ -21,11 +21,11 @@ export const GROUPS = [
   ]},
   { title: "Financeiro", metrics: [
     { id: "revenue", label: "Faturamento", unit: "brl", src: "orders" },
-    { id: "op_cost", label: "Custo operacional", unit: "brl", src: "orders + config" },
-    { id: "gross_profit", label: "Lucro bruto", unit: "brl", src: "orders + config" },
-    { id: "net_profit", label: "Lucro líquido (comissões recebidas)", unit: "brl", src: "Coinzz/Logzz/Mercado Pago" },
+    { id: "op_cost", label: "Custo dos pedidos", unit: "brl", src: "faturamento − margem dos pedidos" },
+    { id: "gross_profit", label: "Margem dos pedidos", unit: "brl", src: "soma do que cada pedido vale pelo status de hoje" },
+    { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio com imposto − API" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(contribuição dos pedidos − anúncio − API) ÷ faturamento", goal: "> 0%" },
-    { id: "roi", label: "ROI", unit: "x", src: "lucro bruto ÷ (anúncio + API)", goal: "≥ 1,5 mín · 2,5 ideal" },
+    { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio com imposto + API)", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "cash_left", label: "Caixa reservado restante", unit: "brl", src: "manual (R$ 1.500)" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
@@ -40,9 +40,9 @@ export const GROUPS = [
     { id: "transfers", label: "Não resolvidas (aviso ao operador)", unit: "n", src: "turn_outcomes (handoff ou fallback)" },
     { id: "first_response", label: "Tempo até a 1ª resposta", unit: "min", src: "messages (carimbos)" },
     { id: "handle_time", label: "Tempo de atendimento", unit: "min", src: "messages (carimbos)" },
-    { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "eval_funnel", goal: "≥ 60% mín · 75% ideal" },
+    { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "conversas em que ela respondeu à Malu ÷ conversas", goal: "≥ 60% mín · 75% ideal" },
     { id: "price_reach", label: "% que chega ao preço", unit: "pct", src: "eval_funnel", goal: "≥ 40% mín · 55% ideal" },
-    { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "eval_funnel" },
+    { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "conversas que chegaram ao link ÷ conversas" },
     { id: "rewrites", label: "Reescritas por resposta", unit: "n", src: "eval_turn_outcomes" },
     { id: "gate_blocks", label: "Bloqueios de gate", unit: "pct", src: "eval_gate_blocks" },
     { id: "delivered", label: "Entregas concluídas ÷ pedidos", unit: "pct", src: "orders", goal: "≥ 70% mín · 83% ideal" },
@@ -114,7 +114,7 @@ export const REF = [
 
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 
-export const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.4, .9], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
+export const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.2, .35], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
 
 export const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
 
