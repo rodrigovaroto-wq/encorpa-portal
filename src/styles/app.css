@@ -406,10 +406,10 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 
 /* Painel (16/10): 3 cartões por linha, textos maiores; avisos compactos; faturamento com as duas roscas empilhadas */
 .kpis.k3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.home-kpis .kpi { min-height: 190px; padding: 22px 26px; gap: 10px; }
-.home-kpis .kpi-top h3 { font-size: 1.46rem; font-weight: 600; color: var(--text); }
-.home-kpis .kpi-value { font-size: 2.8rem; }
-.home-kpis .delta { font-size: .9rem; } .home-kpis .delta i { padding: 3px 10px; }
+.home-kpis .kpi { min-height: 168px; padding: 20px 24px; gap: 8px; }
+.home-kpis .kpi-top h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+.home-kpis .kpi-value { font-size: 2.1rem; }
+.home-kpis .delta { font-size: .68rem; } .home-kpis .delta i { padding: 2px 8px; }
 .home-kpis .round { width: 36px; height: 36px; }
 .mini-stat { flex-direction: row; align-items: center; gap: 16px; padding: 16px 22px; min-height: 0; transition: transform .2s, border-color .2s; }
 .mini-stat:hover { transform: translateY(-2px); border-color: var(--line-hi); }
@@ -438,3 +438,15 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .kpi.selectable.accent { box-shadow: 0 10px 40px rgba(109, 63, 209, .45); }
 .main-chart .big-sub { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 1.5rem; font-weight: 700; color: var(--text); }
 .main-chart .big-sub .delta { font-size: .85rem; font-weight: 400; }
+
+/* Painel 3 × 3: blocos de rosca no formato dos cartões; gráfico único com seletor */
+.donut-block .donut { gap: 14px; flex-wrap: nowrap; margin-top: auto; }
+.donut-block .donut ul { min-width: 0; gap: 3px; } .donut-block .donut li { font-size: .74rem; padding: 1px 4px; }
+.donut-block .donut .big { font-size: 13px; }
+.chart-title { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 1.1rem; font-weight: 600; }
+.chart-title b { font-size: 1.1rem; }
+.chart-title .delta { font-size: .68rem; font-weight: 400; }
+.chart-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.chart-picker button { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--glass-hi); color: var(--muted); font-size: .8rem; transition: all .15s; }
+.chart-picker button:hover { color: var(--text); border-color: var(--line-hi); }
+.chart-picker button.on { background: linear-gradient(135deg, var(--accent), #8b5cf6); border-color: transparent; color: #fff; }
