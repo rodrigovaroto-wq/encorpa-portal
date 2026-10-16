@@ -32,7 +32,27 @@ export function Bars({ items, unit = "n", height = 220, highlight }) {
 }
 
 // Linhas (uma ou mais séries). series: [{ name, values, color }]; labels: rótulo de cada ponto.
-export function Lines({ series, labels, unit = "n", height = 220 }) {
+// axes: mostra o eixo de valor (esquerda) e o de data (embaixo).
+export function Lines({ series, labels, unit = "n", height = 220, axes = false }) {
+  if (axes) return (
+    <div className="axes-chart" style={{ height }}>
+      <AxisY series={series} unit={unit} />
+      <div className="axes-plot"><Lines series={series} labels={labels} unit={unit} height={height - 24} /></div>
+      <div className="axis-x">{(labels || []).map((l, i, a) => (i % Math.ceil(a.length / 6) === 0 || i === a.length - 1) && <span key={i} style={{ left: `${a.length > 1 ? (i / (a.length - 1)) * 100 : 50}%` }}>{l}</span>)}</div>
+    </div>
+  );
+  return <LinesPlot series={series} labels={labels} unit={unit} height={height} />;
+}
+
+// Eixo de valor: 5 marcas do mínimo ao máximo, com o mesmo critério de escala das linhas.
+function AxisY({ series, unit }) {
+  const all = series.flatMap((s) => s.values).filter((v) => v != null);
+  if (all.length < 2) return <div className="axis-y" />;
+  const max = Math.max(...all) || 1, min = Math.min(0, ...all), span = max - min || 1;
+  return <div className="axis-y">{[1, 0.75, 0.5, 0.25, 0].map((f) => <span key={f} style={{ top: `${94 - f * 86}%` }}>{fmt(min + span * f, unit)}</span>)}</div>;
+}
+
+function LinesPlot({ series, labels, unit = "n", height = 220 }) {
   const [hover, setHover] = useState(null);
   const id = useId().replace(/:/g, "");
   const all = series.flatMap((s) => s.values).filter((v) => v != null);

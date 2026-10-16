@@ -403,3 +403,29 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
   .page-head .print-btn, .page-head > .pill { position: static; width: fit-content; }
 }
 @media (max-width: 560px) { .kpis, .ad-grid, .wf-grid, .goals { grid-template-columns: 1fr; } .kpi-value { font-size: 1.7rem; } .greeting h1 { font-size: 1.5rem; } }
+
+/* Painel (16/10): 3 cartões por linha, textos maiores; avisos compactos; faturamento com as duas roscas empilhadas */
+.kpis.k3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.home-kpis .kpi { min-height: 190px; padding: 22px 26px; gap: 10px; }
+.home-kpis .kpi-top h3 { font-size: 1.46rem; font-weight: 600; color: var(--text); }
+.home-kpis .kpi-value { font-size: 2.8rem; }
+.home-kpis .delta { font-size: .9rem; } .home-kpis .delta i { padding: 3px 10px; }
+.home-kpis .round { width: 36px; height: 36px; }
+.mini-stat { flex-direction: row; align-items: center; gap: 16px; padding: 16px 22px; min-height: 0; transition: transform .2s, border-color .2s; }
+.mini-stat:hover { transform: translateY(-2px); border-color: var(--line-hi); }
+.mini-stat > div { flex: 1; } .mini-stat h3 { font-size: 1.05rem; font-weight: 600; }
+.mini-stat p { color: var(--muted); font-size: .86rem; } .mini-stat em { color: var(--warn); font-style: normal; } .mini-stat em.bad { color: var(--bad); }
+.mini-stat > b { font-size: 2.4rem; font-weight: 700; }
+.home-revenue { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: auto auto; }
+.home-revenue .rev-card { grid-row: span 2; }
+.metric-chart .card-head .sub { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+/* eixos dos gráficos de linha */
+.axes-chart { position: relative; padding-left: 70px; }
+.axis-y { position: absolute; left: 0; top: 0; bottom: 24px; width: 64px; }
+.axis-y span { position: absolute; right: 8px; transform: translateY(-50%); font-size: .7rem; color: var(--dim); white-space: nowrap; }
+.axes-plot { height: calc(100% - 24px); }
+.axis-x { position: relative; height: 24px; }
+.axis-x span { position: absolute; top: 6px; transform: translateX(-50%); font-size: .7rem; color: var(--dim); white-space: nowrap; }
+@media (max-width: 1100px) { .kpis.k3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .home-revenue { grid-template-columns: 1fr; } .home-revenue .rev-card { grid-row: auto; } }
+@media (max-width: 560px) { .kpis.k3 { grid-template-columns: 1fr; } .home-kpis .kpi-value { font-size: 2.2rem; } .home-kpis .kpi-top h3 { font-size: 1.2rem; } }
+.home-revenue .rev-card .bars-chart { flex: 1; height: auto !important; min-height: 300px; }
