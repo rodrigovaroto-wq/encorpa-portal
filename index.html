@@ -4,42 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Encorpa Portal de Dados</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="theme-color" content="#07030f">
+  <link rel="icon" href="/logo.svg">
+  <title>Encorpa Portal</title>
 </head>
 <body>
-  <a class="corner" href="#/home" aria-label="Painel"><img src="logo.svg" alt="" width="56" height="56"></a>
-  <header class="hero">
-    <h1 class="sr">Encorpa Portal de Dados</h1>
-    <img class="wordmark" src="wordmark.svg" alt="" width="420" height="269">
-    <span id="updated" class="badge">Sem dados ainda</span>
-    <button id="demo" class="demo">Ver exemplo</button>
-  </header>
-
-  <div class="layout">
-    <nav class="side" id="side" aria-label="Seções"></nav>
-    <div class="content">
-      <div class="sticky"><nav class="periods" id="periods" aria-label="Período"></nav></div>
-      <main>
-        <div id="home">
-          <section>
-            <h2 class="sr">Painel</h2>
-            <div class="kpis" id="kpis"></div>
-            <div class="grid charts" id="charts"></div>
-          </section>
-        </div>
-
-        <section id="page" hidden>
-          <p id="crumb" class="crumb"></p>
-          <h2 id="page-title"></h2>
-          <p id="page-desc" class="desc"></p>
-          <div id="sector"></div>
-        </section>
-      </main>
-    </div>
-  </div>
-
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

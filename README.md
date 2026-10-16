@@ -1,25 +1,21 @@
 # encorpa-portal
 
-Portal de análise de dados e operação da Encorpa. Briefing: `docs/agente-ia/05-plano/11-portal-briefing.md`
-no repositório `Ricos-com-AI`. HTML, CSS e JavaScript puros, sem build.
+Portal de análise e operação da Encorpa. React 19 com Vite 8 (desde 16/10/2026), fundo roxo em ondas e cartões de vidro,
+a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 
-## Abrir
+## Rodar no computador
 
-- Dois cliques em `index.html` (extraia o ZIP inteiro: a fonte está em `fonts/`).
-- Botão **Ver exemplo** liga dados inventados (marcados na tela) para ver tudo funcionando.
-- Com um servidor (`python3 -m http.server 8000`) o portal lê `data.json` automaticamente.
+- `npm install` e depois `npm run dev` (abre em http://localhost:5173). Sem o Vercel não existe `/api/data`: o portal usa o
+  último retrato guardado no navegador ou `public/data.js`. Em Preferências (engrenagem) dá para ligar os dados de exemplo.
+- `npm run build` gera `dist/`, que é o que o Vercel publica.
 
-## O que já funciona
+## Estrutura
 
-Períodos (dia a 12 meses) e menu lateral com sub-abas. Se a leitura ao vivo falhar, o portal mostra o último retrato bom de cada período guardado no navegador, e só sem ele o `data.js`.
-
-- **Painel:** 8 números (4 por linha) e "Atenção agora".
-- **Malu:** Resultados, Conversas, Lacunas, Atendimento, Saúde e versões. Desfecho de cada conversa em `lib/build.mjs` › `conversationStatus`.
-- **Automações:** workflows do n8n desenhados, fluxo da Malu, execuções.
-- **Financeiro:** do faturamento ao lucro, consumo de API, comparação entre períodos.
-- **Anúncios:** campanhas, conjuntos e anúncios da Meta (só leitura, a cada 5 min), comparação entre anúncios com o vencedor de cada métrica em verde, conversão por estado, Testes de Criativos (região A × B pelos conjuntos, piso de amostra, critérios de pausa), metas e premissas.
-
-Atualiza sozinho a cada 1 h.
+- `src/pages/`: Painel, Conversas, Pedidos, Malu, Anúncios, Clientes, Financeiro, Automações, Integrações, Notas.
+- `src/components/`: fundo em ondas, menu lateral que recolhe, topo (período, busca ⌘K, notificações, preferências), gráficos e peças de vidro.
+- `src/lib/`: constantes das métricas, carregamento dos dados, formatação e o menu.
+- `lib/build.mjs` (servidor): monta os dados a partir do Supabase, do n8n e da Meta. `lib/meta.mjs`: leitura do Meta Ads.
+- `api/data.js`: função do Vercel. `middleware.js`: login do site todo.
 
 ## Publicado no Vercel
 
@@ -29,28 +25,7 @@ Atualiza sozinho a cada 1 h.
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
   - `SUPABASE_URL` (opcional; padrão: o projeto da Encorpa).
   - `N8N_API_KEY` (opcional): chave da API do n8n para a seção Automações (workflows e execuções). `N8N_URL` opcional; padrão: o n8n da Encorpa no PikaPods. O portal lê só nome, tipo, posição e ligação dos nós, nunca os parâmetros.
+  - `META_ACCESS_TOKEN` e `META_AD_ACCOUNT_ID`: token só de leitura (`ads_read`) e a conta de anúncios, para a seção Anúncios.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
-- `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Só lê views agregadas e datas: nunca nome, telefone, endereço, CPF ou conversa.
-- `data.js` é uma cópia de segurança (retrato de 09/10). Se `/api/data` falhar, o portal mostra esse retrato.
-
-## Arquivo local
-
-Abrindo `index.html` direto no computador, o portal mostra o retrato de `data.js`.
-
-## Ligar dados reais (servidor)
-
-Publique um `data.json` na mesma pasta. Um objeto por período (`day`, `week`, `month`, `3m`, `6m`, `9m`, `12m`):
-
-```json
-{ "week": {
-  "updated": "2026-10-09T19:00:00Z",
-  "metrics": { "leads": { "value": 120, "previous": 100, "series": [10, 12, 15] } },
-  "totals": { "leads": 320, "orders": 31 },
-  "api_over_pct": 3.8,
-  "channel": { "number": "Saudável", "cloud_api": "Operando", "window": "72 h ativa", "templates": "3 aprovados" }
-} }
-```
-
-Os ids das métricas estão em `app.js` (`GROUPS`). Campos opcionais: `pause`, `videos`, `segments`,
-`money`, `funnel`, `versions`, `gates`. A chave do Supabase nunca vai no navegador: quem gera o
-`data.json` é um job no servidor (n8n ou função), lendo só as views `eval_*`.
+- `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
+- `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.
