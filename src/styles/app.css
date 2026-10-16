@@ -428,4 +428,5 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .axis-x span { position: absolute; top: 6px; transform: translateX(-50%); font-size: .7rem; color: var(--dim); white-space: nowrap; }
 @media (max-width: 1100px) { .kpis.k3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .home-revenue { grid-template-columns: 1fr; } .home-revenue .rev-card { grid-row: auto; } }
 @media (max-width: 560px) { .kpis.k3 { grid-template-columns: 1fr; } .home-kpis .kpi-value { font-size: 2.2rem; } .home-kpis .kpi-top h3 { font-size: 1.2rem; } }
-.home-revenue .rev-card .bars-chart { flex: 1; height: auto !important; min-height: 300px; }
+.home-revenue .rev-card .bars-chart { flex: 1 1 0; height: auto !important; min-height: 0; }
+.home-revenue .rev-card .bars-svg { position: absolute; inset: 0 0 22px 56px; width: calc(100% - 56px); height: calc(100% - 22px); }
