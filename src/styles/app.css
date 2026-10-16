@@ -1,16 +1,15 @@
 /* Encorpa Portal — vidro fosco sobre um fundo roxo em ondas de energia (templates Glassy CRM, Glassy Dashboard, Chat App e Sidebar UI,
-   adaptados à identidade da Encorpa: roxo, Cinzel nos títulos, logo e wordmark). */
-@font-face { font-family: Cinzel; font-weight: 700; font-display: swap; src: url("/fonts/Cinzel-Bold.woff2") format("woff2"); }
+   adaptados à identidade da Encorpa: roxo, logo e wordmark). Uma fonte só em tudo: Inter (index.html). */
 
 :root {
-  --bg: #07030f; --bg-2: #12061f;
-  --glass: rgba(28, 14, 48, .52); --glass-2: rgba(40, 20, 70, .55); --glass-hi: rgba(255, 255, 255, .06);
-  --line: rgba(196, 167, 255, .16); --line-hi: rgba(196, 167, 255, .34);
-  --text: #f1eaff; --muted: #a79bc4; --dim: #7d7298;
+  /* escuro equilibrado (16/10): fundo menos fechado, cartões mais claros e texto com mais contraste */
+  --bg: #170d2b; --bg-2: #2a1650;
+  --glass: rgba(58, 36, 98, .58); --glass-2: rgba(78, 50, 128, .6); --glass-hi: rgba(255, 255, 255, .08);
+  --line: rgba(210, 190, 255, .22); --line-hi: rgba(210, 190, 255, .42);
+  --text: #faf7ff; --muted: #d2c7ec; --dim: #ab9fcb;
   --accent: #6d3fd1; --accent-2: #a78bfa; --pink: #e879f9; --ok: #6ee7b7; --warn: #fbbf24; --bad: #fb7185;
   --radius: 18px; --blur: 22px;
-  --shadow: 0 10px 40px rgba(6, 0, 20, .45), inset 0 1px 0 rgba(255, 255, 255, .06);
-  --serif: Cinzel, Georgia, serif;
+  --shadow: 0 10px 34px rgba(10, 2, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .1);
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color-scheme: dark;
 }
@@ -30,15 +29,16 @@ body { background: var(--bg); color: var(--text); font: 14.5px/1.5 var(--sans); 
 ::selection { background: var(--accent); color: #fff; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+input, textarea, select, table, svg text { font-family: var(--sans); }
 input, textarea { font: inherit; color: var(--text); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* ---------- fundo: ondas, orbes e pulso ---------- */
 .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background:
-  radial-gradient(1200px 700px at 15% -10%, rgba(124, 58, 237, .35), transparent 60%),
-  radial-gradient(900px 600px at 100% 30%, rgba(192, 38, 211, .22), transparent 60%),
-  radial-gradient(1000px 700px at 40% 120%, rgba(91, 33, 182, .4), transparent 60%),
-  linear-gradient(160deg, var(--bg-2), var(--bg) 60%); }
+  radial-gradient(1200px 700px at 15% -10%, rgba(139, 92, 246, .45), transparent 60%),
+  radial-gradient(900px 600px at 100% 30%, rgba(217, 70, 239, .28), transparent 60%),
+  radial-gradient(1000px 700px at 40% 120%, rgba(109, 40, 217, .45), transparent 60%),
+  linear-gradient(160deg, var(--bg-2), var(--bg) 65%); }
 :root[data-theme="light"] .bg { background:
   radial-gradient(1200px 700px at 15% -10%, rgba(167, 139, 250, .45), transparent 60%),
   radial-gradient(900px 600px at 100% 30%, rgba(232, 121, 249, .25), transparent 60%),
@@ -137,7 +137,7 @@ kbd { font: .7rem var(--sans); padding: 2px 6px; border-radius: 6px; border: 1px
 .page-head { display: flex; flex-direction: column; gap: 12px; position: relative; }
 .page-head .print-btn, .page-head > .pill { position: absolute; right: 0; top: 0; }
 .crumb { font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
-.page-title h1 { font: 700 1.7rem/1.2 var(--serif); letter-spacing: .06em; background: linear-gradient(90deg, var(--text), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.page-title h1 { font: 700 1.75rem/1.2 var(--sans); letter-spacing: -.01em; background: linear-gradient(90deg, var(--text), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .desc { color: var(--muted); margin-top: 2px; max-width: 760px; }
 .section-title { font: 600 .78rem var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--accent-2); margin-top: 6px; }
 .mini-title { font: 600 .72rem var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 10px; }
@@ -216,7 +216,7 @@ td.win { color: var(--ok); font-weight: 700; background: color-mix(in srgb, var(
 .bars-svg rect.on, .bars-svg rect:hover { opacity: 1; filter: drop-shadow(0 0 6px var(--accent-2)); }
 @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 .bars-labels { position: absolute; left: 56px; right: 0; bottom: 0; display: flex; }
-.bars-labels span { flex: 1; text-align: center; font-size: .66rem; color: var(--dim); overflow: hidden; white-space: nowrap; }
+.bars-labels span { flex: 1; text-align: center; font-size: .66rem; color: var(--dim); overflow: visible; white-space: nowrap; width: 0; }
 .bars-labels span.on { color: var(--accent-2); }
 .lines-chart { position: relative; }
 .lines-chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
