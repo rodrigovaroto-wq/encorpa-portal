@@ -4,7 +4,8 @@ import { useState } from "react";
 import { BUCKETS, PERIODS } from "../lib/constants.js";
 import { bucketLabels, fmt, metricBy, store } from "../lib/format.js";
 import { Bars, Donut } from "../components/charts.jsx";
-import { Card, DeltaBadge, Kpi } from "../components/ui.jsx";
+import { Card, Kpi } from "../components/ui.jsx";
+import { usePopover } from "../components/Topbar.jsx";
 import { Icon } from "../components/icons.jsx";
 
 // Ordem pedida pelo operador (16/10): faturamento → conversão → margem → lucro → pedidos → resolução.
@@ -19,15 +20,16 @@ export function Home({ data, period }) {
   const label = PERIODS.find((x) => x.id === period)?.label;
   const [sel, setSelState] = useState(() => (OPTIONS.some(([k]) => k === store.get("home:metric")) ? store.get("home:metric") : "revenue"));
   const setSel = (id) => { setSelState(id); store.set("home:metric", id); };
+  const pick = usePopover();
   const pay = [{ label: "Na entrega", value: p.mix?.cod, color: "var(--accent-2)" }, { label: "Antecipado", value: p.mix?.prepay, color: "var(--pink)" }];
   const units = [1, 2, 3].map((n, i) => ({ label: `${n} peça${n > 1 ? "s" : ""}`, value: p.mix?.units?.[i], color: ["var(--accent-2)", "var(--pink)", "var(--ok)"][i] }));
 
   // O que o gráfico mostra para cada opção: as métricas por intervalo do período; pagamento e peças por categoria.
   const chart = (() => {
-    if (sel === "pay") return { unit: "n", value: `${fmt((p.mix?.cod || 0) + (p.mix?.prepay || 0), "n")} pedidos`, items: pay.map((x) => ({ ...x, short: x.label })) };
-    if (sel === "units") return { unit: "n", value: `${fmt(units.reduce((a, b) => a + (b.value || 0), 0), "n")} pedidos`, items: units.map((x) => ({ ...x, short: x.label })) };
+    if (sel === "pay") return { unit: "n", items: pay.map((x) => ({ ...x, short: x.label })) };
+    if (sel === "units") return { unit: "n", items: units.map((x) => ({ ...x, short: x.label })) };
     const x = metricBy(sel), s = m[sel]?.series || [], labels = bucketLabels(period, BUCKETS, s.length);
-    return { unit: x.unit, value: fmt(m[sel]?.value, x.unit), delta: <DeltaBadge metric={m[sel]} unit={x.unit} id={sel} />, items: s.map((v, i) => ({ value: v, label: labels[i], short: i % Math.ceil(s.length / 10) ? "" : labels[i] })) };
+    return { unit: x.unit, items: s.map((v, i) => ({ value: v, label: labels[i], short: i % Math.ceil(s.length / 10) ? "" : labels[i] })) };
   })();
 
   return (
@@ -40,10 +42,12 @@ export function Home({ data, period }) {
         {HOME_KPIS.map((id) => { const k = metricBy(id); return <Kpi key={id} id={id} label={k.label} metric={m[id]} unit={k.unit} href={HREF[id]} selected={sel === id} onSelect={() => setSel(id)} />; })}
       </div>
       <div className="home-chart-row">
-        <Card className="main-chart" title={<span className="chart-title">{OPTIONS.find(([k]) => k === sel)[1]} <b>{chart.value}</b> {chart.delta}</span>}>
-          <div className="chart-picker" role="tablist" aria-label="Métrica do gráfico">
-            {OPTIONS.map(([k, l]) => <button key={k} role="tab" aria-selected={sel === k} className={sel === k ? "on" : ""} onClick={() => setSel(k)}>{l}</button>)}
+        <Card className="main-chart" title={OPTIONS.find(([k]) => k === sel)[1]} action={
+          <div className="pop" ref={pick.ref}>
+            <button className="glass pill" aria-haspopup="listbox" aria-expanded={pick.open} onClick={() => pick.setOpen(!pick.open)}>Métrica<Icon name="chevron" size={14} /></button>
+            {pick.open && <div className="glass popover" role="listbox">{OPTIONS.map(([k, l]) => <button key={k} role="option" aria-selected={sel === k} className={sel === k ? "on" : ""} onClick={() => { setSel(k); pick.setOpen(false); }}>{l}</button>)}</div>}
           </div>
+        }>
           <Bars key={sel} items={chart.items} unit={chart.unit} />
         </Card>
         <div className="home-side home-kpis">

@@ -4,7 +4,7 @@ import { PERIODS } from "../lib/constants.js";
 import { ago } from "../lib/format.js";
 import { Icon } from "./icons.jsx";
 
-function usePopover() {
+export function usePopover() {
   const [open, setOpen] = useState(false), ref = useRef(null);
   useEffect(() => {
     if (!open) return;
