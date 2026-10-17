@@ -131,7 +131,7 @@ export const REF = [
     ["Custo do WhatsApp por lead", "R$ 0 dentro da janela de 24 h ou da gratuita de 72 h; template de pós-venda ~ R$ 0,04 por pedido"]]],
   ["Teste de tráfego (R19.1, 09/10)", [
     ["Ensaio", "R$ 100 em 2 dias, 5 criativos (HANDOFF de 15/10)"],
-    ["Fase Copy, 23 a 29/10", "R$ 350 (R$ 50/dia), 6 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"],
+    ["Fase Copy, 23 a 29/10", "R$ 350 (R$ 50/dia), 5 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"],
     ["Pausa, 30 e 31/10", "leitura da fase Copy"],
     ["Fase Região, 1 a 7/11", "R$ 350 (R$ 50/dia), só as 2 copies vencedoras; A = estados com mais de 5 cidades com pagamento na entrega, B = Sudeste + Centro-Oeste + Sul"],
     ["Fase Leitura, 8 e 9/11", "R$ 0; os pedidos na entrega chegam à porta"],
