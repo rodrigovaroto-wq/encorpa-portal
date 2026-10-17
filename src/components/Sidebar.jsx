@@ -40,6 +40,8 @@ export function MobileNav({ route, data, period }) {
   const [open, setOpen] = useState(false);
   const g = data?.global || {}, p = data?.periods?.[period];
   useEffect(() => { setOpen(false); }, [route.page.id, route.sub?.[0]]);
+  // Girou o tablet para a largura do desktop com o menu aberto: fecha (a folha só existe no celular).
+  useEffect(() => { const mq = matchMedia("(max-width: 900px)"), on = () => !mq.matches && setOpen(false); mq.addEventListener("change", on); return () => mq.removeEventListener("change", on); }, []);
   useEffect(() => {
     if (!open) return;
     const esc = (e) => e.key === "Escape" && setOpen(false);

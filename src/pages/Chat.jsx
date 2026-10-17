@@ -9,9 +9,13 @@ import { Icon } from "../components/icons.jsx";
 
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+// O que o operador fez nesta sessão (envio, pausa) vale na hora; os dados do servidor chegam a cada 5 min.
+// Fica fora do componente para sobreviver a sair da tela e voltar.
+let LOCAL = {};
+
 export function Chat({ data, route }) {
-  // O que o operador fez nesta sessão (envio, pausa) vale na hora; os dados do servidor chegam a cada 5 min.
-  const [local, setLocal] = useState({});
+  const [local, setLocalState] = useState(LOCAL);
+  const setLocal = (f) => setLocalState((x) => (LOCAL = f(x)));
   const chats = useMemo(() => (data.global.chats || []).map((c) => {
     const l = local[c.id];
     if (!l) return c;
@@ -28,8 +32,10 @@ export function Chat({ data, route }) {
   const counts = Object.fromEntries([["all", chats.length], ...OUTCOMES.map(([id]) => [id, chats.filter((c) => c.status === id).length])]);
   const open = chats.filter((c) => c.status === "open");
   const pick = (id) => { location.hash = `#/chat?c=${id}`; };
-  useEffect(() => { if (!selected && list[0] && window.innerWidth > 900) history.replaceState(null, "", `#/chat?c=${list[0].id}`); }, [selected, list]);
-  const current = selected || (window.innerWidth > 900 ? list[0] : null);
+  // Sem ?c= abre a primeira; com um ?c= que não está na lista (fora das 150 mais recentes ou no retrato), avisa em vez de abrir outra cliente.
+  const missing = !!route.query.c && !selected;
+  useEffect(() => { if (!route.query.c && list[0] && window.innerWidth > 900) history.replaceState(null, "", `#/chat?c=${list[0].id}`); }, [route.query.c, list]);
+  const current = selected || (!route.query.c && window.innerWidth > 900 ? list[0] : null);
   return (
     <div className="page chat-page">
       <PageHead crumb="Operação" title="Conversas" desc="Todas as conversas da Malu com as clientes, com a ficha de cada uma." />
@@ -61,7 +67,7 @@ export function Chat({ data, route }) {
             {!list.length && <p className="empty">Nenhuma conversa neste filtro.</p>}
           </div>
         </aside>
-        {current ? <Thread c={current} patch={patch} /> : <div className="chat-empty">Escolha uma conversa.</div>}
+        {current ? <Thread c={current} patch={patch} /> : <div className="chat-empty">{missing ? "Essa conversa não está entre as 150 mais recentes carregadas agora. Escolha outra na lista." : "Escolha uma conversa."}</div>}
         {current && <Profile c={current} />}
       </div>
     </div>

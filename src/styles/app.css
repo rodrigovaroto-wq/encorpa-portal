@@ -402,7 +402,7 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 
 /* impressão (Exportar PDF do Financeiro) */
 @media print {
-  .bg, .side, .topbar, .tabs, .print-btn, .export { display: none !important; }
+  .bg, .side, .topbar, .tabs, .print-btn, .export, .m-dock, .m-sheet-bg { display: none !important; }
   .shell { display: block; padding: 0; } body { background: #fff; color: #111; }
   .glass { background: #fff !important; border-color: #ddd; box-shadow: none; backdrop-filter: none; }
   .page-title h1 { color: #111; background: none; }
@@ -522,7 +522,7 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
   .search span, .search kbd { display: none; }
   .top-right { gap: 8px; }
   .top-right .pill { padding: 9px 12px; }
-  .popover.wide { width: min(340px, calc(100vw - 24px)); }
+  .popover.wide { position: fixed; left: 12px; right: 12px; top: 64px; width: auto; max-height: 70dvh; overflow-y: auto; }
   /* cabeçalho e sub-abas */
   .page-title h1 { font-size: 1.45rem; } .page-title .desc { font-size: .84rem; } .page-title .crumb { font-size: .62rem; }
   .greeting h1 { font-size: 1.4rem; } .greeting p { font-size: .84rem; }

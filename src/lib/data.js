@@ -11,7 +11,7 @@ export async function loadData() {
       const r = await fetch("/api/data", { cache: "no-store", credentials: "same-origin" });
       if (r.ok) {
         const data = await r.json();
-        if (data?.periods) { store.set(CACHE, JSON.stringify(data)); return { ...data, source: "live" }; }
+        if (data?.periods) { store.set(CACHE, JSON.stringify({ ...data, global: { ...data.global, chats: [] } })); return { ...data, source: "live" }; } // o retrato do navegador não guarda conversas
       }
     } catch { /* sem função: cai no retrato */ }
   }

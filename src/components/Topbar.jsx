@@ -1,7 +1,7 @@
 // Topo (Glassy CRM): saudação na página inicial, data de hoje, período em menu, busca (⌘K), notificações e preferências.
 import { useEffect, useRef, useState } from "react";
 import { PERIODS } from "../lib/constants.js";
-import { ago } from "../lib/format.js";
+import { ago, store } from "../lib/format.js";
 import { Icon } from "./icons.jsx";
 
 export function usePopover() {
@@ -29,7 +29,7 @@ export function notifications(data) {
 export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPrefs, demo, setDemo }) {
   const per = usePopover(), bell = usePopover(), gear = usePopover();
   const list = notifications(data);
-  const seen = Number(localStorage.getItem("seen:notif") || 0);
+  const seen = Number(store.get("seen:notif") || 0);
   const unseen = list.filter((n) => new Date(n.at || 0).getTime() > seen).length;
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Sao_Paulo" });
   const live = data?.source === "live";
@@ -49,7 +49,7 @@ export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPre
           </div>
         )}
         <div className="pop" ref={bell.ref}>
-          <button className="glass round big" aria-label="Notificações" onClick={() => { bell.setOpen(!bell.open); localStorage.setItem("seen:notif", String(Date.now())); }}>
+          <button className="glass round big" aria-label="Notificações" onClick={() => { bell.setOpen(!bell.open); store.set("seen:notif", String(Date.now())); }}>
             <Icon name="bell" />{unseen > 0 && <em className="ping">{unseen}</em>}
           </button>
           {bell.open && (

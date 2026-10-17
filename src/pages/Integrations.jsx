@@ -21,7 +21,7 @@ export function Integrations({ data }) {
       <div className="wf-grid">
         {SOURCES.map(([k, name, what, icon]) => {
           const s = h[k] || { ok: null, detail: "sem leitura" };
-          const detail = String(s.detail).replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z?/, (iso) => ago(iso));
+          const detail = String(s.detail).replace(/\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}(?::?\d{2})?)?/, (iso) => ago(iso));
           return (
             <article key={k} className="glass wf-card">
               <div className="wf-head"><span className="round icon-badge"><Icon name={icon} /></span><Chip tone={s.ok === true ? "ok" : s.ok === false ? "bad" : ""}>{s.ok === true ? "Respondendo" : s.ok === false ? "Com erro" : "Não configurado"}</Chip></div>
