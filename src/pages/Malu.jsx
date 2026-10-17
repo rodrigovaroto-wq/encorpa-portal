@@ -17,7 +17,7 @@ export function Malu({ data, period, route, tabs }) {
       {sub === "gaps" && <Gaps p={p} />}
       {sub === "service" && <Service p={p} g={g} />}
       {sub === "health" && <Health p={p} g={g} />}
-      {sub === "hermes" && <Hermes h={g.hermes} />}
+      {sub === "hermes" && <Hermes h={g.hermes} period={period} now={g.updated} />}
     </div>
   );
 }
@@ -109,10 +109,15 @@ const hermesName = (v) => (v != null ? `Hermes V${v}` : "Hermes");
 const SEVERITY = { alta: "Alta", media: "Média", baixa: "Baixa" };
 const KIND = { mentira: "Informação errada", resposta_pronta: "Resposta pronta", venda_perdida: "Venda perdida", tom: "Tom da conversa" };
 
-function Hermes({ h }) {
+// Janela de cada período, igual à de lib/build.mjs (BUCKETS): dia, 7, 30, 13/26/39/52 semanas.
+const PERIOD_DAYS = { day: 1, week: 7, month: 30, "3m": 91, "6m": 182, "9m": 273, "12m": 364 };
+
+function Hermes({ h, period, now }) {
   const [filter, setFilter] = useState("all");
   if (!h) return <Note>Os dados do Hermes ainda não chegaram. Eles vêm das tabelas hermes_runs, hermes_proposals e hermes_backlog do Supabase.</Note>;
-  const props = h.proposals || [], runs = h.runs || [], b = h.backlog;
+  const from = new Date(now || Date.now()).getTime() - (PERIOD_DAYS[period] || 30) * 864e5;
+  const inPeriod = (x) => new Date(x.created_at).getTime() >= from;
+  const props = (h.proposals || []).filter(inPeriod), runs = (h.runs || []).filter(inPeriod), b = h.backlog, everRan = (h.runs || []).length > 0;
   const count = (st) => props.filter((x) => x.status === st).length;
   const list = props.filter((x) => filter === "all" || x.status === filter);
   const mins = (r) => (r.started_at ? Math.max(1, Math.round((new Date(r.created_at) - new Date(r.started_at)) / 60000)) : null);
@@ -122,20 +127,20 @@ function Hermes({ h }) {
       <div className="kpis">
         {card("Estado", "Ativo", "confere todo dia às 08:47 e roda a cada 50 leads novos")}
         {card("Próxima rodada", b ? `${fmt(b.leads, "n")} / ${h.every}` : "—", b ? (b.due ? "na próxima conferência diária" : `faltam ${Math.max(0, h.every - b.leads)} leads`) : "sem leitura do backlog")}
-        {card("Rodadas", fmt(runs.length, "n"), runs[0] ? `última ${ago(runs[0].created_at)}` : "nenhuma rodada em produção ainda")}
-        {card("Propostas", fmt(props.length, "n"), `${count("published")} publicadas · ${count("rejected")} recusadas · ${count("proposed")} aguardando`)}
+        {card("Rodadas no período", fmt(runs.length, "n"), runs[0] ? `última ${ago(runs[0].created_at)}` : everRan ? `última ${ago(h.runs[0].created_at)}` : "nenhuma rodada em produção ainda")}
+        {card("Propostas no período", fmt(props.length, "n"), `${count("published")} publicadas · ${count("rejected")} recusadas · ${count("proposed")} aguardando`)}
       </div>
       <Card title="Rodadas" sub="cada leitura em lote das conversas, com o tempo, os leads e o custo">
-        <Table name="hermes-rodadas" head={["Data", "Tempo", "Leads", "Conversas lidas", "Propostas válidas", "Descartadas", "Premissa indevida", "Custo", "Propostas"]}
+        {!runs.length ? <p className="empty">{everRan ? "Nenhuma rodada neste período." : `Nenhuma rodada ainda: o Hermes só lê as conversas quando chegam ${h.every} leads novos${b ? ` (hoje ${b.leads} de ${h.every})` : ""}.`}</p> : <Table name="hermes-rodadas" head={["Data", "Tempo", "Leads", "Conversas lidas", "Propostas válidas", "Descartadas", "Premissa indevida", "Custo", "Propostas"]}
           rows={runs.map((r) => [when(r.created_at), mins(r) ? `${mins(r)} min` : "—", fmt(r.leads_seen, "n"), fmt(r.conversations_seen, "n"), fmt(r.proposals_ok, "n"), fmt(r.proposals_rejected, "n"),
             r.premise_conversations == null ? "—" : `${r.premise_conversations} conversa${r.premise_conversations === 1 ? "" : "s"}`, r.cost_brl == null ? "—" : fmt(r.cost_brl, "brl"), r.proposals ? <span style={{ whiteSpace: "nowrap" }}>{r.proposals} · {hermesName(r.version)}</span> : "—"])}
-          csv={runs.map((r) => [r.created_at, mins(r) ?? "", r.leads_seen ?? "", r.conversations_seen ?? "", r.proposals_ok ?? "", r.proposals_rejected ?? "", r.premise_conversations ?? "", r.cost_brl ?? "", r.proposals ? `${r.proposals} ${hermesName(r.version)}` : ""])} />
+          csv={runs.map((r) => [r.created_at, mins(r) ?? "", r.leads_seen ?? "", r.conversations_seen ?? "", r.proposals_ok ?? "", r.proposals_rejected ?? "", r.premise_conversations ?? "", r.cost_brl ?? "", r.proposals ? `${r.proposals} ${hermesName(r.version)}` : ""])} />}
       </Card>
       <Card title="Propostas e alterações" sub="o motivo, a evidência, a decisão e o que mudou na Malu">
         <Tabs items={[["all", "Todas"], ...Object.entries(HERMES_STATUS).map(([k, [l]]) => [k, l])]} value={filter} onChange={setFilter} counts={Object.fromEntries([["all", props.length], ...Object.keys(HERMES_STATUS).map((k) => [k, count(k) || null])])} />
         <div className="hermes-list">
           {list.map((x) => <Proposal key={x.id} x={x} />)}
-          {!list.length && <p className="empty">Nenhuma proposta neste filtro.</p>}
+          {!list.length && <p className="empty">Nenhuma proposta {filter === "all" ? "neste período" : "neste filtro e período"}.</p>}
         </div>
       </Card>
     </>
@@ -183,8 +188,10 @@ function Proposal({ x }) {
   ].filter(([, v]) => v != null && v !== "");
   return (
     <details className="hermes-item">
-      <summary><b>{hermesName(x.version)}</b><Chip>{x.target}</Chip><Chip tone={tone}>{label}</Chip><small>{when(x.created_at)}</small></summary>
-      <p className="why">{x.rationale}</p>
+      <summary>
+        <span className="hermes-head"><b>{hermesName(x.version)}</b><Chip>{x.target}</Chip><Chip tone={tone}>{label}</Chip>{!x.run_id && <Chip>registrada à mão</Chip>}<small>{when(x.created_at)}</small></span>
+        <span className="why">{x.rationale}</span>
+      </summary>
       <dl>{rows.map(([k, v]) => <div key={k} style={{ display: "contents" }}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
     </details>
   );

@@ -305,8 +305,13 @@ td.win { color: var(--ok); font-weight: 700; background: color-mix(in srgb, var(
 .facts { display: flex; flex-direction: column; gap: 10px; }
 .reasons { width: 100%; text-align: left; font-size: .82rem; color: var(--muted); }
 
-.chat-filters { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 0 -14px; padding: 2px 14px; overscroll-behavior-x: contain;
-  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); }
+.scroll-row { position: relative; margin: 0 -14px; }
+.chat-filters { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 2px 14px; overscroll-behavior-x: contain; cursor: grab; user-select: none; }
+.chat-filters:active { cursor: grabbing; }
+.scroll-arrow { position: absolute; top: 50%; translate: 0 -50%; z-index: 2; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--bg-2); border: 1px solid var(--line-hi); color: var(--text); box-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+.scroll-arrow.left { left: 6px; } .scroll-arrow.left svg { rotate: 90deg; }
+.scroll-arrow.right { right: 6px; } .scroll-arrow.right svg { rotate: -90deg; }
 .chat-filters::-webkit-scrollbar { display: none; }
 .chat-filters .tabs { flex-wrap: nowrap; width: max-content; padding-right: 14px; }
 .chat-filters .tabs button { flex: none; padding: 5px 12px; font-size: .78rem; }
@@ -474,10 +479,12 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 /* Malu › Hermes */
 .hermes-list { display: flex; flex-direction: column; gap: 10px; }
 .hermes-item { border: 1px solid var(--line); border-radius: 14px; background: var(--glass-hi); padding: 12px 14px; }
-.hermes-item summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; cursor: pointer; list-style: none; }
+.hermes-item summary { display: flex; flex-direction: column; gap: 6px; cursor: pointer; list-style: none; }
+.hermes-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hermes-item:not([open]) summary .why { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .hermes-item summary::-webkit-details-marker { display: none; }
 .hermes-item summary b { font-weight: 600; }
-.hermes-item summary small { margin-left: auto; color: var(--dim); font-size: .74rem; }
+.hermes-head small { margin-left: auto; color: var(--dim); font-size: .74rem; }
 .why { color: var(--muted); font-size: .86rem; margin-top: 6px; }
 .hermes-item dl { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 6px 14px; margin-top: 12px; font-size: .82rem; }
 .hermes-item dt { color: var(--dim); } .hermes-item dd { margin: 0; white-space: pre-wrap; word-break: break-word; }
@@ -486,3 +493,4 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .hermes-item .change { display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 640px) { .hermes-item dl { grid-template-columns: 1fr; } }
 .table-wrap:has(> .export) { padding-top: 38px; }
+.hermes-item summary .why { margin-top: 0; }

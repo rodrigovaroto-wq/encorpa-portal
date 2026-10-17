@@ -41,10 +41,9 @@ export function Chat({ data, route }) {
               {open.slice(0, 8).map((c) => <button key={c.id} onClick={() => pick(c.id)} title={c.name || c.short}><span className="avatar live">{initials(c.name)}</span><small>{(c.name || "Cliente").split(" ")[0]}</small></button>)}
             </div>
           )}
-          {/* Uma linha que rola para o lado; a roda do mouse também rola na horizontal. */}
-          <div className="chat-filters" onWheel={(e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY; }}>
+          <ScrollRow>
             <Tabs items={[["all", "Todas"], ...OUTCOMES.map(([id, l]) => [id, l])]} value={filter} onChange={setFilter} counts={counts} />
-          </div>
+          </ScrollRow>
           <div className="threads">
             {list.map((c) => {
               const last = c.messages.at(-1);
@@ -65,6 +64,36 @@ export function Chat({ data, route }) {
         {current ? <Thread c={current} patch={patch} /> : <div className="chat-empty">Escolha uma conversa.</div>}
         {current && <Profile c={current} />}
       </div>
+    </div>
+  );
+}
+
+// Linha que rola para o lado: setas nas pontas, arrastar com o mouse e a roda do mouse (vertical vira horizontal).
+function ScrollRow({ children }) {
+  const ref = useRef(null), drag = useRef(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
+  const measure = () => { const el = ref.current; if (el) setEdge({ left: el.scrollLeft > 2, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 }); };
+  useEffect(() => {
+    const el = ref.current;
+    measure();
+    // Ouvinte nativo e não passivo: só assim a roda deixa de rolar a página enquanto rola os filtros.
+    const wheel = (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) { e.preventDefault(); el.scrollLeft += e.deltaY; } };
+    el.addEventListener("wheel", wheel, { passive: false });
+    window.addEventListener("resize", measure);
+    return () => { el.removeEventListener("wheel", wheel); window.removeEventListener("resize", measure); };
+  }, []);
+  const by = (dx) => ref.current?.scrollBy({ left: dx, behavior: "smooth" });
+  return (
+    <div className="scroll-row">
+      {edge.left && <button className="scroll-arrow left" onClick={() => by(-180)} aria-label="Filtros anteriores"><Icon name="chevron" size={14} /></button>}
+      <div ref={ref} className="chat-filters" onScroll={measure}
+        onPointerDown={(e) => { if (e.pointerType === "mouse") drag.current = { x: e.clientX, left: ref.current.scrollLeft, moved: false }; }}
+        onPointerMove={(e) => { const d = drag.current; if (!d) return; const dx = e.clientX - d.x; if (Math.abs(dx) > 4) d.moved = true; if (d.moved) ref.current.scrollLeft = d.left - dx; }}
+        onPointerUp={() => { setTimeout(() => { drag.current = null; }, 0); }} onPointerLeave={() => { drag.current = null; }}
+        onClickCapture={(e) => { if (drag.current?.moved) { e.stopPropagation(); e.preventDefault(); } }}>
+        {children}
+      </div>
+      {edge.right && <button className="scroll-arrow right" onClick={() => by(180)} aria-label="Mais filtros"><Icon name="chevron" size={14} /></button>}
     </div>
   );
 }
