@@ -39,7 +39,7 @@ export const GROUPS = [
     { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "conversas que compraram ou encerraram sem compra ÷ encerradas", goal: "≥ 90% (handoff ≤ 10%)" },
     { id: "transfers", label: "Não resolvidas (aviso ao operador)", unit: "n", src: "turn_outcomes (handoff ou fallback)" },
     { id: "first_response", label: "Tempo até a 1ª resposta", unit: "min", src: "messages (carimbos)" },
-    { id: "handle_time", label: "Tempo de atendimento por lead", unit: "min", src: "messages (carimbos): média das conversas de cada lead, depois a média entre os leads" },
+    { id: "handle_time", label: "Tempo de atendimento por lead", unit: "min", src: "messages: da primeira à última mensagem de cada lead, média entre os leads" },
     { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "conversas em que ela respondeu à Malu ÷ conversas", goal: "≥ 60% mín · 75% ideal" },
     { id: "price_reach", label: "% que chega ao preço", unit: "pct", src: "eval_funnel", goal: "≥ 40% mín · 55% ideal" },
     { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "conversas que chegaram ao link ÷ conversas" },

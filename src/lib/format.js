@@ -9,7 +9,7 @@ export function fmt(v, unit) {
   if (unit === "brl") return brl.format(v);
   if (unit === "pct") return `${nf.format(v)}%`;
   if (unit === "x") return `${nf.format(v)}×`;
-  if (unit === "min") return v < 1 ? `${Math.round(v * 60)} s` : `${nf.format(v)} min`;
+  if (unit === "min") return v < 1 ? `${Math.round(v * 60)} s` : v < 60 ? `${nf.format(v)} min` : ((r) => `${Math.floor(r / 60)} h ${String(r % 60).padStart(2, "0")} min`)(Math.round(v));
   return nf.format(v);
 }
 
