@@ -38,7 +38,10 @@ export function Chat({ data, route }) {
               {open.slice(0, 8).map((c) => <button key={c.id} onClick={() => pick(c.id)} title={c.name || c.short}><span className="avatar live">{initials(c.name)}</span><small>{(c.name || "Cliente").split(" ")[0]}</small></button>)}
             </div>
           )}
-          <Tabs items={[["all", "Todas"], ...OUTCOMES.map(([id, l]) => [id, l])]} value={filter} onChange={setFilter} counts={counts} />
+          {/* Uma linha que rola para o lado; a roda do mouse também rola na horizontal. */}
+          <div className="chat-filters" onWheel={(e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY; }}>
+            <Tabs items={[["all", "Todas"], ...OUTCOMES.map(([id, l]) => [id, l])]} value={filter} onChange={setFilter} counts={counts} />
+          </div>
           <div className="threads">
             {list.map((c) => {
               const last = c.messages.at(-1);

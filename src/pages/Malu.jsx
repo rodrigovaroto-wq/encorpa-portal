@@ -4,7 +4,6 @@ import { ago, bucketLabels, fmt, metricBy, when } from "../lib/format.js";
 import { Bars, Donut, Gauge, HBars, Lines, Spark } from "../components/charts.jsx";
 import { useState } from "react";
 import { Card, Chip, DeltaBadge, Kpi, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
-import { Icon } from "../components/icons.jsx";
 
 const COLOR = { bought: "var(--ok)", declined: "var(--accent-2)", unresolved: "var(--bad)", abandoned: "var(--warn)", open: "var(--muted)" };
 
@@ -106,7 +105,9 @@ function Health({ p, g }) {
 // Hermes: o supervisor offline (Ricos-com-AI › hermes/). Roda todo dia às 08:47 e só lê as conversas quando chegaram 50 leads
 // novos (R6.2); propõe, o operador decide na Rotina "Hermes – decisão", e a aprovada é implementada, provada e publicada.
 const HERMES_STATUS = { proposed: ["Aguardando decisão", "warn"], accepted: ["Aprovada", ""], implementing: ["Implementando", ""], published: ["Publicada", "ok"], rejected: ["Recusada", "bad"], failed: ["Falhou", "bad"] };
-const HERMES_RUN_URL = "https://github.com/rodrigovaroto-wq/Ricos-com-AI/actions/workflows/hermes.yml";
+const hermesName = (v) => (v != null ? `Hermes V${v}` : "Hermes");
+const SEVERITY = { alta: "Alta", media: "Média", baixa: "Baixa" };
+const KIND = { mentira: "Informação errada", resposta_pronta: "Resposta pronta", venda_perdida: "Venda perdida", tom: "Tom da conversa" };
 
 function Hermes({ h }) {
   const [filter, setFilter] = useState("all");
@@ -124,15 +125,11 @@ function Hermes({ h }) {
         {card("Rodadas", fmt(runs.length, "n"), runs[0] ? `última ${ago(runs[0].created_at)}` : "nenhuma rodada em produção ainda")}
         {card("Propostas", fmt(props.length, "n"), `${count("published")} publicadas · ${count("rejected")} recusadas · ${count("proposed")} aguardando`)}
       </div>
-      <Card title="Rodar agora" sub="Para ler as conversas antes de completar 50 leads">
-        <p className="why">No GitHub, clique em <b>Run workflow</b>, marque <b>"Rodar mesmo sem 50 leads novos"</b> e confirme. As propostas aparecem aqui em até 5 minutos depois da rodada.</p>
-        <a className="ghost" href={HERMES_RUN_URL} target="_blank" rel="noreferrer"><Icon name="bolt" /> Abrir o Hermes no GitHub</a>
-      </Card>
       <Card title="Rodadas" sub="cada leitura em lote das conversas, com o tempo, os leads e o custo">
         <Table name="hermes-rodadas" head={["Data", "Tempo", "Leads", "Conversas lidas", "Propostas válidas", "Descartadas", "Premissa indevida", "Custo", "Propostas"]}
           rows={runs.map((r) => [when(r.created_at), mins(r) ? `${mins(r)} min` : "—", fmt(r.leads_seen, "n"), fmt(r.conversations_seen, "n"), fmt(r.proposals_ok, "n"), fmt(r.proposals_rejected, "n"),
-            r.premise_conversations == null ? "—" : `${r.premise_conversations} conversa${r.premise_conversations === 1 ? "" : "s"}`, r.cost_usd == null ? "—" : `US$ ${r.cost_usd.toFixed(2)}`, r.proposals.join(", ") || "—"])}
-          csv={runs.map((r) => [r.created_at, mins(r) ?? "", r.leads_seen ?? "", r.conversations_seen ?? "", r.proposals_ok ?? "", r.proposals_rejected ?? "", r.premise_conversations ?? "", r.cost_usd ?? "", r.proposals.join(" ")])} />
+            r.premise_conversations == null ? "—" : `${r.premise_conversations} conversa${r.premise_conversations === 1 ? "" : "s"}`, r.cost_brl == null ? "—" : fmt(r.cost_brl, "brl"), r.proposals ? <span style={{ whiteSpace: "nowrap" }}>{r.proposals} · {hermesName(r.version)}</span> : "—"])}
+          csv={runs.map((r) => [r.created_at, mins(r) ?? "", r.leads_seen ?? "", r.conversations_seen ?? "", r.proposals_ok ?? "", r.proposals_rejected ?? "", r.premise_conversations ?? "", r.cost_brl ?? "", r.proposals ? `${r.proposals} ${hermesName(r.version)}` : ""])} />
       </Card>
       <Card title="Propostas e alterações" sub="o motivo, a evidência, a decisão e o que mudou na Malu">
         <Tabs items={[["all", "Todas"], ...Object.entries(HERMES_STATUS).map(([k, [l]]) => [k, l])]} value={filter} onChange={setFilter} counts={Object.fromEntries([["all", props.length], ...Object.keys(HERMES_STATUS).map((k) => [k, count(k) || null])])} />
@@ -145,14 +142,40 @@ function Hermes({ h }) {
   );
 }
 
+// A evidência que o Hermes grava (hermes-core › storedEvidence) e a alteração, escritas como texto para ler, não como código.
+function evidenceRows(ev) {
+  if (!ev || typeof ev !== "object") return [];
+  const quotes = (ev.evidencias || ev.trechos || []).map((e) => (typeof e === "string" ? { trecho: e } : e)).filter((e) => e?.trecho);
+  return [
+    ["O que mudar", ev.o_que],
+    ["Por quê", ev.por_que],
+    ["Objetivo", ev.objetivo],
+    ["Como medir", ev.como_medir],
+    ["Tipo", KIND[ev.classe] || ev.classe],
+    ["Gravidade", SEVERITY[ev.severidade] || ev.severidade],
+    ["O que o prompt diz", ev.fato_contradito],
+    ["Frase parecida que continua proibida", ev.mentira_vizinha],
+    ["Trechos das conversas", quotes.length ? <ul className="quotes">{quotes.map((e, i) => <li key={i}>“{e.trecho.replace(/^["“]|["”]$/g, "")}”{e.conversa ? <small> · {e.conversa}{e.mensagem != null ? `, mensagem ${e.mensagem}` : ""}</small> : null}</li>)}</ul> : null],
+    ["Origem", typeof ev.source === "string" ? (ev.source.startsWith("personas:") ? "rodada de personas" : ev.source) : null],
+  ];
+}
+
+// "+ linha" vira "Acrescentar: linha" e "- linha" vira "Tirar: linha"; o resto fica como frase.
+function changeText(diff) {
+  const lines = String(diff).split("\n").map((l) => l.trim()).filter((l) => l && !/^(@@|\+\+\+|---)/.test(l));
+  return lines.map((l, i) => {
+    const add = l.startsWith("+"), del = l.startsWith("-"), body = add || del ? l.slice(1).trim() : l;
+    return <p key={i}>{add ? <b>Acrescentar: </b> : del ? <b>Tirar: </b> : null}{body}</p>;
+  });
+}
+
 function Proposal({ x }) {
   const [label, tone] = HERMES_STATUS[x.status] || [x.status, ""];
-  const ev = x.evidence && typeof x.evidence === "object" ? x.evidence : null;
   const rows = [
     ["Proposta em", when(x.created_at)],
     ["Leads da rodada", x.leads_seen != null ? fmt(x.leads_seen, "n") : x.run_id ? "—" : "registrada à mão (antes das rodadas)"],
-    ["Evidência", ev ? (ev.o_que ? <>{ev.o_que}<pre>{JSON.stringify(Object.fromEntries(Object.entries(ev).filter(([k]) => k !== "o_que")), null, 2)}</pre></> : <pre>{JSON.stringify(ev, null, 2)}</pre>) : null],
-    ["Mudança proposta", x.diff ? <pre>{x.diff}</pre> : null],
+    ...evidenceRows(x.evidence),
+    ["Alteração proposta", x.diff ? <div className="change">{changeText(x.diff)}</div> : null],
     ["Decisão", x.decided_at ? `${when(x.decided_at)}${x.decision_reason ? ` · ${x.decision_reason}` : ""}` : x.status === "proposed" ? "aguardando o operador" : null],
     ["Implementada", x.executed_at ? `${when(x.executed_at)}${x.execution_ref ? ` · ${x.execution_ref}` : ""}` : null],
     ["Publicada", x.published_at ? when(x.published_at) : null],
@@ -160,7 +183,7 @@ function Proposal({ x }) {
   ].filter(([, v]) => v != null && v !== "");
   return (
     <details className="hermes-item">
-      <summary><b>{x.code || x.id.slice(0, 8)}</b><Chip>{x.target}</Chip><Chip tone={tone}>{label}</Chip><small>{when(x.created_at)}</small></summary>
+      <summary><b>{hermesName(x.version)}</b><Chip>{x.target}</Chip><Chip tone={tone}>{label}</Chip><small>{when(x.created_at)}</small></summary>
       <p className="why">{x.rationale}</p>
       <dl>{rows.map(([k, v]) => <div key={k} style={{ display: "contents" }}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
     </details>

@@ -305,8 +305,11 @@ td.win { color: var(--ok); font-weight: 700; background: color-mix(in srgb, var(
 .facts { display: flex; flex-direction: column; gap: 10px; }
 .reasons { width: 100%; text-align: left; font-size: .82rem; color: var(--muted); }
 
-.chat-list .tabs { flex-wrap: wrap; gap: 5px; }
-.chat-list .tabs button { padding: 4px 10px; font-size: .74rem; gap: 6px; }
+.chat-filters { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 0 -14px; padding: 2px 14px; overscroll-behavior-x: contain;
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); }
+.chat-filters::-webkit-scrollbar { display: none; }
+.chat-filters .tabs { flex-wrap: nowrap; width: max-content; padding-right: 14px; }
+.chat-filters .tabs button { flex: none; padding: 5px 12px; font-size: .78rem; }
 
 /* pedidos */
 .terminal .tabs button { padding: 5px 11px; font-size: .78rem; }
@@ -478,7 +481,8 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .why { color: var(--muted); font-size: .86rem; margin-top: 6px; }
 .hermes-item dl { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 6px 14px; margin-top: 12px; font-size: .82rem; }
 .hermes-item dt { color: var(--dim); } .hermes-item dd { margin: 0; white-space: pre-wrap; word-break: break-word; }
-.hermes-item pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: .76rem; color: var(--muted); }
+.hermes-item .quotes { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.hermes-item .quotes small { color: var(--dim); }
+.hermes-item .change { display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 640px) { .hermes-item dl { grid-template-columns: 1fr; } }
-.card > a.ghost { align-self: flex-start; margin-top: 0; }
 .table-wrap:has(> .export) { padding-top: 38px; }
