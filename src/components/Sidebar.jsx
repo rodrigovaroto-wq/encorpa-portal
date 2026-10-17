@@ -58,7 +58,7 @@ export function MobileNav({ route, data, period }) {
       </nav>
       {open && (
         <div className="m-sheet-bg" onClick={() => setOpen(false)}>
-          <div className="m-sheet glass" role="dialog" aria-label="Menu" onClick={(e) => e.stopPropagation()}>
+          <div className="m-sheet glass" role="dialog" aria-label="Menu" onClick={(e) => { e.stopPropagation(); if (e.target.closest("a")) setOpen(false); }}>
             <div className="m-sheet-grip" />
             {NAV.map((s) => (
               <div key={s.sec} className="m-sec">

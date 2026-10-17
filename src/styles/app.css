@@ -494,7 +494,7 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .hermes-item summary .why { margin-top: 0; }
 
 /* celular (17/10): barra no rodapé com nomes, folha de menu, topo numa linha, sub-abas que rolam, cartões compactos, conversa em tela cheia */
-.m-dock, .m-brand { display: none; }
+.m-dock, .m-brand, .m-sheet-bg { display: none; }
 @media (max-width: 900px) {
   .shell, .shell.side-collapsed { padding: 8px 12px calc(84px + env(safe-area-inset-bottom)); gap: 12px; }
   .main { gap: 14px; }
