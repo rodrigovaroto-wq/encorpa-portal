@@ -15,8 +15,11 @@ export function Chat({ data, route }) {
   const chats = useMemo(() => (data.global.chats || []).map((c) => {
     const l = local[c.id];
     if (!l) return c;
-    const sent = (l.sent || []).filter((x) => !c.messages.some((m) => m.out && m.text === x.text && Math.abs(new Date(m.at) - new Date(x.at)) < 600000));
-    return { ...c, paused: l.paused ?? c.paused, pausedAt: l.pausedAt ?? c.pausedAt, messages: [...c.messages, ...sent], last: sent.at(-1)?.at || c.last };
+    // Vale até chegar um retrato do servidor gerado depois da ação: daí em diante, o servidor é a verdade.
+    const fresh = (at) => !data.global.updated || new Date(data.global.updated) < new Date(at);
+    const sent = (l.sent || []).filter((x) => fresh(x.at));
+    const pause = l.pauseAt && fresh(l.pauseAt) ? { paused: l.paused, pausedAt: l.pausedAt } : {};
+    return { ...c, ...pause, messages: [...c.messages, ...sent], last: sent.at(-1)?.at || c.last };
   }), [data, local]);
   const patch = (id, f) => setLocal((x) => ({ ...x, [id]: f(x[id] || {}) }));
   const [q, setQ] = useState(""), [filter, setFilter] = useState("all");
@@ -105,7 +108,7 @@ async function post(body) {
 function Composer({ c, patch }) {
   const [text, setText] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(null);
   useEffect(() => { setText(""); setError(null); }, [c.id]);
-  const keep = (out) => out.paused !== undefined && patch(c.id, (x) => ({ ...x, paused: out.paused, pausedAt: out.pausedAt }));
+  const keep = (out) => out.paused !== undefined && patch(c.id, (x) => ({ ...x, paused: out.paused, pausedAt: out.pausedAt, pauseAt: new Date().toISOString() }));
   const toggle = async () => {
     setBusy(true); setError(null);
     const out = await post({ action: c.paused ? "resume" : "pause", conversationId: c.id }).catch(() => ({ error: "Sem conexão com o portal." }));

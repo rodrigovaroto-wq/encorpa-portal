@@ -45,10 +45,13 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 
 - O workflow **Encorpa — Portal: conversa não resolvida** (`n8n/conversa-nao-resolvida.json`) roda a cada 5 min e manda um
   e-mail ao operador quando uma conversa passa a ser "não resolvida" pela regra do portal (passagem ao operador ou resposta
-  pronta, sem compra), com o link direto dela no portal. Janela fixa de 5 min: cada conversa gera um e-mail só.
+  pronta, sem compra), com o link direto dela no portal. Janela fixa de 5 min: cada conversa gera um e-mail só. Desde 17/10 os
+  avisos antigos "não precisa responder" (Turno da agente e Relógio da régua) estão desligados no n8n.
 
 ## Malu › Hermes
 
 - Rodadas (`hermes_runs`), propostas com motivo, evidência, decisão e o que mudou (`hermes_proposals`) e quantos leads faltam
-  para a próxima rodada (`hermes_backlog`). O Hermes roda pela Action `hermes.yml` do Ricos-com-AI; o botão leva para lá.
+  para a próxima rodada (`hermes_backlog`). O Hermes roda pela Action `hermes.yml` do Ricos-com-AI. Cada proposta leva o nome
+  da versão da Malu no ar quando nasceu ("Hermes V26"; antes da v1, de 05/10, "Hermes V0"), e o custo vai em reais (US$ × 5,40).
+  Essas três tabelas são opcionais: se uma falhar, o resto do portal continua.
 - `public/data.js` não leva a evidência nem a mudança proposta das propostas.
