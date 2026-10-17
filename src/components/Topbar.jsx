@@ -35,7 +35,8 @@ export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPre
   const live = data?.source === "live";
   return (
     <header className="topbar">
-      <button className="glass search" onClick={onSearch}><Icon name="search" /><span>Buscar conversas, anúncios, páginas…</span><kbd>⌘K</kbd></button>
+      <a href="#/home" className="m-brand" aria-label="Painel"><img src="/logo.svg" alt="" width="32" height="32" /></a>
+      <button className="glass search" onClick={onSearch} aria-label="Buscar"><Icon name="search" /><span>Buscar conversas, anúncios, páginas…</span><kbd>⌘K</kbd></button>
       <span className="today"><Icon name="calendar" size={15} /> Hoje, {today}</span>
       <span className={`status-dot ${live ? "live" : ""}`} title={data?.updated ? `Atualizado ${ago(data.updated)}` : ""}>
         <i />{data?.demo ? "Exemplo" : live ? `Ao vivo · ${ago(data.updated)}` : data ? `Retrato · ${ago(data.updated)}` : "Sem dados"}

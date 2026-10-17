@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Background } from "./components/Background.jsx";
 import { Palette } from "./components/Palette.jsx";
-import { Sidebar } from "./components/Sidebar.jsx";
+import { MobileNav, Sidebar } from "./components/Sidebar.jsx";
 import { Topbar } from "./components/Topbar.jsx";
 import { demoData, loadData } from "./lib/data.js";
 import { store } from "./lib/format.js";
@@ -51,6 +51,7 @@ export function App() {
           {data ? <View key={route.page.id} data={data} period={period} route={route} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
         </main>
       </div>
+      <MobileNav route={route} data={data} period={period} />
       <Palette open={palette} onClose={() => setPalette(false)} data={data} period={period} />
     </>
   );
