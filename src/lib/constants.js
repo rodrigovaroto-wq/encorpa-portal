@@ -63,9 +63,9 @@ export const PAUSE = [
 
 
 export const PHASES = [
-  ["Copy (dias 1–5)", "CPL ≤ R$ 1,75 · CTR ≥ 1% · resposta ≥ 60% · chega ao preço ≥ 40%", "CPL ≤ R$ 1,25 · CTR ≥ 2% · resposta ≥ 75% · preço ≥ 55%"],
-  ["Região (dias 6–10)", "CPL ≤ R$ 1,50 · conversão ≥ 6%", "CPL ≤ R$ 1,25 · conversão ≥ 10%"],
-  ["Leitura (dias 11–12)", "entregas ≥ 70%", "entregas ≥ 83% (recusa ≤ 17%)"],
+  ["Copy (23 a 29/10)", "conversão ≥ 6% · CPL ≤ R$ 1,75", "conversão > 7,5% · CPL < R$ 1,50"],
+  ["Região (1 a 7/11)", "conversão ≥ 6% · CPL ≤ R$ 1,75", "conversão > 10% · CPL < R$ 1,25"],
+  ["Leitura (8 e 9/11)", "entregas ≥ 70%", "entregas ≥ 83% (recusa ≤ 17%)"],
 ];
 
 export const DECISION = [
@@ -105,11 +105,40 @@ export const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud 
 
 
 
+// Premissas, conferidas no Ricos-com-AI em 17/10: oferta = BUSINESS_CONFIG de 15/10 (docs/operacao/business-config-2026-10-15.md),
+// economia = contas do portal confirmadas pelo operador em 15/10 (lib/build.mjs), teste = R19.1 de 09/10 (05-plano/09 e 13).
 export const REF = [
-  ["Oferta (config e site)", [["Produto", "Colete Cinta Modeladora, tamanhos P, M, G, GG e XGG"], ["Pagamento na entrega", "R$ 129,90, frete grátis"], ["Pagamento antecipado", "R$ 110,42 (15% off), frete por conta da cliente, calculado no checkout"], ["Âncora de preço", "R$ 216,50"], ["Garantia", "7 dias"], ["Atendimento", "06:00 às 00:00; fora disso, mensagem automática"], ["Mix previsto", "70% na entrega, 30% antecipado, 1 peça por pedido"]]],
-  ["Economia por pedido (estudo de projeção, não medido)", [["COD entregue", "+ R$ 63,35 (produto R$ 30, transação, handling R$ 4,99, entrega R$ 19,99)"], ["COD recusado", "− R$ 14,98 (recusa R$ 9,99)"], ["Antecipado", "+ R$ 70,21"], ["Média com mix 70/30", "R$ 57,18 por pedido"], ["Recusa na porta (premissa)", "12% a 17%; a Logzz declara 13% a 16%"], ["Devolução pós-envio", "5% a 10% a R$ 25,00"], ["Equilíbrio", "conversão de 3,58% com CPL de R$ 1,25"], ["Comissão da entrega", "libera 14 dias depois do pagamento"]]],
-  ["Medido × premissa", [["Custo de API por conversa", "medido R$ 0,051 (4 conversas de teste, máx R$ 0,073) × premissa do estudo R$ 0,80 por lead"], ["Teto do modelo por conversa", "R$ 0,50 (p50 medido R$ 0,268 e p95 R$ 0,546 no modelo padrão, 30/09)"], ["Custo do WhatsApp por lead", "R$ 0 dentro da janela de 24 h ou da gratuita de 72 h; template UTILITY ~ R$ 0,04 por pedido"]]],
-  ["Teste de tráfego (L3)", [["Fase Copy, dias 1 a 5", "R$ 300, 6 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"], ["Fase Região, dias 6 a 10", "R$ 200, só as 2 copies vencedoras; A = estados com mais de 5 cidades atendidas, B = Sudeste + Centro-Oeste + Sul"], ["Fase Leitura, dias 11 e 12", "R$ 0; as entregas chegam à porta"], ["Verba total", "R$ 500 de anúncio + R$ 1.500 de caixa reservado para o custo do pedido"], ["Piso de amostra", "mais de 500 leads atendidos e mais de 50 pedidos criados"], ["Primeira resposta da agente", "1 minuto depois da mensagem"], ["Régua de silêncio", "silence_3 entre 63 h e 71 h depois da abertura da janela de 72 h"]]],
+  ["Oferta (BUSINESS_CONFIG de 15/10)", [
+    ["Produto", "Colete Cinta Modeladora, tamanhos P a XGG (cintura de 60 a 100 cm); na dúvida entre dois, o maior"],
+    ["Pagamento na entrega", "1 peça R$ 129,90 · 2 peças R$ 233,82 · 3 peças R$ 311,76, frete grátis (R14.3 e R15.3)"],
+    ["Pagamento antecipado", "1 peça R$ 116,91 (10% off) · 2 peças R$ 207,84 (20%) · 3 peças R$ 272,79 (30%); frete por conta da cliente, calculado por região no checkout (R10.5 e R15.3)"],
+    ["Âncora de preço", "de R$ 216,50 por R$ 129,90 na entrega"],
+    ["Garantia", "7 dias após o recebimento; devolução e troca sem custo para a cliente, pelo suporte da Logzz (R16.3 e R21.3)"],
+    ["Atendimento", "06:00 às 00:00; fora disso, recibo automático e a resposta guardada sai às 6h"],
+    ["Mix previsto", "70% na entrega, 30% antecipado, 1 peça por pedido (premissa, não medido)"]]],
+  ["Economia por pedido (confirmada pelo operador em 15/10)", [
+    ["Na entrega, se entregue", "1 peça R$ 67,18 · 2 peças R$ 135,94 · 3 peças R$ 180,53 (produto R$ 30/peça, entrega R$ 19,99, manuseio R$ 5,00, transação de 6,99% da comissão + R$ 2,49)"],
+    ["Antecipado, se entregue", "1 peça R$ 77,92 · 2 peças R$ 136,14 · 3 peças R$ 169,15"],
+    ["Recusa na porta", "− R$ 9,99 por pedido recusado (entrega frustrada R$ 4,99 + manuseio R$ 5,00), só na entrega; premissa de 12% a 17%"],
+    ["Devolução depois de entregue", "− R$ 30 na entrega e − R$ 50 no antecipado; premissa de 5% a 10%"],
+    ["Média esperada por pedido", "R$ 51,74 no mix 70/30 com 1 peça, recusa de 17% e devolução de 10%"],
+    ["Equilíbrio", "conversão mínima de 3,3% com CPL de R$ 1,25 e de 3,8% com CPL de R$ 1,50 (anúncio + 13,83% de imposto + R$ 0,27 de IA por lead ÷ R$ 51,70 por pedido, já sem o WhatsApp)"],
+    ["Outros custos", "imposto da Meta 13,83% sobre o anúncio · WhatsApp R$ 0,04 por pedido · fixo R$ 53,50/mês (PikaPods + número)"],
+    ["Repasse", "na entrega: 14 dias depois do pagamento na porta; antecipado: na hora"]]],
+  ["Medido × premissa", [
+    ["Custo de IA por lead", "premissa R$ 0,27 · medido p50 R$ 0,268 e p95 R$ 0,546 por conversa (30/09); personas da v25 ~ R$ 0,02 por conversa (15/10)"],
+    ["Teto do modelo por conversa", "R$ 1,00, sem tolerância (R18.7)"],
+    ["Custo do WhatsApp por lead", "R$ 0 dentro da janela de 24 h ou da gratuita de 72 h; template de pós-venda ~ R$ 0,04 por pedido"]]],
+  ["Teste de tráfego (R19.1, 09/10)", [
+    ["Ensaio", "R$ 100 em 2 dias, 5 criativos (HANDOFF de 15/10)"],
+    ["Fase Copy, 23 a 29/10", "R$ 350 (R$ 50/dia), 6 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"],
+    ["Pausa, 30 e 31/10", "leitura da fase Copy"],
+    ["Fase Região, 1 a 7/11", "R$ 350 (R$ 50/dia), só as 2 copies vencedoras; A = estados com mais de 5 cidades com pagamento na entrega, B = Sudeste + Centro-Oeste + Sul"],
+    ["Fase Leitura, 8 e 9/11", "R$ 0; os pedidos na entrega chegam à porta"],
+    ["Verba e caixa", "R$ 700 de anúncio (R$ 797 com imposto); caixa de R$ 1.325 com R$ 250 de segurança = R$ 1.075 utilizáveis"],
+    ["Piso de amostra", "mais de 500 leads e mais de 50 pedidos (com CPL de R$ 1,50 saem ~467 leads: só passa com CPL abaixo de ~R$ 1,40)"],
+    ["Experimentos por lead", "A = abertura rápida (sem recibo de 60 s), B = link depois da escolha; ~235 leads por braço; Malu congelada de 23/10 a 09/11"],
+    ["Lembretes", "silence_1 em 60 min · silence_2 às 9h do dia seguinte (ou +23 h) · silence_3 com cupom SUPER20 71 h depois da entrada pelo anúncio"]]],
 ];
 
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
