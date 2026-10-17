@@ -44,9 +44,9 @@ function Results({ p, g, period }) {
       </div>
       <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length)} unit="pct" /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
-      <Table name="versoes" head={["Versão", "Conversas", "Resolução", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
-        rows={(g.versions || []).map((r) => [r.version, fmt(r.conversations, "n"), fmt(r.resolution, "pct"), fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
-        csv={(g.versions || []).map((r) => [r.version, r.conversations, r.resolution, r.unresolved, r.abandoned, r.fallback, r.cost])} />
+      <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
+        rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
+        csv={(g.versions || []).map((r) => [r.version, r.published ?? "", r.conversations, r.resolution, r.unresolved, r.abandoned, r.fallback, r.cost])} />
       <Note>Abaixo do piso de amostra (500 leads) a diferença entre versões é ruído: leia como direção, não como veredito.</Note>
     </>
   );
@@ -96,8 +96,8 @@ function Health({ p, g }) {
           <dl className="facts">{CHANNEL.map(([id, l]) => <div key={id}><dt>{l}</dt><dd>{g.channel?.[id] ?? "—"}</dd></div>)}</dl>
         </Card>
       </div>
-      <Table name="versoes-tecnico" head={["Versão", "Respostas", "Handoff", "Resposta pronta", "Reescritas", "Custo"]}
-        rows={(g.versions || []).map((r) => [r.version, fmt(r.turns, "n"), fmt(r.handoff, "pct"), fmt(r.fallback, "pct"), fmt(r.rewrites, "n"), fmt(r.cost, "brl")])} />
+      <Table name="versoes-tecnico" head={["Versão", "Publicada em", "Respostas", "Handoff", "Resposta pronta", "Reescritas", "Custo"]}
+        rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.turns, "n"), fmt(r.handoff, "pct"), fmt(r.fallback, "pct"), fmt(r.rewrites, "n"), fmt(r.cost, "brl")])} />
     </>
   );
 }
