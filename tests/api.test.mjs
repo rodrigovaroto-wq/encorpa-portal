@@ -80,3 +80,11 @@ test("devolver para a Malu limpa handoff_at", async () => {
   assert.equal(out.body.paused, false);
   assert.equal(lead.handoff_at, null);
 });
+
+test("desfazer a pausa só apaga a pausa deste envio (PATCH condicional)", async () => {
+  n8nReply = { status: "refused", reason: "window_closed" };
+  await call({ action: "send", conversationId: CONV, text: "oi" });
+  const patches = calls.filter((c) => c.method === "PATCH");
+  assert.equal(patches.length, 2);
+  assert.match(patches[1].url, /&handoff_at=eq\./);
+});

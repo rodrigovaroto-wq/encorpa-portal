@@ -119,3 +119,25 @@ test("chats: flaggedAt é a hora em que a Malu avisou o operador, não a última
   assert.equal(bia.flaggedAt, new Date(NOW - 47.9 * 3600000).toISOString());
   assert.equal(rows.find((c) => c.name === "Ana Teste").flaggedAt, null);
 });
+
+test("chats: desfecho da cliente pela mesma precedência entre as conversas dela; motivo mais recente por último", async () => {
+  const fx = fixture();
+  // A conversa antiga da Duda teve aviso ao operador; a nova está em andamento.
+  fx.turn_outcomes.push({ id: "t4", conversation_id: "33333333-3333-4333-8333-333333333333", outcome: "fallback", reason: "nenhuma reescrita passou", rewrites: 5, agent_version: 27, created_at: fx.messages[7].created_at });
+  const { chats: rows } = await buildChats({ fixture: fx }, NOW);
+  const duda = rows.find((c) => c.name === "Duda Teste");
+  assert.equal(duda.status, "unresolved");
+  assert.equal(duda.reasons.at(-1), "nenhuma reescrita passou");
+});
+
+test("adBudget: conjunto já encerrado e campanha sem conjunto rodando não contam", () => {
+  const m = {
+    campaigns: [{ id: "c1", status: "ACTIVE", daily_budget: 50 }, { id: "c2", status: "ACTIVE" }],
+    adsets: [
+      { id: "s1", campaign_id: "c1", status: "PAUSED", daily_budget: 25 },
+      { id: "s2", campaign_id: "c2", status: "ACTIVE", daily_budget: 10, end: "2026-10-18T00:00:00Z" },
+      { id: "s3", campaign_id: "c2", status: "ACTIVE", daily_budget: 20 },
+    ],
+  };
+  assert.equal(adBudget(m, NOW), 20);
+});

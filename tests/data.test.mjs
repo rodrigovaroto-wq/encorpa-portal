@@ -33,3 +33,20 @@ test("meta: Meta fora segue com a última leitura boa, avisando", async () => {
   const again = await meta({ metaToken: "t", metaAccount: "act_cache" });
   assert.equal(again, good, "dentro de 15 min, a mesma leitura sem chamar a Meta");
 });
+
+test("meta: depois de uma falha, não chama a Meta de novo por 15 min", async () => {
+  let calls = 0, up = true;
+  globalThis.fetch = async () => { calls++; if (!up) throw new Error("limite"); return { ok: true, status: 200, json: async () => ({ data: [] }) }; };
+  const realNow = Date.now;
+  try {
+    await meta({ metaToken: "t", metaAccount: "act_backoff" });
+    up = false;
+    Date.now = () => realNow() + 16 * 60000; // passou o prazo da leitura boa
+    const first = await meta({ metaToken: "t", metaAccount: "act_backoff" });
+    assert.ok(first.stale);
+    const before = calls;
+    const second = await meta({ metaToken: "t", metaAccount: "act_backoff" });
+    assert.ok(second.stale);
+    assert.equal(calls, before, "a segunda leitura não chamou a Meta");
+  } finally { Date.now = realNow; }
+});

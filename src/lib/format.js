@@ -67,3 +67,6 @@ export function bucketLabels(period, buckets, n, end) {
     return days < 1 ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", timeZone: "America/Sao_Paulo" }) + " h" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
   });
 }
+
+// Valor digitado em reais: "1.500,50", "1.500" e "1500" são mil e quinhentos; "1500.50" também. Ponto seguido de 3 dígitos é milhar.
+export const parseBrl = (x) => { const s = String(x).trim().replace(/^R\$\s*/, ""); return Number(/,/.test(s) || /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, "").replace(",", ".") : s); };

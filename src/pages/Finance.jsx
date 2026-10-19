@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
 import { periodDays } from "../lib/data.js";
 import { CASH_LIMIT, DELIVERY_DAYS, IDEAL, META_TAX, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
-import { bucketLabels, fmt, metricBy } from "../lib/format.js";
+import { bucketLabels, fmt, metricBy, parseBrl } from "../lib/format.js";
 import { Gauge, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
@@ -79,8 +79,7 @@ function Api({ p, period, updated }) {
 function Cash({ g, period }) {
   const meta = g.ad_budget;
   const [weekly, setWeekly] = useState("");
-  // "1.500,50" (pt-BR) ou "1500.50": com vírgula, o ponto é milhar.
-  const typed = Number(/,/.test(weekly) ? weekly.replace(/\./g, "").replace(",", ".") : weekly);
+  const typed = parseBrl(weekly);
   const daily = weekly !== "" && typed > 0 ? typed / 7 : meta;
   const plan = cashPlan(daily, periodDays(period)), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
   const pct = plan ? (plan.need / CASH_LIMIT) * 100 : null;

@@ -2,8 +2,7 @@
 // Protegida pelo middleware (login). A chave service_role fica só no ambiente do Vercel.
 import { buildAll } from "../lib/build.mjs";
 
-const URL_DEFAULT = "https://hbmkgakzrqmdlsvszjeo.supabase.co";
-const N8N_DEFAULT = "https://encorpa-fashion.pikapod.net";
+import { N8N_URL, NO_KEY, SUPABASE_URL, serviceKey } from "../lib/env.mjs";
 
 // O Vercel não guarda em cache resposta "private" nem pedido com login (Authorization), então cada aba recalculava tudo.
 // Quem guarda é a própria função: 60 s, e pedidos ao mesmo tempo esperam a mesma leitura.
@@ -13,11 +12,11 @@ export const reset = () => { memo = null; }; // para os testes
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-  if (!key) return res.status(500).json({ error: "Falta a variável SUPABASE_SERVICE_ROLE_KEY no Vercel." });
+  const key = serviceKey();
+  if (!key) return res.status(500).json({ error: NO_KEY });
   try {
     if (!memo || Date.now() - memo.at > TTL) {
-      const promise = buildAll({ url: process.env.SUPABASE_URL || URL_DEFAULT, key, n8nUrl: process.env.N8N_API_KEY ? process.env.N8N_URL || N8N_DEFAULT : null, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID });
+      const promise = buildAll({ url: SUPABASE_URL, key, n8nUrl: process.env.N8N_API_KEY ? N8N_URL : null, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID });
       memo = { at: Date.now(), promise };
       promise.catch(() => { if (memo?.promise === promise) memo = null; }); // falha não fica guardada
     }

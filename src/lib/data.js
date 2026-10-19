@@ -2,7 +2,7 @@
 // Formato: { updated, global: {...}, periods: { day, week, month, 3m, 6m, 9m, 12m } } (lib/build.mjs › build).
 import { ALL, BUCKETS, RANGE, SUMMED, OUTCOMES, PAUSE, DECISION } from "./constants.js";
 import { fmt, store } from "./format.js";
-import { CASH_LIMIT, META_TAX, cashPlan } from "./economics.js";
+import { CASH_LIMIT, DELIVERY_DAYS, META_TAX, RELEASE_DAYS, cashPlan } from "./economics.js";
 
 const CACHE = "last:portal";
 
@@ -37,8 +37,9 @@ function loadScript(src) {
 export const periodDays = (period) => { const [n, d] = BUCKETS[period] || BUCKETS.week; return n * d; };
 
 // Critérios de pausa do teste, calculados das métricas.
-export function computePause(p, g, period) {
-  const plan = cashPlan(g.ad_budget, periodDays(period));
+// O caixa da pausa é o de um ciclo inteiro (entrega + repasse), o pico de quem roda sem parar, seja qual for o período na tela.
+export function computePause(p, g) {
+  const plan = cashPlan(g.ad_budget, DELIVERY_DAYS + RELEASE_DAYS);
   const v = (id) => p.metrics?.[id]?.value;
   const lvl = (x, warn, bad) => (x == null ? "" : x > bad ? "bad" : x > warn ? "warn" : "ok");
   const row = (x, s, u) => (x == null ? undefined : { value: fmt(x, u), status: s });

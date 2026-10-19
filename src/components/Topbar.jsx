@@ -20,7 +20,7 @@ export function usePopover() {
 export function notifications(data) {
   const g = data?.global || {}, out = [], day = Date.now() - 86400000;
   for (const o of g.orders || []) if (new Date(o.created).getTime() > day) out.push({ at: o.created, text: `Pedido novo ${o.id}${o.name ? ` — ${o.name}` : ""}`, href: "#/orders", tone: "ok" });
-  for (const c of g.chats || []) if (c.status === "unresolved") out.push({ at: c.flaggedAt || c.last, text: `${c.name || "Cliente"}: a Malu avisou o operador (${c.reasons[0] || "sem motivo"})`, href: `#/chat?c=${c.id}`, tone: "bad" });
+  for (const c of g.chats || []) if (c.status === "unresolved") out.push({ at: c.flaggedAt || c.last, text: `${c.name || "Cliente"}: a Malu avisou o operador (${c.reasons.at(-1) || "sem motivo"})`, href: `#/chat?c=${c.id}`, tone: "bad" });
   for (const w of g.automations?.workflows || []) if (w.active && w.errors) out.push({ at: w.last?.at, text: `${w.name.replace(/^Encorpa — /, "")}: ${w.errors} execução com erro`, href: "#/auto/runs", tone: "bad" });
   for (const [k, h] of Object.entries(g.health || {})) if (h.ok === false) out.push({ at: g.updated, text: `${k}: ${h.detail}`, href: "#/integrations", tone: "bad" });
   return out.sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0)).slice(0, 12);
