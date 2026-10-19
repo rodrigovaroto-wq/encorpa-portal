@@ -29,12 +29,23 @@ export default async function handler(req, res) {
     const conv = (await db(`conversations?id=eq.${conversationId}&select=lead_id,leads(id,phone,handoff_at)`))[0];
     const lead = conv?.leads;
     if (!lead) return res.status(404).json({ error: "Conversa não encontrada." });
+    // Rodada de personas (Ricos-com-AI): o número não existe e o lead é apagado no fim da rodada.
+    if (/^5500099/.test(String(lead.phone))) return res.status(409).json({ error: "Conversa de teste (rodada de personas): o número não existe e a conversa é apagada no fim da rodada." });
     // Pausa antes de enviar: se ela responder no meio do envio, a Malu já não fala por cima.
     const pausedAt = action === "resume" ? null : lead.handoff_at || new Date().toISOString();
-    if (pausedAt !== lead.handoff_at) await db(`leads?id=eq.${lead.id}`, { method: "PATCH", body: JSON.stringify({ handoff_at: pausedAt }) });
-    if (action !== "send") return res.status(200).json({ status: "ok", paused: !!pausedAt, pausedAt });
+    const setLead = (handoff_at) => db(`leads?id=eq.${lead.id}`, { method: "PATCH", body: JSON.stringify({ handoff_at }) });
+    if (pausedAt !== lead.handoff_at) await setLead(pausedAt);
+    // Hora do servidor: a tela compara com a hora do retrato (também do servidor), nunca com o relógio do navegador.
+    const at = new Date().toISOString();
+    if (action !== "send") return res.status(200).json({ status: "ok", paused: !!pausedAt, pausedAt, at });
+    // Recusa certa (nada saiu): devolve a Malu se foi este envio que a pausou, para a cliente não ficar sem ninguém.
+    const undo = async () => {
+      if (lead.handoff_at) return { paused: true, pausedAt, at };
+      await setLead(null).catch(() => undefined);
+      return { paused: false, pausedAt: null, at };
+    };
 
-    if (!process.env.N8N_API_KEY) return res.status(500).json({ error: "Falta a variável N8N_API_KEY no Vercel.", paused: true, pausedAt });
+    if (!process.env.N8N_API_KEY) return res.status(500).json({ error: "Falta a variável N8N_API_KEY no Vercel.", ...(await undo()) });
     const r = await fetch(`${process.env.N8N_URL || N8N_DEFAULT}/webhook/portal-responder`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-N8N-API-KEY": process.env.N8N_API_KEY },
@@ -42,8 +53,10 @@ export default async function handler(req, res) {
       signal: AbortSignal.timeout(40_000),
     });
     const out = await r.json().catch(() => ({}));
-    if (out.status === "sent") return res.status(200).json({ status: "sent", paused: true, pausedAt });
-    return res.status(out.status === "refused" ? 409 : 502).json({ error: out.message || `n8n HTTP ${r.status}`, reason: out.reason ?? null, paused: true, pausedAt });
+    if (out.status === "sent") return res.status(200).json({ status: "sent", paused: true, pausedAt, at });
+    // "refused" e chave recusada (401) são certeza de que nada saiu. Erro ou tempo esgotado podem ter enviado: fica pausada.
+    const nothingSent = out.status === "refused" || r.status === 401;
+    return res.status(out.status === "refused" ? 409 : 502).json({ error: out.message || `n8n HTTP ${r.status}`, reason: out.reason ?? null, ...(nothingSent ? await undo() : { paused: true, pausedAt, at }) });
   } catch (e) {
     return res.status(502).json({ error: String(e.message || e).slice(0, 200) });
   }

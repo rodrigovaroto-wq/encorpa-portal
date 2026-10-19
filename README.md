@@ -15,7 +15,8 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `src/components/`: fundo em ondas, menu lateral que recolhe, topo (período, busca ⌘K, notificações, preferências), gráficos e peças de vidro.
 - `src/lib/`: constantes das métricas, carregamento dos dados, formatação e o menu.
 - `lib/build.mjs` (servidor): monta os dados a partir do Supabase, do n8n e da Meta. `lib/meta.mjs`: leitura do Meta Ads.
-- `api/data.js`: função do Vercel. `api/chat.js`: resposta do operador e a chave da Malu por conversa. `middleware.js`: login do site todo.
+- `api/data.js`: função do Vercel. `api/chats.js`: só as conversas, sem cache, para a tela Conversas. `api/chat.js`: resposta do
+  operador e a chave da Malu por conversa. `middleware.js`: login do site todo.
 - `n8n/`: os dois workflows do n8n que são do portal (cópia do que está ativo no PikaPods).
 
 ## Publicado no Vercel
@@ -39,6 +40,12 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   próprio n8n, passa pela mesma regra do formulário "Responder cliente" (`turn` › `human_reply`: janela de 24 h, texto,
   duplicata), grava a mensagem na conversa e entrega ao "WhatsApp envio". Se a Meta recusar, chega o e-mail de falha de envio.
 - "Devolver para a Malu" limpa `handoff_at`: ela volta a responder a partir da próxima mensagem da cliente.
+- Desde 19/10 a tela Conversas lê `api/chats.js` a cada 15 s (sem cache), com uma linha por cliente: as mensagens de todas as
+  conversas do lead juntas, e o id é o da conversa mais nova, a mesma em que `human_reply` grava a resposta. Se a leitura falhar,
+  a lista fica na tela com um aviso, em vez de esvaziar.
+- Recusa certa do envio (janela fechada, duplicata, chave do n8n) devolve a Malu se foi o próprio envio que a pausou.
+- Conversas de teste da rodada de personas (telefone `5500099…`, apagadas no fim da rodada) não aparecem no portal nem nas
+  métricas lidas das tabelas, e o portal recusa responder a elas. As views `eval_*` do Ricos-com-AI ainda as contam.
 - Precisa de `N8N_API_KEY` no Vercel (a mesma da seção Automações).
 
 ## E-mail de conversa não resolvida (desde 16/10)

@@ -34,7 +34,12 @@ export function App() {
   const setDemo = (d) => { setDemoState(d); store.set("demo", d ? "1" : "0"); };
   const setPrefs = (p) => { setPrefsState(p); store.set("prefs", JSON.stringify(p)); };
 
-  const refresh = useCallback(async () => setData(demo ? demoData() : (await loadData()) || false), [demo]);
+  // Uma carga que cai no retrato do navegador (sem conversas) mantém as conversas da última carga ao vivo: antes, uma falha
+  // de rede esvaziava a tela Conversas e a conversa aberta "sumia" no meio do atendimento.
+  const refresh = useCallback(async () => {
+    const next = demo ? demoData() : (await loadData()) || false;
+    setData((prev) => (next && next.source !== "live" && !next.demo && !prev?.demo && prev?.global?.chats?.length ? { ...next, global: { ...next.global, chats: prev.global.chats } } : next));
+  }, [demo]);
   useEffect(() => { refresh(); const t = setInterval(refresh, REFRESH); return () => clearInterval(t); }, [refresh]);
   useEffect(() => { const on = () => { setRoute(parseRoute(location.hash)); window.scrollTo(0, 0); }; window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
