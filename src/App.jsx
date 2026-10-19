@@ -41,7 +41,16 @@ export function App() {
     const next = demo ? demoData() : (await loadData()) || false;
     setData((prev) => (next && next.source !== "live" && !next.demo && !prev?.demo && prev?.global?.chats?.length ? { ...next, global: { ...next.global, chats: prev.global.chats } } : next));
   }, [demo]);
-  useEffect(() => { refresh(); const t = setInterval(refresh, REFRESH); return () => clearInterval(t); }, [refresh]);
+  // Com a aba escondida não busca; ao voltar, busca se o último retrato passou de 5 min.
+  useEffect(() => {
+    let at = 0;
+    const run = () => { at = Date.now(); refresh(); };
+    const tick = () => { if (document.visibilityState === "visible" && Date.now() - at >= REFRESH - 1000) run(); };
+    run();
+    const t = setInterval(tick, REFRESH);
+    document.addEventListener("visibilitychange", tick);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", tick); };
+  }, [refresh]);
   useEffect(() => { const on = () => { setRoute(parseRoute(location.hash)); window.scrollTo(0, 0); }; window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
   useEffect(() => { document.documentElement.dataset.theme = prefs.theme; document.documentElement.dataset.motion = prefs.motion; }, [prefs]);

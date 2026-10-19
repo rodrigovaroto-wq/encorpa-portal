@@ -93,3 +93,29 @@ test("channel: erro no envio ou silêncio de 3 dias pede atenção; sem leitura 
   assert.equal(channel({ ok: false }, wf(0)).status, "warn");
   assert.equal(channel({ ok: null }, null).status, null);
 });
+
+test("orderValue: na entrega, cancelado antes de sair não custa nada nem conta como recusa (operador, 19/10)", async () => {
+  assert.deepEqual(orderValue({ status: "Cancelado", payment_method: "cod", amount_brl: 129.9, units: 1 }), { kind: "void", revenue: 0, contribution: 0 });
+  assert.equal(orderValue({ status: "Frustrado", payment_method: "cod", amount_brl: 129.9, units: 1 }).kind, "refused");
+  const fx = fixture();
+  fx.orders.push({ id: "o2", external_id: "LZ2", lead_id: "lead-bia", created_at: fx.orders[0].created_at, updated_at: fx.orders[0].created_at, amount_brl: 129.9, status: "Cancelado", payment_method: "cod", units: 1, size: "M", scheduled_for: null });
+  const { data } = await buildAll({ fixture: fx }, NOW);
+  assert.equal(data.periods.week.metrics.orders.value, 1, "cancelado não é venda");
+  assert.equal(data.global.orders.find((o) => o.id === "LZ2").step, "void");
+});
+
+test("entregue: \"Completo\" sim, \"Incompleto\" não", async () => {
+  const fx = fixture();
+  fx.orders.push({ ...fx.orders[0], id: "o3", external_id: "LZ3", status: "Completo" }, { ...fx.orders[0], id: "o4", external_id: "LZ4", status: "Incompleto" });
+  const { data } = await buildAll({ fixture: fx }, NOW);
+  const step = (id) => data.global.orders.find((o) => o.id === id).step;
+  assert.equal(step("LZ3"), "delivered");
+  assert.notEqual(step("LZ4"), "delivered");
+});
+
+test("chats: flaggedAt é a hora em que a Malu avisou o operador, não a última mensagem", async () => {
+  const { chats: rows } = await buildChats({ fixture: fixture() }, NOW);
+  const bia = rows.find((c) => c.name === "Bia Teste");
+  assert.equal(bia.flaggedAt, new Date(NOW - 47.9 * 3600000).toISOString());
+  assert.equal(rows.find((c) => c.name === "Ana Teste").flaggedAt, null);
+});

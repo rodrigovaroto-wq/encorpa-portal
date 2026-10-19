@@ -16,7 +16,7 @@ export function Finance({ data, period, route, tabs }) {
       <PageHead crumb="Análise › Financeiro" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/money/${k}`)}
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
       {sub === "result" && <Result p={p} />}
-      {sub === "api" && <Api p={p} period={period} />}
+      {sub === "api" && <Api p={p} period={period} updated={data.updated} />}
       {sub === "cash" && <Cash g={g} period={period} />}
       {sub === "compare" && <Compare p={p} />}
     </div>
@@ -61,7 +61,7 @@ function Result({ p }) {
   );
 }
 
-function Api({ p, period }) {
+function Api({ p, period, updated }) {
   const m = p.money || {}, s = p.metrics?.api_per_lead;
   return (
     <>
@@ -69,7 +69,7 @@ function Api({ p, period }) {
         {[["api_cost", "No período"], ["api_per_day", "Média por dia"], ["api_30d", "Projeção para 30 dias"]].map(([id, l]) => <div key={id} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(m[id], "brl")}</div></div>)}
         <Kpi label="Custo de API por lead" id="api_per_lead" metric={s} unit="brl" goal="teto R$ 1,00" />
       </div>
-      <Card title="Custo de API por lead" sub="por intervalo do período"><Lines series={[{ name: "Por lead", values: s?.series || [], color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, (s?.series || []).length)} unit="brl" /></Card>
+      <Card title="Custo de API por lead" sub="por intervalo do período"><Lines series={[{ name: "Por lead", values: s?.series || [], color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, (s?.series || []).length, updated)} unit="brl" /></Card>
     </>
   );
 }

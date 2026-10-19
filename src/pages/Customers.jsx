@@ -22,7 +22,7 @@ export function Customers({ data, period }) {
       </div>
       <div className="row r-2-1">
         <Card title="Leads por origem" sub="anúncio (clique no WhatsApp) × orgânico">
-          <Lines series={[{ name: "Anúncio", values: ad, color: "var(--accent-2)" }, { name: "Orgânico", values: org, color: "var(--ok)" }]} labels={bucketLabels(period, BUCKETS, ad.length)} />
+          <Lines series={[{ name: "Anúncio", values: ad, color: "var(--accent-2)" }, { name: "Orgânico", values: org, color: "var(--ok)" }]} labels={bucketLabels(period, BUCKETS, ad.length, data.updated)} />
         </Card>
         <Card title="Origem no período"><Donut items={[{ label: "Anúncio", value: m.leads_ad?.value, color: "var(--accent-2)" }, { label: "Orgânico", value: m.leads_organic?.value, color: "var(--ok)" }]} /></Card>
       </div>

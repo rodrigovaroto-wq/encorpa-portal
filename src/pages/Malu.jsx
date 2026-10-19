@@ -3,6 +3,7 @@ import { AGENT_HEALTH, BUCKETS, CHANNEL, FUNNEL, OUTCOMES, SERVICE } from "../li
 import { ago, bucketLabels, fmt, metricBy, when } from "../lib/format.js";
 import { Bars, Donut, Gauge, HBars, Lines, Spark } from "../components/charts.jsx";
 import { useState } from "react";
+import { periodDays } from "../lib/data.js";
 import { Card, Chip, DeltaBadge, Kpi, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
 
 const COLOR = { bought: "var(--ok)", declined: "var(--accent-2)", unresolved: "var(--bad)", abandoned: "var(--warn)", open: "var(--muted)" };
@@ -42,7 +43,7 @@ function Results({ p, g, period }) {
           <Donut items={OUTCOMES.map(([id, l]) => ({ label: l, value: o[id], color: COLOR[id] }))} />
         </Card>
       </div>
-      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length)} unit="pct" /></Card>
+      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
       <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
         rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
@@ -109,13 +110,11 @@ const hermesName = (v) => (v != null ? `Hermes V${v}` : "Hermes");
 const SEVERITY = { alta: "Alta", media: "Média", baixa: "Baixa" };
 const KIND = { mentira: "Informação errada", resposta_pronta: "Resposta pronta", venda_perdida: "Venda perdida", tom: "Tom da conversa" };
 
-// Janela de cada período, igual à de lib/build.mjs (BUCKETS): dia, 7, 30, 13/26/39/52 semanas.
-const PERIOD_DAYS = { day: 1, week: 7, month: 30, "3m": 91, "6m": 182, "9m": 273, "12m": 364 };
 
 function Hermes({ h, period, now }) {
   const [filter, setFilter] = useState("all");
   if (!h) return <Note>Os dados do Hermes ainda não chegaram. Eles vêm das tabelas hermes_runs, hermes_proposals e hermes_backlog do Supabase.</Note>;
-  const from = new Date(now || Date.now()).getTime() - (PERIOD_DAYS[period] || 30) * 864e5;
+  const from = new Date(now || Date.now()).getTime() - periodDays(period) * 864e5;
   const inPeriod = (x) => new Date(x.created_at).getTime() >= from;
   const props = (h.proposals || []).filter(inPeriod), runs = (h.runs || []).filter(inPeriod), b = h.backlog, everRan = (h.runs || []).length > 0;
   const count = (st) => props.filter((x) => x.status === st).length;

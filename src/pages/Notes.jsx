@@ -17,7 +17,7 @@ export function Notes() {
       <PageHead crumb="Sistema" title="Notas" desc="Anotações do operador, com etiqueta. Ficam guardadas neste navegador." />
       <div className="row r-1-2">
         <Card title="Nova nota">
-          <div className="composer">
+          <div className="note-composer">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" />
             <div className="tag-row">{TAGS.map((t) => <button key={t} className={t === tag ? "on" : ""} onClick={() => setTag(t)}>{t}</button>)}</div>
             <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escreva a nota" rows={6} />
