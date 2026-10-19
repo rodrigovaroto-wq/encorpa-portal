@@ -1,11 +1,13 @@
 // Financeiro: demonstrativo de resultado (o "P&L ledger" do Glassy CRM), consumo de API, caixa e comparação entre períodos.
-import { ALL, BUCKETS } from "../lib/constants.js";
+import { useState } from "react";
+import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
+import { periodDays } from "../lib/data.js";
+import { CASH_LIMIT, DELIVERY_DAYS, IDEAL, META_TAX, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
 import { bucketLabels, fmt, metricBy } from "../lib/format.js";
 import { Gauge, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
-const META_TAX = 0.1383, CASH_LIMIT = 1075; // mesmos valores de lib/build.mjs
 
 export function Finance({ data, period, route, tabs }) {
   const p = data.periods[period] || {}, g = data.global, sub = route.sub[0];
@@ -15,7 +17,7 @@ export function Finance({ data, period, route, tabs }) {
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
       {sub === "result" && <Result p={p} />}
       {sub === "api" && <Api p={p} period={period} />}
-      {sub === "cash" && <Cash g={g} />}
+      {sub === "cash" && <Cash g={g} period={period} />}
       {sub === "compare" && <Compare p={p} />}
     </div>
   );
@@ -72,18 +74,41 @@ function Api({ p, period }) {
   );
 }
 
-function Cash({ g }) {
-  const need = g.cash_need || 0, pct = (need / CASH_LIMIT) * 100;
+// Caixa necessário (operador, 19/10): o orçamento dos anúncios ativos na Meta, ou um orçamento digitado para simular, passa
+// pelas premissas ideais do teste. Mostra o período escolhido e todos os períodos lado a lado.
+function Cash({ g, period }) {
+  const meta = g.ad_budget;
+  const [weekly, setWeekly] = useState("");
+  // "1.500,50" (pt-BR) ou "1500.50": com vírgula, o ponto é milhar.
+  const typed = Number(/,/.test(weekly) ? weekly.replace(/\./g, "").replace(",", ".") : weekly);
+  const daily = weekly !== "" && typed > 0 ? typed / 7 : meta;
+  const plan = cashPlan(daily, periodDays(period)), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
+  const pct = plan ? (plan.need / CASH_LIMIT) * 100 : null;
   return (
-    <div className="row r-1-2">
-      <Card title="Necessidade de caixa" sub={`contra o caixa utilizável de ${fmt(CASH_LIMIT, "brl")}`}>
-        <Gauge value={pct} tone={pct > 100 ? "bad" : pct > 75 ? "warn" : "ok"} label={fmt(need, "brl")} sub="adiantado em pedidos na entrega" size={160} />
-      </Card>
-      <Card title="Como a conta é feita">
-        <HBars unit="brl" items={[{ label: "Adiantado agora", value: need, tone: pct > 100 ? "bad" : "" }, { label: "Limite do teste", value: CASH_LIMIT, tone: "ok" }]} />
-        <Note>Cada pedido na entrega adianta produto (R$ 30 por peça), entrega (R$ 19,99), manuseio (R$ 5,00) e a taxa da Logzz quando vai para separação. O dinheiro volta no repasse, 14 dias depois de "Completo". O antecipado cai na hora e não entra aqui. O saldo atual da Logzz e do Mercado Pago não tem API: por isso o portal mostra a necessidade, não o saldo.</Note>
-      </Card>
-    </div>
+    <>
+      <div className="row r-1-2">
+        <Card title="Caixa necessário" sub={`para rodar o anúncio por ${label}, contra o caixa utilizável de ${fmt(CASH_LIMIT, "brl")}`}>
+          <Gauge value={pct} tone={pct == null ? "" : pct > 100 ? "bad" : pct > 75 ? "warn" : "ok"} label={plan ? fmt(plan.need, "brl") : "—"} sub={plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem orçamento"} size={160} />
+          <label className="cash-input"><span>Orçamento por semana para simular</span>
+            <input inputMode="decimal" value={weekly} onChange={(e) => setWeekly(e.target.value)} placeholder={meta ? `${fmt(meta * 7, "brl")} (Meta)` : "ex.: 100"} />
+          </label>
+          <Note>{weekly !== "" && typed > 0 ? "Simulação: o valor digitado substitui o orçamento da Meta. Apague para voltar." : meta ? `Orçamento dos anúncios ativos na Meta: ${fmt(meta, "brl")} por dia.` : meta === 0 ? "Nenhum anúncio ativo com orçamento na Meta. Digite um orçamento para simular." : "Meta Ads não ligado. Digite um orçamento para simular."}</Note>
+        </Card>
+        <Card title="Como a conta é feita" sub="premissas ideais do teste">
+          {plan ? <HBars unit="brl" items={[
+            { label: `Anúncio + imposto da Meta (${fmt(META_TAX * 100, "pct")})`, value: plan.ad },
+            { label: `IA (${fmt(IDEAL.api_per_lead, "brl")} por lead) + WhatsApp pós-venda`, value: plan.api },
+            { label: `Adiantado nos pedidos na entrega (${fmt(plan.cod_orders, "n")} de ${fmt(plan.orders, "n")} pedidos)`, value: plan.upfront },
+            { label: "Sai do caixa no período", value: plan.total },
+            { label: `Caixa necessário (até ${plan.cycle} dias, antes do primeiro repasse)`, value: plan.need, tone: pct > 100 ? "bad" : "ok" }]} /> : <p className="empty">Sem orçamento para calcular.</p>}
+          <Note>CPL de {fmt(IDEAL.cpl, "brl")} e conversão de {fmt(IDEAL.conversion, "pct")}: cada {fmt(IDEAL.cpl, "brl")} de anúncio traz um lead, e 1 em cada 10 leads compra. {fmt(IDEAL.cod_share * 100, "pct")} dos pedidos na entrega, 1 peça de {fmt(IDEAL.cod_price, "brl")}: cada um adianta {fmt(codUpfront(IDEAL.cod_price, 1), "brl")} (produto, entrega, manuseio e taxa), que voltam no repasse da Logzz {RELEASE_DAYS} dias depois do "Completo". Com {DELIVERY_DAYS} dias até entregar (premissa do portal), nada volta antes de {DELIVERY_DAYS + RELEASE_DAYS} dias; depois disso o repasse dos pedidos antigos paga os novos, então o caixa necessário é o de no máximo esse ciclo. O que entra do antecipado na hora não é descontado.</Note>
+        </Card>
+      </div>
+      <h2 className="section-title">Caixa necessário por período</h2>
+      <Table name="caixa-por-periodo" head={["Período", "Anúncio", "Leads", "Pedidos", "Sai do caixa", "Caixa necessário"]}
+        rows={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id)); return [x.label, fmt(pl?.spend, "brl"), fmt(pl?.leads, "n"), fmt(pl?.orders, "n"), fmt(pl?.total, "brl"), fmt(pl?.need, "brl")]; })}
+        csv={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id)); return [x.label, pl?.spend, pl?.leads, pl?.orders, pl?.total, pl?.need]; })} />
+    </>
   );
 }
 

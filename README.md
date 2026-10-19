@@ -24,7 +24,12 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 
 ## Publicado no Vercel
 
-- `api/data.js` lê o Supabase, o n8n e a Meta na hora e guarda a resposta 5 min no cache. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
+- `api/data.js` lê o Supabase, o n8n e a Meta e guarda a resposta 60 s na memória da função (o cache do Vercel não guarda
+  resposta com login). A Meta é lida no máximo a cada 15 min; se falhar, o portal mostra a última leitura boa (até 6 h) com um
+  aviso. Toda leitura tem limite de tempo. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
+- Financeiro › Caixa (desde 19/10): o caixa necessário para rodar o orçamento diário dos anúncios ativos na Meta (ou um
+  orçamento semanal digitado para simular), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,27 por lead,
+  70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Conta em `src/lib/economics.js`, com teste.
 - `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.
 - Variáveis do projeto no Vercel (Settings > Environment Variables):
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.

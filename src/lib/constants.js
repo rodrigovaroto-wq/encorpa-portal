@@ -26,7 +26,6 @@ export const GROUPS = [
     { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio com imposto − API" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(contribuição dos pedidos − anúncio − API) ÷ faturamento", goal: "> 0%" },
     { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio com imposto + API)", goal: "≥ 1,5 mín · 2,5 ideal" },
-    { id: "cash_left", label: "Caixa reservado restante", unit: "brl", src: "manual (R$ 1.500)" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
   ]},
@@ -57,8 +56,8 @@ export const PAUSE = [
   { id: "p_handoff", label: "Conversas que a Malu não resolveu", what: "a Malu precisou avisar o operador", limit: "pausar acima de 10% das conversas", missing: "nenhuma conversa encerrada no período" },
   { id: "p_optout", label: "Clientes que pediram para sair", what: "pediram para não receber mais mensagem", limit: "pausar acima de 2,5% dos leads", missing: "nenhum lead no período" },
   { id: "p_api", label: "Conversas caras de API", what: "das últimas 100 conversas, quantas custaram mais de R$ 1,00 de modelo", limit: "pausar acima de 5% delas", missing: "nenhuma conversa com custo registrado" },
-  { id: "p_cash", label: "Necessidade de caixa", what: "quanto está adiantado em pedidos na entrega ainda não repassados (produto, entrega, manuseio e taxa; volta 14 dias depois de completo)", limit: "pausar acima de R$ 1.075 (o caixa utilizável do teste)", missing: "nenhum pedido no período" },
-  { id: "p_channel", label: "Número do WhatsApp", what: "o número está liberado pela Meta e a Cloud API responde", limit: "pausar se restrito, banido ou fora do ar", missing: "estado do canal não informado" },
+  { id: "p_cash", label: "Caixa necessário", what: "o caixa para rodar o orçamento dos anúncios ativos no período, com as premissas ideais (CPL R$ 1,25, conversão 10%)", limit: "pausar acima de R$ 1.075 (o caixa utilizável do teste)", missing: "nenhum anúncio ativo com orçamento na Meta" },
+  { id: "p_channel", label: "Número do WhatsApp", what: "a Malu está enviando e o workflow \"WhatsApp envio\" do n8n não tem erro nas últimas execuções", limit: "pausar se restrito, banido ou fora do ar", missing: "sem leitura do n8n nem mensagem da Malu" },
 ];
 
 
@@ -143,7 +142,7 @@ export const REF = [
 
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 
-export const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.2, .35], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], cash_left: [900, 1500], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
+export const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.2, .35], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
 
 export const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
 

@@ -1,7 +1,7 @@
 // Anúncios do Meta Ads (só leitura, a cada 5 min): campanhas, conjuntos, anúncios com comparação, testes de criativos, metas e premissas.
 import { AD_STATUS, COMPARE, GENDER, PAUSE, PHASES, REF, SAMPLE_FLOOR } from "../lib/constants.js";
 import { computePause } from "../lib/data.js";
-import { fmt } from "../lib/format.js";
+import { fmt, when } from "../lib/format.js";
 import { HBars } from "../components/charts.jsx";
 import { Card, Chip, Note, PageHead, Table } from "../components/ui.jsx";
 
@@ -19,10 +19,11 @@ export function Ads({ data, period, route, tabs }) {
       <PageHead crumb="Análise › Anúncios" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/ads/${k}`)} />
       {needMeta && !m && <Note>Meta Ads ainda não ligado: faltam as variáveis META_ACCESS_TOKEN e META_AD_ACCOUNT_ID no Vercel.</Note>}
       {needMeta && m?.error && <Note>Não consegui ler a Meta: {m.error}</Note>}
+      {m?.stale && <Note>A Meta não respondeu agora ({m.stale.error}). Mostrando a última leitura boa, de {when(m.stale.at)}.</Note>}
       {sub === "campaigns" && m?.campaigns && <Campaigns m={m} />}
       {sub === "adsets" && m?.adsets && <Adsets m={m} />}
       {sub === "ads" && m?.ads && <AdsView m={m} p={p} />}
-      {sub === "tests" && <Tests m={m} p={p} g={g} />}
+      {sub === "tests" && <Tests m={m} p={p} g={g} period={period} />}
       {sub === "goals" && <Goals p={p} />}
       {sub === "ref" && <Ref />}
     </div>
@@ -101,8 +102,8 @@ function AdsView({ m, p }) {
   );
 }
 
-export function PauseList({ p, g }) {
-  const pz = computePause(p, g), SIT = { ok: "dentro do limite", warn: "perto do limite", bad: "PAUSAR" };
+export function PauseList({ p, g, period }) {
+  const pz = computePause(p, g, period), SIT = { ok: "dentro do limite", warn: "perto do limite", bad: "PAUSAR" };
   return (
     <ul className="pause glass">
       {PAUSE.map((c) => { const x = pz[c.id]; return (
@@ -115,7 +116,7 @@ export function PauseList({ p, g }) {
   );
 }
 
-function Tests({ m, p, g }) {
+function Tests({ m, p, g, period }) {
   const t = g.totals || {};
   return (
     <>
@@ -123,7 +124,7 @@ function Tests({ m, p, g }) {
         <Card title="Progresso do teste" sub="piso de amostra">
           <HBars unit="n" items={[["Leads atendidos", "leads", "n"], ["Pedidos criados", "orders", "n"], ["Verba do anúncio", "spend", "brl"]].map(([l, k, u]) => ({ label: l, value: Math.min(100, ((t[k] || 0) / SAMPLE_FLOOR[k]) * 100), right: `${fmt(t[k] || 0, u)} / ${fmt(SAMPLE_FLOOR[k], u)}` }))} />
         </Card>
-        <div><h3 className="mini-title">Critérios de pausa</h3><PauseList p={p} g={g} /></div>
+        <div><h3 className="mini-title">Critérios de pausa</h3><PauseList p={p} g={g} period={period} /></div>
       </div>
       <h2 className="section-title">Criativos</h2>
       {m?.ads ? <><AdCards m={{ ...m, ads: m.ads.filter((a) => !["DELETED", "ARCHIVED"].includes(a.status)) }} /><h2 className="section-title">Comparação entre os criativos</h2><Compare items={m.ads.filter((a) => !["DELETED", "ARCHIVED"].includes(a.status))} label="criativo" /></> : <Note>Meta Ads não ligado.</Note>}

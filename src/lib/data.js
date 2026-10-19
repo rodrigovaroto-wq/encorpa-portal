@@ -2,6 +2,7 @@
 // Formato: { updated, global: {...}, periods: { day, week, month, 3m, 6m, 9m, 12m } } (lib/build.mjs › build).
 import { ALL, BUCKETS, RANGE, SUMMED, OUTCOMES, PAUSE, DECISION } from "./constants.js";
 import { fmt, store } from "./format.js";
+import { CASH_LIMIT, META_TAX, cashPlan } from "./economics.js";
 
 const CACHE = "last:portal";
 
@@ -32,8 +33,12 @@ function loadScript(src) {
   });
 }
 
+// Dias de cada período (BUCKETS: intervalos × dias por intervalo).
+export const periodDays = (period) => { const [n, d] = BUCKETS[period] || BUCKETS.week; return n * d; };
+
 // Critérios de pausa do teste, calculados das métricas.
-export function computePause(p, g) {
+export function computePause(p, g, period) {
+  const plan = cashPlan(g.ad_budget, periodDays(period));
   const v = (id) => p.metrics?.[id]?.value;
   const lvl = (x, warn, bad) => (x == null ? "" : x > bad ? "bad" : x > warn ? "warn" : "ok");
   const row = (x, s, u) => (x == null ? undefined : { value: fmt(x, u), status: s });
@@ -42,8 +47,8 @@ export function computePause(p, g) {
     p_handoff: row(v("handoff"), lvl(v("handoff"), 8, 10), "pct"),
     p_optout: row(v("optout"), lvl(v("optout"), 2, 2.5), "pct"),
     p_api: row(g.api_over_pct, lvl(g.api_over_pct, 4, 5), "pct"),
-    p_cash: row(g.cash_need, lvl(g.cash_need, 800, 1075), "brl"),
-    p_channel: g.channel ? { value: g.channel.number, status: /restrit|banid|fora|erro|desconect/i.test(g.channel.number) ? "bad" : "ok" } : undefined,
+    p_cash: row(plan?.need, lvl(plan?.need, CASH_LIMIT * 0.75, CASH_LIMIT), "brl"),
+    p_channel: g.channel?.status ? { value: g.channel.number, status: g.channel.status } : undefined,
   };
 }
 export const PAUSE_IDS = PAUSE.map((c) => c.id);
@@ -112,7 +117,7 @@ export function demoData() {
     demo: true, source: "demo", updated: new Date(now).toISOString(), periods,
     global: {
       updated: new Date(now).toISOString(), totals: { leads: 210, orders: 18, spend: 240 }, funnel: { first_msg: 210, reply: 160, price: 110, link: 70, order: 18, delivered: 12 },
-      channel: { number: "Saudável", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" }, api_over_pct: 2.1, cash_need: 540,
+      channel: { number: "Enviando, sem erro nas últimas execuções", status: "ok", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" }, api_over_pct: 2.1, ad_budget: 50,
       versions: [24, 25, 26].map((v, i) => ({ version: `v${v}`, conversations: 60 + i * 20, resolution: 70 + i * 6, unresolved: 9 - i * 3, abandoned: 12 - i * 2, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * 0.2, cost: 0.8 - i * 0.08 })),
       gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
       chats, orders,
@@ -142,7 +147,7 @@ export function demoData() {
 // Os números de exemplo saem uns dos outros com as mesmas regras do cálculo real (lib/build.mjs), para fecharem entre si:
 // ticket médio com mix 70% na entrega / 30% antecipado e alguns kits; margem por pedido já descontando recusa (17%) e devolução;
 // anúncio = leads × CPL com imposto da Meta; API = leads × custo por lead + R$ 0,04 por pedido.
-const TICKET = 132, MARGIN_PER_ORDER = 61, META_TAX = 0.1383;
+const TICKET = 132, MARGIN_PER_ORDER = 61;
 function derive(leads, orders, cpl, apl) {
   const revenue = orders * TICKET, gross = orders * MARGIN_PER_ORDER, spend = leads * cpl, api = leads * apl + orders * 0.04;
   const cost = spend * (1 + META_TAX) + api, net = gross - cost;

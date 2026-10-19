@@ -1,7 +1,7 @@
 // Contas do portal (lib/build.mjs) contra dados sintéticos. Rode: npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildAll, buildChats, chats, conversationStatus, dropSynthetic, orderValue, outcomeCounts } from "../lib/build.mjs";
+import { adBudget, buildAll, buildChats, channel, conversationStatus, dropSynthetic, orderValue, outcomeCounts } from "../lib/build.mjs";
 import { NOW, fixture } from "./fixture.mjs";
 
 const near = (a, b, eps = 0.01) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
@@ -55,4 +55,41 @@ test("buildAll: as métricas não contam a persona e a lista de conversas é a m
   assert.equal(data.periods.week.metrics.leads.value, 3);
   assert.equal(data.periods.week.metrics.orders.value, 1);
   assert.deepEqual(data.global.chats.map((c) => c.id), (await buildChats({ fixture: fixture() }, NOW)).chats.map((c) => c.id));
+});
+
+test("price_reach e funil: conversa com alguma mensagem nossa com R$ chegou ao preço", async () => {
+  const { data } = await buildAll({ fixture: fixture() }, NOW);
+  // 4 conversas reais na semana; só a da Ana recebeu "R$".
+  near(data.periods.week.metrics.price_reach.value, 25);
+  assert.equal(data.global.funnel.price, 1);
+});
+
+test("séries: intervalo sem base fica nulo (lacuna), contagem fica zero", async () => {
+  const { data } = await buildAll({ fixture: fixture() }, NOW);
+  const conv = data.periods.week.metrics.conversion.series, leads = data.periods.week.metrics.leads.series;
+  assert.ok(conv.includes(null), "dias sem lead não viram 0% de conversão");
+  assert.ok(!leads.includes(null) && leads.includes(0), "dias sem lead têm 0 leads");
+});
+
+test("adBudget: orçamento da campanha, ou soma dos conjuntos ativos; pausado fica fora", () => {
+  const m = {
+    campaigns: [{ id: "c1", status: "ACTIVE", daily_budget: 50 }, { id: "c2", status: "ACTIVE" }, { id: "c3", status: "PAUSED", daily_budget: 999 }],
+    adsets: [
+      { id: "s1", campaign_id: "c1", status: "ACTIVE", daily_budget: 25 }, // orçamento na campanha: não soma de novo
+      { id: "s2", campaign_id: "c2", status: "ACTIVE", daily_budget: 10 },
+      { id: "s3", campaign_id: "c2", status: "PAUSED", daily_budget: 70 },
+      { id: "s4", campaign_id: "c2", status: "ACTIVE", lifetime_budget: 70, start: "2026-10-15T00:00:00Z", end: "2026-10-22T00:00:00Z" },
+    ],
+  };
+  assert.equal(adBudget(m, NOW), 50 + 10 + 10);
+  assert.equal(adBudget(null, NOW), null);
+  assert.equal(adBudget({ error: "x" }, NOW), null);
+});
+
+test("channel: erro no envio ou silêncio de 3 dias pede atenção; sem leitura fica sem número", () => {
+  const wf = (errors) => ({ workflows: [{ name: "Encorpa — WhatsApp envio", errors }] });
+  assert.equal(channel({ ok: true }, wf(0)).status, "ok");
+  assert.equal(channel({ ok: true }, wf(2)).status, "warn");
+  assert.equal(channel({ ok: false }, wf(0)).status, "warn");
+  assert.equal(channel({ ok: null }, null).status, null);
 });
