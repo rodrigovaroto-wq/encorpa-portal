@@ -1,7 +1,7 @@
 // Conversas da Malu no layout do Chat App UI: lista com busca e filtro por desfecho, fileira de quem está conversando agora,
 // a conversa em bolhas e a ficha da cliente. O operador responde por aqui (api/chat.js): a primeira mensagem pausa a Malu
 // naquela conversa (leads.handoff_at), e "Devolver para a Malu" tira a pausa.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OUTCOME, OUTCOMES, STAGE } from "../lib/constants.js";
 import { ago, dayKey, fmt, initials, timeOnly, when } from "../lib/format.js";
 import { Chip, PageHead, Tabs } from "../components/ui.jsx";
@@ -12,42 +12,14 @@ const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toL
 // O que o operador fez nesta sessão (envio, pausa) vale na hora, até o servidor mostrar o mesmo.
 // Fica fora do componente para sobreviver a sair da tela e voltar.
 let LOCAL = {};
-// Último retrato bom de api/chats: uma falha de rede mantém a lista na tela em vez de esvaziá-la.
-let LIVE = { updated: null, chats: null, failedAt: null };
-const POLL = 15_000;
 const ms = (s) => new Date(s).getTime();
 
-// Conversas ao vivo (api/chats.js, sem cache) a cada 15 s com a aba visível; /api/data chega a ter 5 min de atraso.
-function useLiveChats(enabled) {
-  const [live, setLive] = useState(LIVE);
-  const load = useCallback(async () => {
-    try {
-      const r = await fetch("api/chats", { cache: "no-store", credentials: "same-origin" });
-      const out = r.ok ? await r.json() : null;
-      if (!Array.isArray(out?.chats)) throw new Error("sem conversas");
-      LIVE = { updated: out.updated, chats: out.chats, failedAt: null };
-    } catch {
-      LIVE = { ...LIVE, failedAt: new Date().toISOString() };
-    }
-    setLive(LIVE);
-  }, []);
-  useEffect(() => {
-    if (!enabled) return;
-    load();
-    const tick = () => { if (document.visibilityState === "visible") load(); };
-    const t = setInterval(tick, POLL);
-    document.addEventListener("visibilitychange", tick);
-    return () => { clearInterval(t); document.removeEventListener("visibilitychange", tick); };
-  }, [enabled, load]);
-  return [live, load];
-}
-
-export function Chat({ data, route }) {
+export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
   const [local, setLocalState] = useState(LOCAL);
   const setLocal = (f) => setLocalState((x) => (LOCAL = f(x)));
-  const [live, reload] = useLiveChats(!data.demo && location.protocol !== "file:");
-  // O retrato mais novo entre o ao vivo e o de /api/data.
-  const base = live.chats && (!data.global.updated || !live.updated || ms(live.updated) >= ms(data.global.updated)) ? live : { updated: data.global.updated, chats: data.global.chats || [] };
+  const reload = reloadChats;
+  // As conversas já chegam com o retrato ao vivo (App › withLive); chatsUpdated é a hora dele.
+  const base = useMemo(() => ({ updated: data.chatsUpdated || data.global.updated, chats: data.global.chats || [] }), [data]);
   const chats = useMemo(() => base.chats.map((c) => {
     const l = local[c.id];
     if (!l) return c;
@@ -138,9 +110,19 @@ function ScrollRow({ children }) {
   );
 }
 
+// Rola para o fim ao abrir a conversa, ao enviar e quando chega mensagem com você já no fim. Lendo o histórico mais acima,
+// a tela fica parada e aparece "Novas mensagens" (antes a atualização de 15 s puxava a leitura para baixo).
 function Thread({ c, patch, reload }) {
-  const end = useRef(null);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [c.id, c.messages.length]);
+  const end = useRef(null), box = useRef(null), atEnd = useRef(true), seen = useRef({ id: null, n: 0 });
+  const [fresh, setFresh] = useState(false);
+  const toEnd = () => { end.current?.scrollIntoView({ block: "end" }); atEnd.current = true; setFresh(false); };
+  useEffect(() => {
+    const prev = seen.current, n = c.messages.length;
+    seen.current = { id: c.id, n };
+    if (prev.id !== c.id || atEnd.current || c.messages.at(-1)?.op) toEnd();
+    else if (n > prev.n) setFresh(true);
+  }, [c.id, c.messages.length]);
+  const onScroll = () => { const el = box.current; atEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; if (atEnd.current) setFresh(false); };
   let lastDay = "";
   return (
     <section className="chat-thread">
@@ -149,7 +131,7 @@ function Thread({ c, patch, reload }) {
         <span className="avatar">{initials(c.name)}</span>
         <div><b>{c.name || `Cliente ${c.short}`}</b><small>{c.phone || ""} · {STAGE[c.stage] || c.stage} · {ago(c.last)}</small></div>
       </header>
-      <div className="bubbles">
+      <div className="bubbles" ref={box} onScroll={onScroll}>
         {c.messages.map((m, i) => {
           const d = dayKey(m.at), sep = d !== lastDay; lastDay = d;
           return (
@@ -161,6 +143,7 @@ function Thread({ c, patch, reload }) {
         })}
         {!c.messages.length && <p className="empty">Conversa sem mensagens registradas.</p>}
         <div ref={end} />
+        {fresh && <button className="new-msgs glass pill" onClick={toEnd}>Novas mensagens ↓</button>}
       </div>
       <Composer c={c} patch={patch} reload={reload} />
     </section>

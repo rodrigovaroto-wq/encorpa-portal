@@ -1,10 +1,11 @@
 // Casca do portal: fundo em ondas, menu lateral, topo, busca e a página da rota (#/pagina/sub-aba).
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Background } from "./components/Background.jsx";
 import { Palette } from "./components/Palette.jsx";
 import { MobileNav, Sidebar } from "./components/Sidebar.jsx";
 import { Topbar } from "./components/Topbar.jsx";
 import { demoData, loadData } from "./lib/data.js";
+import { useLiveChats, withLive } from "./lib/live.js";
 import { store } from "./lib/format.js";
 import { parseRoute } from "./lib/nav.js";
 import { Ads } from "./pages/Ads.jsx";
@@ -45,19 +46,22 @@ export function App() {
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
   useEffect(() => { document.documentElement.dataset.theme = prefs.theme; document.documentElement.dataset.motion = prefs.motion; }, [prefs]);
 
+  const [live, reloadChats] = useLiveChats(!demo && location.protocol !== "file:", route.page.id === "chat" ? 15_000 : 60_000);
+  const shown = useMemo(() => withLive(data, live), [data, live]);
+
   const View = VIEWS[route.page.id] || Home;
   return (
     <>
       <Background />
       <div className={`shell ${collapsed ? "side-collapsed" : ""}`}>
-        <Sidebar route={route} collapsed={collapsed} onToggle={() => { setCollapsed(!collapsed); store.set("side", collapsed ? "0" : "1"); }} data={data} period={period} />
+        <Sidebar route={route} collapsed={collapsed} onToggle={() => { setCollapsed(!collapsed); store.set("side", collapsed ? "0" : "1"); }} data={shown} period={period} />
         <main className="main">
-          <Topbar route={route} period={period} setPeriod={setPeriod} data={data} onSearch={() => setPalette(true)} prefs={prefs} setPrefs={setPrefs} demo={demo} setDemo={setDemo} />
-          {data ? <View key={route.page.id} data={data} period={period} route={route} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
+          <Topbar route={route} period={period} setPeriod={setPeriod} data={shown} onSearch={() => setPalette(true)} prefs={prefs} setPrefs={setPrefs} demo={demo} setDemo={setDemo} />
+          {shown ? <View key={route.page.id} data={shown} period={period} route={route} live={live} reloadChats={reloadChats} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
         </main>
       </div>
-      <MobileNav route={route} data={data} period={period} />
-      <Palette open={palette} onClose={() => setPalette(false)} data={data} period={period} />
+      <MobileNav route={route} data={shown} period={period} />
+      <Palette open={palette} onClose={() => setPalette(false)} data={shown} period={period} />
     </>
   );
 }

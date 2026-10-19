@@ -42,3 +42,29 @@ test("Conversas: abrir, responder, ver a resposta ficar e sobreviver a uma falha
     server.close();
   }
 });
+
+test("Conversas: lendo o histórico, mensagem nova não puxa a tela; o menu conta as mesmas conversas", { timeout: 60_000 }, async () => {
+  const { server, state, url } = await start();
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  const page = await browser.newPage({ viewport: { width: 1400, height: 500 } });
+  try {
+    const conv = "11111111-1111-4111-8111-111111111111";
+    // Histórico comprido para haver o que rolar.
+    for (let i = 0; i < 30; i++) state.fx.messages.push({ id: `h${i}`, conversation_id: conv, direction: i % 2 ? "outbound" : "inbound", body: `linha ${i}`, created_at: new Date(Date.now() - (60 - i) * 60000).toISOString(), external_id: null });
+    await page.goto(`${url}/#/chat?c=${conv}`);
+    await page.waitForSelector(".chat-thread .bubble");
+    await page.waitForTimeout(500);
+    await page.locator(".bubbles").evaluate((el) => { el.scrollTop = 0; el.dispatchEvent(new Event("scroll")); });
+    state.fx.messages.push({ id: "nova", conversation_id: conv, direction: "inbound", body: "chegou agora", created_at: new Date().toISOString(), external_id: "wamid.nova" });
+    await page.locator(".new-msgs").waitFor({ timeout: 20_000 });
+    assert.equal(await page.locator(".bubbles").evaluate((el) => el.scrollTop), 0, "a leitura ficou onde estava");
+    await page.click(".new-msgs");
+    await page.waitForTimeout(300);
+    assert.ok(await page.locator(".bubbles").evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight < 80), "o botão leva ao fim");
+    // A conversa não resolvida (Bia) aparece no contador do menu, vindo do mesmo retrato ao vivo.
+    assert.equal(await page.locator('.side-item[href="#/chat"] em').textContent(), "1");
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

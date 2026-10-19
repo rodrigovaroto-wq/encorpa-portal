@@ -567,3 +567,4 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .cash-input { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: .82rem; color: var(--dim); }
 .cash-input input { padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--glass-hi); color: var(--text); font: inherit; outline: none; }
 .cash-input input:focus { border-color: var(--accent-2); }
+.new-msgs { position: sticky; bottom: 4px; align-self: center; z-index: 2; font-size: .8rem; }
