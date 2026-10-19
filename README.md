@@ -8,6 +8,9 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `npm install` e depois `npm run dev` (abre em http://localhost:5173). Sem o Vercel não existe `/api/data`: o portal usa o
   último retrato guardado no navegador ou `public/data.js`. Em Preferências (engrenagem) dá para ligar os dados de exemplo.
 - `npm run build` gera `dist/`, que é o que o Vercel publica.
+- `npm test` roda os testes das contas (`lib/build.mjs`) e das funções (`api/`) com dados sintéticos (`tests/fixture.mjs`);
+  `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build). `npm run check` faz os três.
+  O GitHub roda o mesmo em todo push e pull request (`.github/workflows/ci.yml`). Mudou uma conta ou uma tela, rode antes de publicar.
 
 ## Estrutura
 
