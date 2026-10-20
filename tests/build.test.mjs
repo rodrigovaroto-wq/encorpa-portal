@@ -3,7 +3,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { adBudget, buildAll, buildChats, channel, conversationStatus, dropSynthetic, orderValue, outcomeCounts } from "../lib/build.mjs";
 import { NOW, fixture } from "./fixture.mjs";
-import { FIXED_PER_DAY } from "../src/lib/economics.js";
 
 const near = (a, b, eps = 0.01) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 
@@ -156,7 +155,7 @@ test("demonstrativo: margem − anúncio − IA − WhatsApp − fixos = lucro; 
   const { data } = await buildAll({ fixture: withMeta(20) }, NOW);
   const p = data.periods.week, m = p.money, v = (id) => p.metrics[id].value;
   near(m.ads, 20, 1e-9); // o gasto da Meta, sem acréscimo de imposto
-  near(m.fixed, (50 / 24) * FIXED_PER_DAY, 1e-6); // do primeiro lead real (50 h atrás) até agora
+  near(m.fixed, 0, 1e-9); // nenhum fixo venceu nesta semana: o fixo entra só quando vence
   near(v("net_profit"), v("gross_profit") - m.ads - m.ai - m.whatsapp - m.fixed, 1e-9);
   near(v("roi"), v("gross_profit") / (m.ads + m.ai + m.whatsapp), 1e-9);
   near(v("op_margin"), (v("net_profit") / v("revenue")) * 100, 1e-9);
@@ -168,4 +167,14 @@ test("investido até agora: soma das linhas, anúncio ao vivo da Meta, resultado
   near(inv.total, inv.rows.reduce((a, r) => a + r.total, 0), 1e-9);
   assert.equal(inv.rows.find((r) => r.id === "ads").total, 20);
   near(inv.result, inv.contribution - inv.total, 1e-9);
+});
+
+test("resultado do mês em que o número vence: entra a mensalidade de R$ 35 inteira, no mês em que vence", async () => {
+  const at = Date.parse("2026-11-06T12:00:00Z");
+  const { data } = await buildAll({ fixture: withMeta(20) }, at);
+  near(data.periods.month.money.fixed, 35, 1e-9);
+  near(data.periods.week.money.fixed, 35, 1e-9);
+  near(data.periods.day.money.fixed, 0, 1e-9);
+  const s = data.periods.month.metrics.fixed_cost.series;
+  assert.equal(s.filter((v) => v > 0).length, 1, "só o dia do vencimento tem valor");
 });

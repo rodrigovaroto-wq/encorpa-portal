@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
 import { periodDays } from "../lib/data.js";
-import { CASH_LIMIT, DELIVERY_DAYS, FIXED_PER_DAY, IDEAL, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
+import { DELIVERY_DAYS, IDEAL, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
 import { bucketLabels, fmt, metricBy, parseBrl } from "../lib/format.js";
-import { Gauge, HBars, Lines } from "../components/charts.jsx";
+import { HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
@@ -35,7 +35,7 @@ function Result({ p, g }) {
     { label: "Anúncio na Meta (imposto já incluído no gasto)", value: v("spend") ?? null, sign: -1 },
     { label: "Modelo de IA (chamadas dos leads)", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
     { label: "WhatsApp (template de pós-venda)", value: money.whatsapp ?? null, sign: -1 },
-    { label: "Custos fixos (PikaPods + número, rateio por dia)", value: money.fixed ?? null, sign: -1 },
+    { label: "Custos fixos que venceram (recarga da PikaPods, mensalidade do número)", value: money.fixed ?? null, sign: -1 },
     { label: "= Resultado", value: v("net_profit") ?? null, sum: true },
   ];
   const max = Math.max(1, ...lines.map((l) => Math.abs(l.value || 0)));
@@ -58,7 +58,7 @@ function Result({ p, g }) {
           ))}
         </div>
       </Card>
-      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). O anúncio entra pelo gasto da Meta, que já traz o imposto. A IA é a soma das chamadas de modelo dos leads. Os fixos (PikaPods US$ 3,73/mês × R$ 5,40 e número R$ 35/mês) são rateados por dia desde o primeiro lead e não entram no ROI. Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
+      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). O anúncio entra pelo gasto da Meta, que já traz o imposto. A IA é a soma das chamadas de modelo dos leads. Os fixos entram só quando vencem e são pagos de novo: cada recarga automática de US$ 10 da PikaPods (R$ 54) e cada mensalidade de R$ 35 do número, no dia 5. Não entram no ROI. Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
       {g.invested && <Invested inv={g.invested} />}
     </>
   );
@@ -75,7 +75,7 @@ function Invested({ inv }) {
           ["Margem dos pedidos até hoje", "", "", fmt(inv.contribution, "brl")],
           [<b key="r">Resultado acumulado</b>, "", "", <b key="w" className={inv.result < 0 ? "neg" : ""}>{fmt(inv.result, "brl")}</b>]]}
         csv={[...inv.rows.map((r) => [r.label, r.kind, r.how, r.total]), ["Total investido", "", "", inv.total], ["Margem dos pedidos até hoje", "", "", inv.contribution], ["Resultado acumulado", "", "", inv.result]]} />
-      <Note>Desde o início do projeto, pelo que já saiu do cartão, e atualizado sozinho a cada leitura dos dados (a cada 5 min): anúncio pela Meta, IA pelas chamadas de modelo dos leads (sem personas nem Hermes), WhatsApp pelos pedidos, PikaPods pelas recargas automáticas de US$ 10 (o consumo de US$ 3,73 por mês leva o saldo abaixo de US$ 1) e o número pelas mensalidades de cada dia 5. Dólar a R$ 5,40. É diferente do resultado do período acima, que rateia os fixos por dia.</Note>
+      <Note>Desde o início do projeto, pelo que já saiu do cartão, e atualizado sozinho a cada leitura dos dados (a cada 5 min): anúncio pela Meta, IA pelas chamadas de modelo dos leads (sem personas nem Hermes), WhatsApp pelos pedidos, PikaPods pelas recargas automáticas de US$ 10 (o consumo de US$ 3,73 por mês leva o saldo abaixo de US$ 1) e o número pelas mensalidades de cada dia 5. Dólar a R$ 5,40. </Note>
     </>
   );
 }
@@ -94,39 +94,50 @@ function Api({ p, period, updated }) {
 }
 
 // Caixa necessário (operador, 19/10): o orçamento dos anúncios ativos na Meta, ou um orçamento digitado para simular, passa
-// pelas premissas ideais do teste. Mostra o período escolhido e todos os períodos lado a lado.
+// pelas premissas ideais do teste. CPL e conversão também podem ser digitados para simular (operador, 20/10); vazio = premissa ideal.
+// Mostra o período escolhido e todos os períodos lado a lado.
+const typedOr = (text, fallback, ok) => { const v = parseBrl(String(text).replace("%", "")); return text.trim() !== "" && ok(v) ? v : fallback; };
 function Cash({ g, period }) {
   const meta = g.ad_budget;
-  const [weekly, setWeekly] = useState("");
+  const [weekly, setWeekly] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState("");
   const typed = parseBrl(weekly);
   const daily = weekly !== "" && typed > 0 ? typed / 7 : meta;
-  const plan = cashPlan(daily, periodDays(period)), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
-  const pct = plan ? (plan.need / CASH_LIMIT) * 100 : null;
+  const sim = { cpl: typedOr(cplText, IDEAL.cpl, (v) => v > 0), conversion: typedOr(convText, IDEAL.conversion, (v) => v >= 0 && v <= 100) };
+  const simulated = sim.cpl !== IDEAL.cpl || sim.conversion !== IDEAL.conversion;
+  const plan = cashPlan(daily, periodDays(period), sim), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
   return (
     <>
       <div className="row r-1-2">
-        <Card title="Caixa necessário" sub={`para rodar o anúncio por ${label}, contra o caixa utilizável de ${fmt(CASH_LIMIT, "brl")}`}>
-          <Gauge value={pct} tone={pct == null ? "" : pct > 100 ? "bad" : pct > 75 ? "warn" : "ok"} label={plan ? fmt(plan.need, "brl") : "—"} sub={plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem orçamento"} size={160} />
-          <label className="cash-input"><span>Orçamento por semana para simular</span>
-            <input inputMode="decimal" value={weekly} onChange={(e) => setWeekly(e.target.value)} placeholder={meta ? `${fmt(meta * 7, "brl")} (Meta)` : "ex.: 100"} />
-          </label>
-          <Note>{weekly !== "" && typed > 0 ? "Simulação: o valor digitado substitui o orçamento da Meta. Apague para voltar." : meta ? `Orçamento dos anúncios ativos na Meta: ${fmt(meta, "brl")} por dia.` : meta === 0 ? "Nenhum anúncio ativo com orçamento na Meta. Digite um orçamento para simular." : "Meta Ads não ligado. Digite um orçamento para simular."}</Note>
+        <Card title="Caixa necessário" sub={`para rodar a operação por ${label}`}>
+          <div className="kpi-value">{plan ? fmt(plan.need, "brl") : "—"}</div>
+          <p className="desc">{plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem orçamento"}</p>
+          <div className="cash-grid">
+            <label className="cash-input"><span>Orçamento por semana</span>
+              <input inputMode="decimal" value={weekly} onChange={(e) => setWeekly(e.target.value)} placeholder={meta ? `${fmt(meta * 7, "brl")} (Meta)` : "ex.: 100"} />
+            </label>
+            <label className="cash-input"><span>CPL</span>
+              <input inputMode="decimal" value={cplText} onChange={(e) => setCpl(e.target.value)} placeholder={`${fmt(IDEAL.cpl, "brl")} (ideal)`} />
+            </label>
+            <label className="cash-input"><span>Conversão (%)</span>
+              <input inputMode="decimal" value={convText} onChange={(e) => setConv(e.target.value)} placeholder={`${fmt(IDEAL.conversion, "pct")} (ideal)`} />
+            </label>
+          </div>
+          <Note>{weekly !== "" && typed > 0 ? "Simulação: o orçamento digitado substitui o da Meta." : meta ? `Orçamento dos anúncios ativos na Meta: ${fmt(meta, "brl")} por dia.` : meta === 0 ? "Nenhum anúncio ativo com orçamento na Meta. Digite um orçamento para simular." : "Meta Ads não ligado. Digite um orçamento para simular."} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
         </Card>
-        <Card title="Como a conta é feita" sub="premissas ideais do teste">
+        <Card title="Como a conta é feita" sub={simulated ? "com o CPL e a conversão digitados" : "premissas ideais do teste"}>
           {plan ? <HBars unit="brl" items={[
             { label: "Anúncio (imposto da Meta já incluído)", value: plan.ad },
             { label: `IA (${fmt(IDEAL.api_per_lead, "brl")} por lead) + WhatsApp pós-venda`, value: plan.api },
-            { label: `Custos fixos (PikaPods + número, ${fmt(FIXED_PER_DAY, "brl")} por dia)`, value: plan.fixed },
             { label: `Adiantado nos pedidos na entrega (${fmt(plan.cod_orders, "n")} de ${fmt(plan.orders, "n")} pedidos)`, value: plan.upfront },
             { label: "Sai do caixa no período", value: plan.total },
-            { label: `Caixa necessário (até ${plan.cycle} dias, antes do primeiro repasse)`, value: plan.need, tone: pct > 100 ? "bad" : "ok" }]} /> : <p className="empty">Sem orçamento para calcular.</p>}
-          <Note>CPL de {fmt(IDEAL.cpl, "brl")} e conversão de {fmt(IDEAL.conversion, "pct")}: cada {fmt(IDEAL.cpl, "brl")} de anúncio traz um lead, e 1 em cada 10 leads compra. {fmt(IDEAL.cod_share * 100, "pct")} dos pedidos na entrega, 1 peça de {fmt(IDEAL.cod_price, "brl")}: cada um adianta {fmt(codUpfront(IDEAL.cod_price, 1), "brl")} (produto, entrega, manuseio e taxa), que voltam no repasse da Logzz {RELEASE_DAYS} dias depois do "Completo". Com {DELIVERY_DAYS} dias até entregar (premissa do portal), nada volta antes de {DELIVERY_DAYS + RELEASE_DAYS} dias; depois disso o repasse dos pedidos antigos paga os novos, então o caixa necessário é o de no máximo esse ciclo. O que entra do antecipado na hora não é descontado.</Note>
+            { label: `Caixa necessário (até ${plan.cycle} dias, antes do primeiro repasse)`, value: plan.need }]} /> : <p className="empty">Sem orçamento para calcular.</p>}
+          <Note>CPL de {fmt(sim.cpl, "brl")} e conversão de {fmt(sim.conversion, "pct")}: cada {fmt(sim.cpl, "brl")} de anúncio traz um lead, e {fmt(sim.conversion, "pct")} dos leads compram. {fmt(IDEAL.cod_share * 100, "pct")} dos pedidos na entrega, 1 peça de {fmt(IDEAL.cod_price, "brl")}: cada um adianta {fmt(codUpfront(IDEAL.cod_price, 1), "brl")} (produto, entrega, manuseio e taxa), que voltam no repasse da Logzz {RELEASE_DAYS} dias depois do "Completo". Com {DELIVERY_DAYS} dias até entregar (premissa do portal), nada volta antes de {DELIVERY_DAYS + RELEASE_DAYS} dias; depois disso o repasse dos pedidos antigos paga os novos, então o caixa necessário é o de no máximo esse ciclo. O que entra do antecipado na hora não é descontado.</Note>
         </Card>
       </div>
       <h2 className="section-title">Caixa necessário por período</h2>
       <Table name="caixa-por-periodo" head={["Período", "Anúncio", "Leads", "Pedidos", "Sai do caixa", "Caixa necessário"]}
-        rows={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id)); return [x.label, fmt(pl?.spend, "brl"), fmt(pl?.leads, "n"), fmt(pl?.orders, "n"), fmt(pl?.total, "brl"), fmt(pl?.need, "brl")]; })}
-        csv={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id)); return [x.label, pl?.spend, pl?.leads, pl?.orders, pl?.total, pl?.need]; })} />
+        rows={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id), sim); return [x.label, fmt(pl?.spend, "brl"), fmt(pl?.leads, "n"), fmt(pl?.orders, "n"), fmt(pl?.total, "brl"), fmt(pl?.need, "brl")]; })}
+        csv={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id), sim); return [x.label, pl?.spend, pl?.leads, pl?.orders, pl?.total, pl?.need]; })} />
     </>
   );
 }

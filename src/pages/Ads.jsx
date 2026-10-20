@@ -103,7 +103,7 @@ function AdsView({ m, p }) {
 }
 
 export function PauseList({ p, g }) {
-  const pz = computePause(p, g), SIT = { ok: "dentro do limite", warn: "perto do limite", bad: "PAUSAR" };
+  const pz = computePause(p, g), SIT = { ok: "dentro do limite", warn: "perto do limite", bad: "PAUSAR", info: "informativo, sem limite" };
   return (
     <ul className="pause glass">
       {PAUSE.map((c) => { const x = pz[c.id]; return (
