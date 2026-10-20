@@ -99,9 +99,9 @@ function Api({ p, period, updated }) {
 const typedOr = (text, fallback, ok) => { const v = parseBrl(String(text).replace("%", "")); return text.trim() !== "" && ok(v) ? v : fallback; };
 function Cash({ g, period }) {
   const meta = g.ad_budget;
-  const [weekly, setWeekly] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState("");
-  const typed = parseBrl(weekly);
-  const daily = weekly !== "" && typed > 0 ? typed / 7 : meta;
+  const [budget, setBudget] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState("");
+  const typed = parseBrl(budget);
+  const daily = budget !== "" && typed > 0 ? typed : meta; // orçamento por dia (operador, 20/10)
   const sim = { cpl: typedOr(cplText, IDEAL.cpl, (v) => v > 0), conversion: typedOr(convText, IDEAL.conversion, (v) => v >= 0 && v <= 100) };
   const simulated = sim.cpl !== IDEAL.cpl || sim.conversion !== IDEAL.conversion;
   const plan = cashPlan(daily, periodDays(period), sim), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
@@ -109,11 +109,13 @@ function Cash({ g, period }) {
     <>
       <div className="row r-1-2">
         <Card title="Caixa necessário" sub={`para rodar a operação por ${label}`}>
-          <div className="kpi-value">{plan ? fmt(plan.need, "brl") : "—"}</div>
-          <p className="desc">{plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem orçamento"}</p>
+          <div className="cash-need">
+            <div className="kpi-value">{plan ? fmt(plan.need, "brl") : "—"}</div>
+            <p className="desc">{plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem orçamento"}</p>
+          </div>
           <div className="cash-grid">
-            <label className="cash-input"><span>Orçamento por semana</span>
-              <input inputMode="decimal" value={weekly} onChange={(e) => setWeekly(e.target.value)} placeholder={meta ? `${fmt(meta * 7, "brl")} (Meta)` : "ex.: 100"} />
+            <label className="cash-input"><span>Orçamento por dia</span>
+              <input inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder={meta ? `${fmt(meta, "brl")} (Meta)` : "ex.: 50"} />
             </label>
             <label className="cash-input"><span>CPL</span>
               <input inputMode="decimal" value={cplText} onChange={(e) => setCpl(e.target.value)} placeholder={`${fmt(IDEAL.cpl, "brl")} (ideal)`} />
@@ -122,7 +124,7 @@ function Cash({ g, period }) {
               <input inputMode="decimal" value={convText} onChange={(e) => setConv(e.target.value)} placeholder={`${fmt(IDEAL.conversion, "pct")} (ideal)`} />
             </label>
           </div>
-          <Note>{weekly !== "" && typed > 0 ? "Simulação: o orçamento digitado substitui o da Meta." : meta ? `Orçamento dos anúncios ativos na Meta: ${fmt(meta, "brl")} por dia.` : meta === 0 ? "Nenhum anúncio ativo com orçamento na Meta. Digite um orçamento para simular." : "Meta Ads não ligado. Digite um orçamento para simular."} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
+          <Note>{budget !== "" && typed > 0 ? "Simulação: o orçamento digitado substitui o da Meta." : meta ? `Orçamento dos anúncios ativos na Meta: ${fmt(meta, "brl")} por dia.` : meta === 0 ? "Nenhum anúncio ativo com orçamento na Meta. Digite um orçamento para simular." : "Meta Ads não ligado. Digite um orçamento para simular."} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
         </Card>
         <Card title="Como a conta é feita" sub={simulated ? "com o CPL e a conversão digitados" : "premissas ideais do teste"}>
           {plan ? <HBars unit="brl" items={[
