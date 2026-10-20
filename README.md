@@ -31,6 +31,13 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
 - `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.
 
+## Financeiro: custos (desde 20/10)
+
+- O anúncio entra pelo gasto que a Meta devolve, que **já inclui** o imposto de 13,83% (operador, 20/10). Nada é somado por cima.
+- Custos fixos da planilha `Gastos_Encorpa`: PikaPods R$ 55 a cada ~80 dias e número do WhatsApp R$ 35/mês, rateados por dia desde o
+  primeiro lead (`FIXED` em `lib/build.mjs`). Lucro, margem operacional e ROI descontam anúncio, IA (conversas e Hermes), WhatsApp e fixos.
+- "Investido até agora" (Financeiro › Resultado) soma os gastos pagos até 20/10 (`SPENT`) com o que veio depois. Atualize `SPENT` a cada fatura.
+
 ## Responder pelo portal (desde 16/10)
 
 - Em Conversas, a caixa no pé da conversa envia pelo WhatsApp. `api/chat.js` primeiro pausa a Malu naquela conversa

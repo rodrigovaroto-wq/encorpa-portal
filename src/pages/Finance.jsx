@@ -5,7 +5,7 @@ import { Gauge, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
-const META_TAX = 0.1383, CASH_LIMIT = 1075; // mesmos valores de lib/build.mjs
+const CASH_LIMIT = 1075; // mesmo valor de lib/build.mjs
 
 export function Finance({ data, period, route, tabs }) {
   const p = data.periods[period] || {}, g = data.global, sub = route.sub[0];
@@ -13,7 +13,7 @@ export function Finance({ data, period, route, tabs }) {
     <div className="page">
       <PageHead crumb="Análise › Financeiro" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/money/${k}`)}
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
-      {sub === "result" && <Result p={p} />}
+      {sub === "result" && <Result p={p} g={g} />}
       {sub === "api" && <Api p={p} period={period} />}
       {sub === "cash" && <Cash g={g} />}
       {sub === "compare" && <Compare p={p} />}
@@ -21,17 +21,19 @@ export function Finance({ data, period, route, tabs }) {
   );
 }
 
-function Result({ p }) {
+function Result({ p, g }) {
   // Os mesmos números dos cartões (lib/build.mjs › profit): nenhuma conta própria aqui, para nunca divergirem.
-  const m = p.metrics || {}, v = (id) => m[id]?.value;
-  const rev = v("revenue") ?? 0, contrib = v("gross_profit"), spend = v("spend"), api = p.money?.api_cost ?? 0;
-  const adCost = spend == null ? null : spend * (1 + META_TAX);
+  // Retrato antigo (sem a abertura de custos): IA cai no total de API e WhatsApp e fixos ficam "—".
+  const m = p.metrics || {}, v = (id) => m[id]?.value, money = p.money || {};
+  const rev = v("revenue") ?? 0, contrib = v("gross_profit");
   const lines = [
     { label: "Faturamento (pedidos válidos)", value: rev, sign: 1 },
     { label: "Custo dos pedidos (produto, entrega, manuseio, taxa, recusas e devoluções)", value: contrib == null ? null : rev - contrib, sign: -1 },
     { label: "= Margem dos pedidos", value: contrib, sum: true },
-    { label: "Anúncio com imposto da Meta (13,83%)", value: adCost, sign: -1 },
-    { label: "API (modelo + WhatsApp pós-venda)", value: api, sign: -1 },
+    { label: "Anúncio na Meta (imposto já incluído no gasto)", value: v("spend") ?? null, sign: -1 },
+    { label: "Modelo de IA (conversas e Hermes)", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
+    { label: "WhatsApp (template de pós-venda)", value: money.whatsapp ?? null, sign: -1 },
+    { label: "Custos fixos (PikaPods + número, rateio por dia)", value: money.fixed ?? null, sign: -1 },
     { label: "= Resultado", value: v("net_profit") ?? null, sum: true },
   ];
   const max = Math.max(1, ...lines.map((l) => Math.abs(l.value || 0)));
@@ -54,7 +56,25 @@ function Result({ p }) {
           ))}
         </div>
       </Card>
-      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
+      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). O anúncio entra pelo gasto da Meta, que já traz o imposto. Os fixos (PikaPods R$ 55 a cada ~80 dias e número R$ 35/mês) são rateados por dia desde o primeiro lead. Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
+      {g.invested && <Invested inv={g.invested} />}
+    </>
+  );
+}
+
+// Tudo o que o projeto já gastou (planilha do operador até 20/10, mais o medido depois) contra o que os pedidos já valem.
+function Invested({ inv }) {
+  const until = new Date(inv.until).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+  return (
+    <>
+      <h2 className="section-title">Investido até agora</h2>
+      <Table name="investido-ate-agora" head={["Custo", "Tipo", `Até ${until}`, "Depois", "Total"]}
+        rows={[...inv.rows.map((r) => [r.label, r.kind, r.live ? "Meta, ao vivo" : fmt(r.paid, "brl"), r.live ? "—" : fmt(r.after, "brl"), fmt(r.total, "brl")]),
+          [<b key="t">Total investido</b>, "", "", "", <b key="v">{fmt(inv.total, "brl")}</b>],
+          ["Margem dos pedidos até hoje", "", "", "", fmt(inv.contribution, "brl")],
+          [<b key="r">Resultado acumulado</b>, "", "", "", <b key="w" className={inv.result < 0 ? "neg" : ""}>{fmt(inv.result, "brl")}</b>]]}
+        csv={[...inv.rows.map((r) => [r.label, r.kind, r.paid, r.after, r.total]), ["Total investido", "", "", "", inv.total], ["Margem dos pedidos até hoje", "", "", "", inv.contribution], ["Resultado acumulado", "", "", "", inv.result]]} />
+      <Note>Desde o início do projeto, pelo que foi pago (a planilha de gastos até {until}) e, depois, pelo medido no banco e pelo rateio dos fixos. É diferente do resultado do período acima, que rateia os fixos por dia. O modelo de IA até {until} é a fatura (US$ 8 × R$ 5,50), que inclui personas e testes; depois disso o portal só enxerga o custo gravado das conversas e do Hermes. Quando chegar fatura nova, atualize a planilha em lib/build.mjs (SPENT).</Note>
     </>
   );
 }
