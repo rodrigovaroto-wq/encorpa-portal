@@ -27,8 +27,8 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `api/data.js` lê o Supabase, o n8n e a Meta e guarda a resposta 60 s na memória da função (o cache do Vercel não guarda
   resposta com login). A Meta é lida no máximo a cada 15 min; se falhar, o portal mostra a última leitura boa (até 6 h) com um
   aviso. Toda leitura tem limite de tempo. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
-- Financeiro › Caixa (desde 19/10): o caixa necessário para rodar o orçamento diário dos anúncios ativos na Meta (ou um
-  orçamento por dia digitado para simular), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,05 por lead,
+- Financeiro › Caixa (desde 19/10): o caixa necessário para rodar o gasto com anúncios (média por dia no período, da Meta, ou
+  um gasto por dia digitado para simular; o critério de pausa usa a média dos últimos 7 dias), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,05 por lead,
   70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Sai do caixa: anúncio (imposto já incluído), IA, WhatsApp e o
   adiantado dos pedidos na entrega; os custos fixos ficam fora (é o caixa de rodar a operação). Conta em `src/lib/economics.js`, com teste.
 - `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.

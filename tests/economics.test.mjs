@@ -32,7 +32,7 @@ test("sem orçamento não há conta", () => {
 
 test("pausa pelo caixa: um ciclo inteiro de 21 dias, seja qual for o período na tela", async () => {
   const { computePause } = await import("../src/lib/data.js");
-  const g = { ad_budget: 50 };
+  const g = { ad_spend_day: 50 };
   const a = computePause({ metrics: {} }, g, "day"), b = computePause({ metrics: {} }, g, "12m");
   assert.deepEqual(a.p_cash, b.p_cash);
   assert.equal(a.p_cash.status, "info", "sem limite fixo para comparar (operador, 20/10)");

@@ -57,7 +57,7 @@ export const PAUSE = [
   { id: "p_handoff", label: "Conversas que a Malu não resolveu", what: "a Malu precisou avisar o operador", limit: "pausar acima de 10% das conversas", missing: "nenhuma conversa encerrada no período" },
   { id: "p_optout", label: "Clientes que pediram para sair", what: "pediram para não receber mais mensagem", limit: "pausar acima de 2,5% dos leads", missing: "nenhum lead no período" },
   { id: "p_api", label: "Conversas caras de API", what: "das últimas 100 conversas, quantas custaram mais de R$ 1,00 de modelo", limit: "pausar acima de 5% delas", missing: "nenhuma conversa com custo registrado" },
-  { id: "p_cash", label: "Caixa necessário", what: "o caixa para rodar o orçamento dos anúncios ativos até o primeiro repasse voltar (21 dias), com as premissas ideais (CPL R$ 1,25, conversão 10%)", limit: "informativo: sem limite fixo para comparar (operador, 20/10)", missing: "nenhum anúncio ativo com orçamento na Meta" },
+  { id: "p_cash", label: "Caixa necessário", what: "o caixa para rodar o gasto médio diário com anúncios dos últimos 7 dias até o primeiro repasse voltar (21 dias), com as premissas ideais (CPL R$ 1,25, conversão 10%)", limit: "informativo: sem limite fixo para comparar (operador, 20/10)", missing: "nenhum gasto com anúncios nos últimos 7 dias (ou Meta Ads não ligado)" },
   { id: "p_channel", label: "Número do WhatsApp", what: "a Malu está enviando e o workflow \"WhatsApp envio\" do n8n não tem erro nas últimas execuções", limit: "pausar se restrito, banido ou fora do ar", missing: "sem leitura do n8n nem mensagem da Malu" },
 ];
 
