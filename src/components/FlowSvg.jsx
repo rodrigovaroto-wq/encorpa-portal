@@ -38,7 +38,7 @@ export function FlowSvg({ w }) {
   const reset = () => { try { localStorage.removeItem(`flow:${w.id || w.name}`); } catch { /* nada */ } setPos(layout(w)); };
   return (
     <div className="flow-wrap">
-      <svg ref={svg} className="wf" viewBox={`0 0 ${vw} ${vh}`} style={{ width: vw }} onPointerMove={move} onPointerUp={up} role="img" aria-label={`Fluxo do workflow ${w.name}`}>
+      <svg ref={svg} className="wf" viewBox={`0 0 ${vw} ${vh}`} style={{ width: vw }} onPointerMove={move} onPointerUp={up} onPointerCancel={up} role="img" aria-label={`Fluxo do workflow ${w.name}`}>
         {w.edges.filter(([a, b]) => pos[a] && pos[b]).map(([a, b], i) => <path key={i} d={edge(pos[a], pos[b])} />)}
         {Object.entries(pos).map(([name, p]) => (
           <g key={name} className={`nd ${/Trigger$|^webhook$/.test(types[name]) ? "trig" : ""}`} transform={`translate(${p.x},${p.y})`} onPointerDown={down(name)}>

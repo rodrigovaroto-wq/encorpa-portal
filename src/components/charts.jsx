@@ -59,10 +59,9 @@ function LinesPlot({ series, labels, unit = "n", height = 220 }) {
   if (all.length < 2) return <Empty />;
   const n = Math.max(...series.map((s) => s.values.length)), max = Math.max(...all) || 1, min = Math.min(0, ...all), span = max - min || 1;
   const X = (i) => (n > 1 ? (i / (n - 1)) * 100 : 50), Y = (v) => 94 - ((v - min) / span) * 86;
-  const smooth = (vals) => {
-    const p = vals.map((v, i) => [X(i), Y(v ?? 0)]);
-    return p.reduce((d, [x, y], i) => { if (!i) return `M${x},${y}`; const [px, py] = p[i - 1], cx = (px + x) / 2; return `${d} C${cx},${py} ${cx},${y} ${x},${y}`; }, "");
-  };
+  // Intervalo sem dado (taxa sem base) fica como lacuna, nunca como zero: a linha para e recomeça.
+  const runs = (vals) => vals.reduce((out, v, i) => { if (v == null) return out; const last = out.at(-1); if (last && last.at(-1)[2] === i - 1) last.push([X(i), Y(v), i]); else out.push([[X(i), Y(v), i]]); return out; }, []);
+  const smooth = (p) => p.reduce((d, [x, y], i) => { if (!i) return `M${x},${y}`; const [px, py] = p[i - 1], cx = (px + x) / 2; return `${d} C${cx},${py} ${cx},${y} ${x},${y}`; }, "");
   return (
     <div className="lines-chart" style={{ height }} onMouseLeave={() => setHover(null)}
       onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setHover(Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width) * (n - 1))))); }}>
@@ -71,8 +70,9 @@ function LinesPlot({ series, labels, unit = "n", height = 220 }) {
         {[0.25, 0.5, 0.75].map((f) => <line key={f} x1="0" x2="100" y1={8 + f * 86} y2={8 + f * 86} className="grid" />)}
         {series.map((s, k) => (
           <g key={k}>
-            <path d={`${smooth(s.values)} L100,100 L0,100 Z`} fill={`url(#lg${id}${k})`} />
-            <path d={smooth(s.values)} stroke={s.color} className="line" />
+            {runs(s.values).map((p, j) => p.length > 1 ? (
+              <g key={j}><path d={`${smooth(p)} L${p.at(-1)[0]},100 L${p[0][0]},100 Z`} fill={`url(#lg${id}${k})`} /><path d={smooth(p)} stroke={s.color} className="line" /></g>
+            ) : <circle key={j} cx={p[0][0]} cy={p[0][1]} r="1.2" fill={s.color} />)}
           </g>
         ))}
         {hover != null && <line x1={X(hover)} x2={X(hover)} y1="0" y2="100" className="cross" />}
@@ -132,15 +132,17 @@ export function Gauge({ value, label, sub, tone, size = 132 }) {
 // Mini gráfico de linha para dentro dos cartões, com o valor do ponto sob o mouse.
 export function Spark({ values, unit, height = 56 }) {
   const [hover, setHover] = useState(null);
-  if (!values || values.length < 2) return <div className="spark empty" style={{ height }} />;
-  const max = Math.max(...values), min = Math.min(...values), span = max - min || 1, n = values.length;
-  const pts = values.map((v, i) => [(i / (n - 1)) * 100, 92 - ((v - min) / span) * 80]);
-  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x},${y}`).join(" ");
+  const known = (values || []).filter((v) => v != null);
+  if (known.length < 2) return <div className="spark empty" style={{ height }} />;
+  const max = Math.max(...known), min = Math.min(...known), span = max - min || 1, n = values.length;
+  const pts = values.map((v, i) => [(i / (n - 1)) * 100, v == null ? null : 92 - ((v - min) / span) * 80]);
+  // Sem dado no intervalo: a linha para (lacuna), não cai a zero.
+  const d = pts.map(([x, y], i) => (y == null ? "" : `${i && pts[i - 1][1] != null ? "L" : "M"}${x},${y}`)).join(" ");
   return (
     <div className="spark" style={{ height }} onMouseLeave={() => setHover(null)}
       onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setHover(Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width) * (n - 1))))); }}>
       <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path d={`${d} L100,100 L0,100 Z`} className="area" />
+        {pts.every(([, y]) => y != null) && <path d={`${d} L100,100 L0,100 Z`} className="area" />}
         <path d={d} className="line" />
         {hover != null && <line x1={pts[hover][0]} x2={pts[hover][0]} y1="0" y2="100" className="cross" />}
       </svg>

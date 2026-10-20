@@ -8,6 +8,9 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `npm install` e depois `npm run dev` (abre em http://localhost:5173). Sem o Vercel não existe `/api/data`: o portal usa o
   último retrato guardado no navegador ou `public/data.js`. Em Preferências (engrenagem) dá para ligar os dados de exemplo.
 - `npm run build` gera `dist/`, que é o que o Vercel publica.
+- `npm test` roda os testes das contas (`lib/build.mjs`) e das funções (`api/`) com dados sintéticos (`tests/fixture.mjs`);
+  `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build). `npm run check` faz os três.
+  O GitHub roda o mesmo em todo push e pull request (`.github/workflows/ci.yml`). Mudou uma conta ou uma tela, rode antes de publicar.
 
 ## Estrutura
 
@@ -15,12 +18,18 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - `src/components/`: fundo em ondas, menu lateral que recolhe, topo (período, busca ⌘K, notificações, preferências), gráficos e peças de vidro.
 - `src/lib/`: constantes das métricas, carregamento dos dados, formatação e o menu.
 - `lib/build.mjs` (servidor): monta os dados a partir do Supabase, do n8n e da Meta. `lib/meta.mjs`: leitura do Meta Ads.
-- `api/data.js`: função do Vercel. `api/chat.js`: resposta do operador e a chave da Malu por conversa. `middleware.js`: login do site todo.
+- `api/data.js`: função do Vercel. `api/chats.js`: só as conversas, sem cache, para a tela Conversas. `api/chat.js`: resposta do
+  operador e a chave da Malu por conversa. `middleware.js`: login do site todo.
 - `n8n/`: os dois workflows do n8n que são do portal (cópia do que está ativo no PikaPods).
 
 ## Publicado no Vercel
 
-- `api/data.js` lê o Supabase, o n8n e a Meta na hora e guarda a resposta 5 min no cache. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
+- `api/data.js` lê o Supabase, o n8n e a Meta e guarda a resposta 60 s na memória da função (o cache do Vercel não guarda
+  resposta com login). A Meta é lida no máximo a cada 15 min; se falhar, o portal mostra a última leitura boa (até 6 h) com um
+  aviso. Toda leitura tem limite de tempo. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
+- Financeiro › Caixa (desde 19/10): o caixa necessário para rodar o orçamento diário dos anúncios ativos na Meta (ou um
+  orçamento semanal digitado para simular), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,27 por lead,
+  70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Conta em `src/lib/economics.js`, com teste.
 - `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.
 - Variáveis do projeto no Vercel (Settings > Environment Variables):
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
@@ -39,6 +48,12 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   próprio n8n, passa pela mesma regra do formulário "Responder cliente" (`turn` › `human_reply`: janela de 24 h, texto,
   duplicata), grava a mensagem na conversa e entrega ao "WhatsApp envio". Se a Meta recusar, chega o e-mail de falha de envio.
 - "Devolver para a Malu" limpa `handoff_at`: ela volta a responder a partir da próxima mensagem da cliente.
+- Desde 19/10 a tela Conversas lê `api/chats.js` a cada 15 s (sem cache), com uma linha por cliente: as mensagens de todas as
+  conversas do lead juntas, e o id é o da conversa mais nova, a mesma em que `human_reply` grava a resposta. Se a leitura falhar,
+  a lista fica na tela com um aviso, em vez de esvaziar.
+- Recusa certa do envio (janela fechada, duplicata, chave do n8n) devolve a Malu se foi o próprio envio que a pausou.
+- Conversas de teste da rodada de personas (telefone `5500099…`, apagadas no fim da rodada) não aparecem no portal nem nas
+  métricas lidas das tabelas, e o portal recusa responder a elas. As views `eval_*` do Ricos-com-AI ainda as contam.
 - Precisa de `N8N_API_KEY` no Vercel (a mesma da seção Automações).
 
 ## E-mail de conversa não resolvida (desde 16/10)

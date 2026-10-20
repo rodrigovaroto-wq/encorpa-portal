@@ -9,25 +9,30 @@ import { Icon } from "../components/icons.jsx";
 
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-// O que o operador fez nesta sessão (envio, pausa) vale na hora; os dados do servidor chegam a cada 5 min.
+// O que o operador fez nesta sessão (envio, pausa) vale na hora, até o servidor mostrar o mesmo.
 // Fica fora do componente para sobreviver a sair da tela e voltar.
 let LOCAL = {};
+const ms = (s) => new Date(s).getTime();
 
-export function Chat({ data, route }) {
+export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
   const [local, setLocalState] = useState(LOCAL);
   const setLocal = (f) => setLocalState((x) => (LOCAL = f(x)));
-  const chats = useMemo(() => (data.global.chats || []).map((c) => {
+  const reload = reloadChats;
+  // As conversas já chegam com o retrato ao vivo (App › withLive); chatsUpdated é a hora dele.
+  const base = useMemo(() => ({ updated: data.chatsUpdated || data.global.updated, chats: data.global.chats || [] }), [data]);
+  const chats = useMemo(() => base.chats.map((c) => {
     const l = local[c.id];
     if (!l) return c;
-    // Vale até chegar um retrato do servidor gerado depois da ação: daí em diante, o servidor é a verdade.
-    const fresh = (at) => !data.global.updated || new Date(data.global.updated) < new Date(at);
-    const sent = (l.sent || []).filter((x) => fresh(x.at));
-    const pause = l.pauseAt && fresh(l.pauseAt) ? { paused: l.paused, pausedAt: l.pausedAt } : {};
+    // A mensagem enviada fica até o servidor mostrar a mesma (texto igual, do operador); 10 min no máximo.
+    const sent = (l.sent || []).filter((x) => Date.now() - ms(x.at) < 600_000 && !c.messages.some((m) => m.op && m.text.trim() === x.text && Math.abs(ms(m.at) - ms(x.at)) < 600_000));
+    // A pausa vale até chegar um retrato lido depois dela; as duas horas são do servidor.
+    const pause = l.pauseAt && (!base.updated || ms(base.updated) < ms(l.pauseAt)) ? { paused: l.paused, pausedAt: l.pausedAt } : {};
     return { ...c, ...pause, messages: [...c.messages, ...sent], last: sent.at(-1)?.at || c.last };
-  }), [data, local]);
+  }), [base, local]);
   const patch = (id, f) => setLocal((x) => ({ ...x, [id]: f(x[id] || {}) }));
   const [q, setQ] = useState(""), [filter, setFilter] = useState("all");
-  const selected = chats.find((c) => c.id === route.query.c) || null;
+  // O link do e-mail traz o id de uma conversa; a lista tem uma linha por cliente, com todas as conversas dela.
+  const selected = chats.find((c) => c.id === route.query.c || c.ids?.includes(route.query.c)) || null;
   const list = useMemo(() => chats.filter((c) => (filter === "all" || c.status === filter) && (!q || norm(`${c.name} ${c.phone} ${c.state} ${c.messages.map((m) => m.text).join(" ")}`).includes(norm(q)))), [chats, filter, q]);
   const counts = Object.fromEntries([["all", chats.length], ...OUTCOMES.map(([id]) => [id, chats.filter((c) => c.status === id).length])]);
   const open = chats.filter((c) => c.status === "open");
@@ -39,6 +44,7 @@ export function Chat({ data, route }) {
   return (
     <div className="page chat-page">
       <PageHead crumb="Operação" title="Conversas" desc="Todas as conversas da Malu com as clientes, com a ficha de cada uma." />
+      {live.failedAt && !data.demo && <p className="composer-error chat-stale">Sem atualização ao vivo{base.updated ? ` desde ${timeOnly(base.updated)}` : ""}. Tentando de novo a cada 15 s; o que está na tela pode estar atrasado.</p>}
       <div className={`chat-shell glass ${current ? "has-current" : ""}`}>
         <aside className="chat-list">
           <label className="chat-search"><Icon name="search" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, estado ou texto" /></label>
@@ -67,7 +73,7 @@ export function Chat({ data, route }) {
             {!list.length && <p className="empty">Nenhuma conversa neste filtro.</p>}
           </div>
         </aside>
-        {current ? <Thread c={current} patch={patch} /> : <div className="chat-empty">{missing ? "Essa conversa não está entre as 150 mais recentes carregadas agora. Escolha outra na lista." : "Escolha uma conversa."}</div>}
+        {current ? <Thread c={current} patch={patch} reload={reload} /> : <div className="chat-empty">{!base.chats.length && !live.chats && !live.failedAt && !data.demo ? "Carregando as conversas…" : missing ? "Essa conversa não está entre as 150 clientes com movimento mais recente. Escolha outra na lista." : "Escolha uma conversa."}</div>}
         {current && <Profile c={current} />}
       </div>
     </div>
@@ -104,9 +110,19 @@ function ScrollRow({ children }) {
   );
 }
 
-function Thread({ c, patch }) {
-  const end = useRef(null);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [c.id, c.messages.length]);
+// Rola para o fim ao abrir a conversa, ao enviar e quando chega mensagem com você já no fim. Lendo o histórico mais acima,
+// a tela fica parada e aparece "Novas mensagens" (antes a atualização de 15 s puxava a leitura para baixo).
+function Thread({ c, patch, reload }) {
+  const end = useRef(null), box = useRef(null), atEnd = useRef(true), seen = useRef({ id: null, n: 0 });
+  const [fresh, setFresh] = useState(false);
+  const toEnd = () => { end.current?.scrollIntoView({ block: "end" }); atEnd.current = true; setFresh(false); };
+  useEffect(() => {
+    const prev = seen.current, n = c.messages.length;
+    seen.current = { id: c.id, n };
+    if (prev.id !== c.id || atEnd.current || c.messages.at(-1)?.op) toEnd();
+    else if (n > prev.n) setFresh(true);
+  }, [c.id, c.messages.length]);
+  const onScroll = () => { const el = box.current; atEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; if (atEnd.current) setFresh(false); };
   let lastDay = "";
   return (
     <section className="chat-thread">
@@ -115,7 +131,7 @@ function Thread({ c, patch }) {
         <span className="avatar">{initials(c.name)}</span>
         <div><b>{c.name || `Cliente ${c.short}`}</b><small>{c.phone || ""} · {STAGE[c.stage] || c.stage} · {ago(c.last)}</small></div>
       </header>
-      <div className="bubbles">
+      <div className="bubbles" ref={box} onScroll={onScroll}>
         {c.messages.map((m, i) => {
           const d = dayKey(m.at), sep = d !== lastDay; lastDay = d;
           return (
@@ -127,8 +143,9 @@ function Thread({ c, patch }) {
         })}
         {!c.messages.length && <p className="empty">Conversa sem mensagens registradas.</p>}
         <div ref={end} />
+        {fresh && <button className="new-msgs glass pill" onClick={toEnd}>Novas mensagens ↓</button>}
       </div>
-      <Composer c={c} patch={patch} />
+      <Composer c={c} patch={patch} reload={reload} />
     </section>
   );
 }
@@ -140,15 +157,16 @@ async function post(body) {
   return { ok: r.ok, ...out };
 }
 
-function Composer({ c, patch }) {
+function Composer({ c, patch, reload }) {
   const [text, setText] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(null);
   useEffect(() => { setText(""); setError(null); }, [c.id]);
-  const keep = (out) => out.paused !== undefined && patch(c.id, (x) => ({ ...x, paused: out.paused, pausedAt: out.pausedAt, pauseAt: new Date().toISOString() }));
+  const keep = (out) => out.paused !== undefined && patch(c.id, (x) => ({ ...x, paused: out.paused, pausedAt: out.pausedAt, pauseAt: out.at || new Date().toISOString() }));
   const toggle = async () => {
     setBusy(true); setError(null);
     const out = await post({ action: c.paused ? "resume" : "pause", conversationId: c.id }).catch(() => ({ error: "Sem conexão com o portal." }));
     if (out.ok) keep(out); else setError(out.error || "Não deu para mudar a Malu.");
     setBusy(false);
+    reload();
   };
   const send = async () => {
     const body = text.trim();
@@ -159,6 +177,7 @@ function Composer({ c, patch }) {
     if (out.ok) { patch(c.id, (x) => ({ ...x, sent: [...(x.sent || []), { out: true, op: true, text: body, at: new Date().toISOString() }] })); setText(""); }
     else setError(out.error || "A mensagem não saiu.");
     setBusy(false);
+    reload();
   };
   const blocked = c.optedOut ? "Ela pediu para não receber mais mensagens." : !c.windowOpen ? "Janela de 24 h fechada: o WhatsApp só aceita texto livre até 24 h depois da última mensagem dela." : null;
   return (
@@ -172,7 +191,7 @@ function Composer({ c, patch }) {
       {blocked ? <p className="composer-note">{blocked}</p> : (
         <div className="composer-row">
           <textarea value={text} rows={1} maxLength={4096} placeholder="Escreva para a cliente…" title="Enter envia · Shift+Enter quebra a linha" disabled={busy}
-            onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+            onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }} />
           <button className="send" onClick={send} disabled={busy || !text.trim()} aria-label="Enviar"><Icon name="send" /></button>
         </div>
       )}
