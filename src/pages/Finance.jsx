@@ -17,7 +17,7 @@ export function Finance({ data, period, route, tabs }) {
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
       {sub === "result" && <Result p={p} g={g} />}
       {sub === "api" && <Api p={p} period={period} updated={data.updated} />}
-      {sub === "cash" && <Cash g={g} period={period} />}
+      {sub === "cash" && <Cash p={p} period={period} />}
       {sub === "compare" && <Compare p={p} />}
     </div>
   );
@@ -93,15 +93,15 @@ function Api({ p, period, updated }) {
   );
 }
 
-// Caixa necessário (operador, 19/10): o orçamento dos anúncios ativos na Meta, ou um orçamento digitado para simular, passa
-// pelas premissas ideais do teste. CPL e conversão também podem ser digitados para simular (operador, 20/10); vazio = premissa ideal.
+// Caixa necessário (operador, 19/10): o gasto médio por dia com anúncios no período (Meta), ou um gasto por dia digitado para simular
+// (operador, 20/10: gasto, não orçamento), passa pelas premissas ideais do teste. CPL e conversão também podem ser digitados para simular (operador, 20/10); vazio = premissa ideal.
 // Mostra o período escolhido e todos os períodos lado a lado.
 const typedOr = (text, fallback, ok) => { const v = parseBrl(String(text).replace("%", "")); return text.trim() !== "" && ok(v) ? v : fallback; };
-function Cash({ g, period }) {
-  const meta = g.ad_budget;
-  const [weekly, setWeekly] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState("");
-  const typed = parseBrl(weekly);
-  const daily = weekly !== "" && typed > 0 ? typed / 7 : meta;
+function Cash({ p, period }) {
+  const spent = p.metrics?.spend?.value, meta = spent == null ? null : spent / periodDays(period); // média por dia no período
+  const [spendText, setSpend] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState("");
+  const typed = parseBrl(spendText);
+  const daily = spendText !== "" && typed > 0 ? typed : meta;
   const sim = { cpl: typedOr(cplText, IDEAL.cpl, (v) => v > 0), conversion: typedOr(convText, IDEAL.conversion, (v) => v >= 0 && v <= 100) };
   const simulated = sim.cpl !== IDEAL.cpl || sim.conversion !== IDEAL.conversion;
   const plan = cashPlan(daily, periodDays(period), sim), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
@@ -109,11 +109,13 @@ function Cash({ g, period }) {
     <>
       <div className="row r-1-2">
         <Card title="Caixa necessário" sub={`para rodar a operação por ${label}`}>
-          <div className="kpi-value">{plan ? fmt(plan.need, "brl") : "—"}</div>
-          <p className="desc">{plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem orçamento"}</p>
+          <div className="cash-need">
+            <div className="kpi-value">{plan ? fmt(plan.need, "brl") : "—"}</div>
+            <p className="desc">{plan ? `${fmt(plan.spend, "brl")} de anúncio no período` : "sem gasto com anúncios"}</p>
+          </div>
           <div className="cash-grid">
-            <label className="cash-input"><span>Orçamento por semana</span>
-              <input inputMode="decimal" value={weekly} onChange={(e) => setWeekly(e.target.value)} placeholder={meta ? `${fmt(meta * 7, "brl")} (Meta)` : "ex.: 100"} />
+            <label className="cash-input"><span>Gasto com anúncios por dia</span>
+              <input inputMode="decimal" value={spendText} onChange={(e) => setSpend(e.target.value)} placeholder={meta ? `${fmt(meta, "brl")} (Meta)` : "ex.: 50"} />
             </label>
             <label className="cash-input"><span>CPL</span>
               <input inputMode="decimal" value={cplText} onChange={(e) => setCpl(e.target.value)} placeholder={`${fmt(IDEAL.cpl, "brl")} (ideal)`} />
@@ -122,7 +124,7 @@ function Cash({ g, period }) {
               <input inputMode="decimal" value={convText} onChange={(e) => setConv(e.target.value)} placeholder={`${fmt(IDEAL.conversion, "pct")} (ideal)`} />
             </label>
           </div>
-          <Note>{weekly !== "" && typed > 0 ? "Simulação: o orçamento digitado substitui o da Meta." : meta ? `Orçamento dos anúncios ativos na Meta: ${fmt(meta, "brl")} por dia.` : meta === 0 ? "Nenhum anúncio ativo com orçamento na Meta. Digite um orçamento para simular." : "Meta Ads não ligado. Digite um orçamento para simular."} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
+          <Note>{spendText !== "" && typed > 0 ? "Simulação: o gasto digitado substitui o gasto real da Meta." : meta ? `Gasto com anúncios na Meta: média de ${fmt(meta, "brl")} por dia no período.` : meta === 0 ? "Nenhum gasto com anúncios no período. Digite um gasto por dia para simular." : "Meta Ads não ligado. Digite um gasto por dia para simular."} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
         </Card>
         <Card title="Como a conta é feita" sub={simulated ? "com o CPL e a conversão digitados" : "premissas ideais do teste"}>
           {plan ? <HBars unit="brl" items={[
@@ -130,7 +132,7 @@ function Cash({ g, period }) {
             { label: `IA (${fmt(IDEAL.api_per_lead, "brl")} por lead) + WhatsApp pós-venda`, value: plan.api },
             { label: `Adiantado nos pedidos na entrega (${fmt(plan.cod_orders, "n")} de ${fmt(plan.orders, "n")} pedidos)`, value: plan.upfront },
             { label: "Sai do caixa no período", value: plan.total },
-            { label: `Caixa necessário (até ${plan.cycle} dias, antes do primeiro repasse)`, value: plan.need }]} /> : <p className="empty">Sem orçamento para calcular.</p>}
+            { label: `Caixa necessário (até ${plan.cycle} dias, antes do primeiro repasse)`, value: plan.need }]} /> : <p className="empty">Sem gasto com anúncios para calcular.</p>}
           <Note>CPL de {fmt(sim.cpl, "brl")} e conversão de {fmt(sim.conversion, "pct")}: cada {fmt(sim.cpl, "brl")} de anúncio traz um lead, e {fmt(sim.conversion, "pct")} dos leads compram. {fmt(IDEAL.cod_share * 100, "pct")} dos pedidos na entrega, 1 peça de {fmt(IDEAL.cod_price, "brl")}: cada um adianta {fmt(codUpfront(IDEAL.cod_price, 1), "brl")} (produto, entrega, manuseio e taxa), que voltam no repasse da Logzz {RELEASE_DAYS} dias depois do "Completo". Com {DELIVERY_DAYS} dias até entregar (premissa do portal), nada volta antes de {DELIVERY_DAYS + RELEASE_DAYS} dias; depois disso o repasse dos pedidos antigos paga os novos, então o caixa necessário é o de no máximo esse ciclo. O que entra do antecipado na hora não é descontado.</Note>
         </Card>
       </div>

@@ -9,8 +9,8 @@ export const PERIODS = [
 export const GROUPS = [
   { title: "Operação", metrics: [
     { id: "leads", label: "Leads", unit: "n", src: "leads" },
-    { id: "orders", label: "Pedidos", unit: "n", src: "orders" },
-    { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "orders ÷ leads", goal: "≥ 6% mín · 10% ideal" },
+    { id: "orders", label: "Pedidos", unit: "n", src: "pedidos feitos: vendas, recusas na porta e devoluções (sem antecipado não pago e sem cancelado)" },
+    { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "pedidos feitos ÷ leads", goal: "≥ 6% mín · 10% ideal" },
     { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "≤ R$ 1,75 mín · R$ 1,25 ideal" },
     { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "llm_calls (todas as chamadas de modelo dos leads) ÷ leads", goal: "teto R$ 1,00" },
     { id: "cpl_api", label: "CPL + API", unit: "brl", src: "Meta Ads + eval_conversation_cost" },
@@ -27,7 +27,7 @@ export const GROUPS = [
     { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio (imposto incluído) − IA − WhatsApp − fixos" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(margem dos pedidos − anúncio − IA − WhatsApp − fixos) ÷ faturamento", goal: "> 0%" },
     { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp), sem os fixos", goal: "≥ 1,5 mín · 2,5 ideal" },
-    { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
+    { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "antecipados ÷ pedidos feitos" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
   ]},
   { title: "Anúncio", metrics: [
@@ -45,7 +45,7 @@ export const GROUPS = [
     { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "conversas que chegaram ao link ÷ conversas" },
     { id: "rewrites", label: "Reescritas por resposta", unit: "n", src: "eval_turn_outcomes" },
     { id: "gate_blocks", label: "Bloqueios de gate", unit: "pct", src: "eval_gate_blocks" },
-    { id: "delivered", label: "Entregas concluídas ÷ pedidos", unit: "pct", src: "orders", goal: "≥ 70% mín · 83% ideal" },
+    { id: "delivered", label: "Entregas concluídas ÷ pedidos", unit: "pct", src: "entregues ÷ pedidos feitos (o recusado conta)", goal: "≥ 70% mín · 83% ideal" },
   ]},
 ];
 
@@ -57,7 +57,7 @@ export const PAUSE = [
   { id: "p_handoff", label: "Conversas que a Malu não resolveu", what: "a Malu precisou avisar o operador", limit: "pausar acima de 10% das conversas", missing: "nenhuma conversa encerrada no período" },
   { id: "p_optout", label: "Clientes que pediram para sair", what: "pediram para não receber mais mensagem", limit: "pausar acima de 2,5% dos leads", missing: "nenhum lead no período" },
   { id: "p_api", label: "Conversas caras de API", what: "das últimas 100 conversas, quantas custaram mais de R$ 1,00 de modelo", limit: "pausar acima de 5% delas", missing: "nenhuma conversa com custo registrado" },
-  { id: "p_cash", label: "Caixa necessário", what: "o caixa para rodar o orçamento dos anúncios ativos até o primeiro repasse voltar (21 dias), com as premissas ideais (CPL R$ 1,25, conversão 10%)", limit: "informativo: sem limite fixo para comparar (operador, 20/10)", missing: "nenhum anúncio ativo com orçamento na Meta" },
+  { id: "p_cash", label: "Caixa necessário", what: "o caixa para rodar o gasto médio diário com anúncios dos últimos 7 dias até o primeiro repasse voltar (21 dias), com as premissas ideais (CPL R$ 1,25, conversão 10%)", limit: "informativo: sem limite fixo para comparar (operador, 20/10)", missing: "nenhum gasto com anúncios nos últimos 7 dias (ou Meta Ads não ligado)" },
   { id: "p_channel", label: "Número do WhatsApp", what: "a Malu está enviando e o workflow \"WhatsApp envio\" do n8n não tem erro nas últimas execuções", limit: "pausar se restrito, banido ou fora do ar", missing: "sem leitura do n8n nem mensagem da Malu" },
 ];
 
