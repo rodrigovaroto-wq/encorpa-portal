@@ -2,7 +2,7 @@
 // Formato: { updated, global: {...}, periods: { day, week, month, 3m, 6m, 9m, 12m } } (lib/build.mjs › build).
 import { ALL, BUCKETS, RANGE, SUMMED, OUTCOMES, PAUSE, DECISION } from "./constants.js";
 import { fmt, store } from "./format.js";
-import { CASH_LIMIT, DELIVERY_DAYS, RELEASE_DAYS, cashPlan } from "./economics.js";
+import { DELIVERY_DAYS, RELEASE_DAYS, cashPlan, fixedDue } from "./economics.js";
 
 const CACHE = "last:portal";
 
@@ -48,7 +48,7 @@ export function computePause(p, g) {
     p_handoff: row(v("handoff"), lvl(v("handoff"), 8, 10), "pct"),
     p_optout: row(v("optout"), lvl(v("optout"), 2, 2.5), "pct"),
     p_api: row(g.api_over_pct, lvl(g.api_over_pct, 4, 5), "pct"),
-    p_cash: row(plan?.need, lvl(plan?.need, CASH_LIMIT * 0.75, CASH_LIMIT), "brl"),
+    p_cash: row(plan?.need, "info", "brl"), // sem limite fixo para comparar (operador, 20/10): só mostra o valor
     p_channel: g.channel?.status ? { value: g.channel.number, status: g.channel.status } : undefined,
   };
 }
@@ -78,6 +78,9 @@ export function demoData() {
       const s = Array.from({ length: n }, (_, i) => Math.round((lo + (hi - lo) * (0.4 + 0.4 * r() + 0.2 * Math.sin(i / 2))) * Math.max(days, 0.3)));
       metrics[id] = { id, value: s.reduce((a, b) => a + b, 0), previous: Math.round(s.reduce((a, b) => a + b, 0) * 0.9), series: s };
     }
+    // Fixos pelas datas de vencimento de verdade, como no servidor: só o intervalo em que uma cobrança vence tem valor.
+    const step = days * 864e5, start = now - n * step;
+    metrics.fixed_cost = { id: "fixed_cost", value: fixedDue(start, now), previous: fixedDue(start - n * step, start), series: Array.from({ length: n }, (_, i) => fixedDue(start + i * step, start + (i + 1) * step)) };
     const api = coherent(metrics);
     const r = rng("o" + period), stat = ["bought", "declined", "declined", "unresolved", "abandoned", "abandoned", "open"];
     const outcomes = Object.fromEntries(OUTCOMES.map(([id]) => [id, 0]));
@@ -153,7 +156,7 @@ export function demoData() {
 
 // Os números de exemplo saem uns dos outros com as mesmas regras do cálculo real (lib/build.mjs), para fecharem entre si:
 // ticket médio com mix 70% na entrega / 30% antecipado e alguns kits; margem por pedido já descontando recusa (17%) e devolução;
-// anúncio = leads × CPL (o imposto da Meta já vem dentro); API = leads × custo por lead + R$ 0,04 por pedido; fixos rateados por dia.
+// anúncio = leads × CPL (o imposto da Meta já vem dentro); API = leads × custo por lead + R$ 0,04 por pedido; fixos só quando vencem.
 const TICKET = 132, MARGIN_PER_ORDER = 61;
 function derive(leads, orders, cpl, apl, fixed) {
   const revenue = orders * TICKET, gross = orders * MARGIN_PER_ORDER, spend = leads * cpl, api = leads * apl + orders * 0.04;

@@ -28,9 +28,9 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   resposta com login). A Meta é lida no máximo a cada 15 min; se falhar, o portal mostra a última leitura boa (até 6 h) com um
   aviso. Toda leitura tem limite de tempo. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
 - Financeiro › Caixa (desde 19/10): o caixa necessário para rodar o orçamento diário dos anúncios ativos na Meta (ou um
-  orçamento semanal digitado para simular), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,27 por lead,
-  70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Sai do caixa: anúncio (imposto já incluído), IA, WhatsApp, custos
-  fixos do período e o adiantado dos pedidos na entrega. Conta em `src/lib/economics.js`, com teste.
+  orçamento semanal digitado para simular), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,05 por lead,
+  70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Sai do caixa: anúncio (imposto já incluído), IA, WhatsApp e o
+  adiantado dos pedidos na entrega; os custos fixos ficam fora (é o caixa de rodar a operação). Conta em `src/lib/economics.js`, com teste.
 - `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.
 - Variáveis do projeto no Vercel (Settings > Environment Variables):
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
@@ -47,8 +47,9 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 - IA = soma de `llm_calls` (toda chamada de modelo dos leads, inclusive áudio e imagem); personas (`dropSynthetic`, também em
   `llm_calls`) e Hermes ficam fora. Dólar a R$ 5,40.
 - Fixos: PikaPods cobra por hora, US$ 3,73/mês (saldo US$ 9,46 em 20/10, recarga automática de US$ 10 abaixo de US$ 1) e número do
-  WhatsApp R$ 55 no início + R$ 35 a cada dia 5 (`PIKAPODS` e `WA_NUMBER` em `src/lib/economics.js`). No resultado do período entram rateados
-  por dia desde o primeiro lead; lucro e margem operacional descontam os fixos, o ROI não.
+  WhatsApp R$ 55 no início + R$ 35 a cada dia 5 (`PIKAPODS` e `WA_NUMBER` em `src/lib/economics.js`). No resultado do período entram
+  só quando vencem e são pagos de novo (`fixedPayments`), sem rateio por dia (operador, 20/10); lucro e margem operacional descontam
+  os fixos, o ROI não.
 - "Investido até agora" (Financeiro › Resultado) é recalculado a cada leitura: Meta, `llm_calls` e pedidos ao vivo, PikaPods pelas
   recargas e o número pelas mensalidades. Só precisa de edição se mudar o preço do PikaPods ou do número.
 
