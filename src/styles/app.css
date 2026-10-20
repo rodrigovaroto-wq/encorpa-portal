@@ -467,6 +467,11 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .home-chart-row .main-chart .bars-svg { position: absolute; inset: 0 0 22px 56px; width: calc(100% - 56px); height: calc(100% - 22px); }
 @media (max-width: 1100px) { .home-chart-row { grid-template-columns: 1fr; } .home-chart-row .main-chart .bars-chart { min-height: 300px; } }
 .main-chart .popover { min-width: 230px; background: var(--bg-2); backdrop-filter: none; } .main-chart .popover > button { white-space: nowrap; }
+/* Painel 10% maior que o resto do portal em todas as fontes (operador, 20/10). `zoom` nos textos vale em todos os tamanhos de tela,
+   sem repetir cada media query; os textos dos gráficos (SVG e eixos) crescem pelo font-size. */
+.home .greeting h1, .home .greeting p, .home .kpi-top h3, .home .kpi-value, .home .delta, .home .card-head h3, .home .pop > .pill, .home .donut ul { zoom: 1.1; }
+.home .bars-grid em { font-size: calc(.68rem * 1.1); } .home .bars-labels span { font-size: calc(.66rem * 1.1); }
+.home .donut-block .donut .big { font-size: calc(13px * 1.1); } .home .donut .small { font-size: calc(6.5px * 1.1); }
 
 /* Malu › Hermes */
 .hermes-list { display: flex; flex-direction: column; gap: 10px; }
