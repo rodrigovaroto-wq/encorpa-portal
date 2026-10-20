@@ -1,7 +1,7 @@
 // Anúncios do Meta Ads (só leitura, a cada 5 min): campanhas, conjuntos, anúncios com comparação, testes de criativos, metas e premissas.
 import { AD_STATUS, COMPARE, GENDER, PAUSE, PHASES, REF, SAMPLE_FLOOR } from "../lib/constants.js";
 import { computePause } from "../lib/data.js";
-import { fmt } from "../lib/format.js";
+import { fmt, when } from "../lib/format.js";
 import { HBars } from "../components/charts.jsx";
 import { Card, Chip, Note, PageHead, Table } from "../components/ui.jsx";
 
@@ -19,6 +19,7 @@ export function Ads({ data, period, route, tabs }) {
       <PageHead crumb="Análise › Anúncios" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/ads/${k}`)} />
       {needMeta && !m && <Note>Meta Ads ainda não ligado: faltam as variáveis META_ACCESS_TOKEN e META_AD_ACCOUNT_ID no Vercel.</Note>}
       {needMeta && m?.error && <Note>Não consegui ler a Meta: {m.error}</Note>}
+      {m?.stale && <Note>A Meta não respondeu agora ({m.stale.error}). Mostrando a última leitura boa, de {when(m.stale.at)}.</Note>}
       {sub === "campaigns" && m?.campaigns && <Campaigns m={m} />}
       {sub === "adsets" && m?.adsets && <Adsets m={m} />}
       {sub === "ads" && m?.ads && <AdsView m={m} p={p} />}

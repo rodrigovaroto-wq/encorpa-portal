@@ -28,14 +28,14 @@ export function Home({ data, period }) {
   const chart = (() => {
     if (sel === "pay") return { unit: "n", items: pay.map((x) => ({ ...x, short: x.label })) };
     if (sel === "units") return { unit: "n", items: units.map((x) => ({ ...x, short: x.label })) };
-    const x = metricBy(sel), s = m[sel]?.series || [], labels = bucketLabels(period, BUCKETS, s.length);
+    const x = metricBy(sel), s = m[sel]?.series || [], labels = bucketLabels(period, BUCKETS, s.length, data.updated);
     return { unit: x.unit, items: s.map((v, i) => ({ value: v, label: labels[i], short: i % Math.ceil(s.length / 10) ? "" : labels[i] })) };
   })();
 
   return (
     <div className="page home">
       <div className="greeting">
-        <h1>{hello}, Rodrigo <span className="wave-hand">👋</span></h1>
+        <h1>{hello} <span className="wave-hand">👋</span></h1>
         <p>Isso é o que está acontecendo {label === "Dia" ? "nas últimas 24 horas" : `no período: ${label?.toLowerCase()}`}. Clique num bloco para ver o gráfico dele.</p>
       </div>
       <div className="kpis k3 home-kpis">

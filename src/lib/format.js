@@ -53,16 +53,20 @@ export function downloadCsv(name, head, rows) {
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   a.download = `${name}.csv`;
   a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000); // revogar na hora cancela o download no Safari e no Firefox
 }
 
 export const initials = (name) => (name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
 
-// Rótulo de cada intervalo do período (o gráfico mostra a data de início do intervalo).
-export function bucketLabels(period, buckets, n) {
-  const [, days] = buckets[period], step = days * 86400000, start = Date.now() - n * step;
+// Rótulo de cada intervalo do período (o gráfico mostra a data de início do intervalo). end = hora em que o servidor
+// fechou os intervalos (data.updated), não o relógio do navegador, para o rótulo não andar um intervalo.
+export function bucketLabels(period, buckets, n, end) {
+  const [, days] = buckets[period], step = days * 86400000, start = (Date.parse(end) || Date.now()) - n * step;
   return Array.from({ length: n }, (_, i) => {
     const d = new Date(start + i * step);
     return days < 1 ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", timeZone: "America/Sao_Paulo" }) + " h" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
   });
 }
+
+// Valor digitado em reais: "1.500,50", "1.500" e "1500" são mil e quinhentos; "1500.50" também. Ponto seguido de 3 dígitos é milhar.
+export const parseBrl = (x) => { const s = String(x).trim().replace(/^R\$\s*/, ""); return Number(/,/.test(s) || /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, "").replace(",", ".") : s); };

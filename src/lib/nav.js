@@ -24,7 +24,7 @@ export const NAV = [
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],
       ["api", "Consumo de API", "Custo do modelo (chamadas dos leads) e do WhatsApp no período, por dia, por lead e a projeção do mês."],
-      ["cash", "Caixa", "Quanto está adiantado em pedidos na entrega ainda não repassados, contra o limite."],
+      ["cash", "Caixa", "Quanto caixa o orçamento dos anúncios pede no período, com as premissas ideais do teste, contra o limite."],
       ["compare", "Comparação", "Todas as métricas contra o período anterior."]] },
   ] },
   { sec: "Sistema", items: [
