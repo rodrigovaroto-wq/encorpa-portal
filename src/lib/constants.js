@@ -12,7 +12,7 @@ export const GROUPS = [
     { id: "orders", label: "Pedidos", unit: "n", src: "orders" },
     { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "orders ÷ leads", goal: "≥ 6% mín · 10% ideal" },
     { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "≤ R$ 1,75 mín · R$ 1,25 ideal" },
-    { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "eval_conversation_cost", goal: "teto R$ 1,00" },
+    { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "llm_calls (todas as chamadas de modelo dos leads) ÷ leads", goal: "teto R$ 1,00" },
     { id: "cpl_api", label: "CPL + API", unit: "brl", src: "Meta Ads + eval_conversation_cost" },
     { id: "handoff", label: "Handoff (aviso ao operador)", unit: "pct", src: "não resolvidas ÷ conversas encerradas", goal: "≤ 10%" },
     { id: "fallback", label: "Resposta pronta (fallback)", unit: "pct", src: "eval_turn_outcomes" },
@@ -23,9 +23,10 @@ export const GROUPS = [
     { id: "revenue", label: "Faturamento", unit: "brl", src: "orders" },
     { id: "op_cost", label: "Custo dos pedidos", unit: "brl", src: "faturamento − margem dos pedidos" },
     { id: "gross_profit", label: "Margem dos pedidos", unit: "brl", src: "soma do que cada pedido vale pelo status de hoje" },
-    { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio com imposto − API" },
-    { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(contribuição dos pedidos − anúncio − API) ÷ faturamento", goal: "> 0%" },
-    { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio com imposto + API)", goal: "≥ 1,5 mín · 2,5 ideal" },
+    { id: "fixed_cost", label: "Custos fixos (rateio)", unit: "brl", src: "PikaPods US$ 3,73/mês × R$ 5,40 + número R$ 35/mês, por dia desde o primeiro lead" },
+    { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio (imposto incluído) − IA − WhatsApp − fixos" },
+    { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(margem dos pedidos − anúncio − IA − WhatsApp − fixos) ÷ faturamento", goal: "> 0%" },
+    { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp), sem os fixos", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
   ]},
@@ -79,7 +80,7 @@ export const SAMPLE_FLOOR = { leads: 500, orders: 50, spend: 500 };
 
 export const KPIS = ["leads", "orders", "conversion", "revenue", "resolution", "api_per_lead", "net_profit", "op_margin"];
 
-export const LOWER = new Set(["cpl", "api_per_lead", "cpl_api", "handoff", "fallback", "optout", "invalid_premise", "op_cost", "refusal", "spend", "cpm", "rewrites", "gate_blocks", "transfers", "first_response", "handle_time"]);
+export const LOWER = new Set(["cpl", "api_per_lead", "cpl_api", "handoff", "fallback", "optout", "invalid_premise", "op_cost", "fixed_cost", "refusal", "spend", "cpm", "rewrites", "gate_blocks", "transfers", "first_response", "handle_time"]);
 
 export const FUNNEL = [["first_msg", "Mandou a 1ª mensagem"], ["reply", "Respondeu à agente"], ["price", "Chegou ao preço"], ["link", "Recebeu o link"], ["order", "Pedido criado"], ["delivered", "Entrega concluída"]];
 
@@ -121,9 +122,17 @@ export const REF = [
     ["Recusa na porta", "− R$ 9,99 por pedido recusado (entrega frustrada R$ 4,99 + manuseio R$ 5,00), só na entrega; premissa de 12% a 17%"],
     ["Devolução depois de entregue", "− R$ 30 na entrega e − R$ 50 no antecipado; premissa de 5% a 10%"],
     ["Média esperada por pedido", "R$ 51,74 no mix 70/30 com 1 peça, recusa de 17% e devolução de 10%"],
-    ["Equilíbrio", "conversão mínima de 3,3% com CPL de R$ 1,25 e de 3,8% com CPL de R$ 1,50 (anúncio + 13,83% de imposto + R$ 0,27 de IA por lead ÷ R$ 51,70 por pedido, já sem o WhatsApp)"],
-    ["Outros custos", "imposto da Meta 13,83% sobre o anúncio · WhatsApp R$ 0,04 por pedido · fixo R$ 53,50/mês (PikaPods + número)"],
+    ["Equilíbrio", "conversão mínima de 2,9% com CPL de R$ 1,25 e de 3,4% com CPL de R$ 1,50 ((CPL + R$ 0,27 de IA por lead) ÷ R$ 51,70 por pedido, já sem o WhatsApp; o CPL da Meta já traz o imposto); os fixos pedem mais ~1,1 pedido por mês"],
+    ["Outros custos", "imposto da Meta (13,83%) já incluído no gasto do anúncio (operador, 20/10) · WhatsApp R$ 0,04 por pedido · fixos ~ R$ 55,14/mês (R$ 1,81/dia)"],
     ["Repasse", "na entrega: 14 dias depois do pagamento na porta; antecipado: na hora"]]],
+  ["Custos do projeto (planilha do operador, 20/10)", [
+    ["Fixo: PikaPods (n8n)", "cobra por hora: US$ 3,73 por mês (~ R$ 20,14); saldo de US$ 9,46 em 20/10, recarga automática de US$ 10 quando fica abaixo de US$ 1"],
+    ["Fixo: número do WhatsApp", "R$ 55 no início; depois R$ 35 por mês, vence dia 5"],
+    ["Variável: anúncios na Meta", "conforme o uso, imposto incluído no valor cobrado"],
+    ["Variável: API do WhatsApp", "R$ 0 dentro das janelas; ~ R$ 0,04 por pedido no template de pós-venda"],
+    ["Variável: modelo de IA", "só as chamadas de modelo dos leads (resposta, reescrita, interpretação, áudio e imagem); personas e Hermes fora"],
+    ["Câmbio", "R$ 5,40 por dólar, o mesmo do Ricos-com-AI"],
+    ["Onde entram", "no resultado do período (fixos rateados por dia, fora do ROI) e em Financeiro › Resultado › Investido até agora, ao vivo"]]],
   ["Medido × premissa", [
     ["Custo de IA por lead", "premissa R$ 0,27 · medido p50 R$ 0,268 e p95 R$ 0,546 por conversa (30/09); personas da v25 ~ R$ 0,02 por conversa (15/10)"],
     ["Teto do modelo por conversa", "R$ 1,00, sem tolerância (R18.7)"],
@@ -134,7 +143,7 @@ export const REF = [
     ["Pausa, 30 e 31/10", "leitura da fase Copy"],
     ["Fase Região, 1 a 7/11", "R$ 350 (R$ 50/dia), só as 2 copies vencedoras; A = estados com mais de 5 cidades com pagamento na entrega, B = Sudeste + Centro-Oeste + Sul"],
     ["Fase Leitura, 8 e 9/11", "R$ 0; os pedidos na entrega chegam à porta"],
-    ["Verba e caixa", "R$ 700 de anúncio (R$ 797 com imposto); caixa de R$ 1.325 com R$ 250 de segurança = R$ 1.075 utilizáveis"],
+    ["Verba e caixa", "R$ 700 de anúncio, imposto incluído; caixa de R$ 1.325 com R$ 250 de segurança = R$ 1.075 utilizáveis"],
     ["Piso de amostra", "mais de 500 leads e mais de 50 pedidos (com CPL de R$ 1,50 saem ~467 leads: só passa com CPL abaixo de ~R$ 1,40)"],
     ["Experimentos por lead", "A = abertura rápida (sem recibo de 60 s), B = link depois da escolha; ~235 leads por braço; Malu congelada de 23/10 a 09/11"],
     ["Lembretes", "silence_1 em 60 min · silence_2 às 9h do dia seguinte (ou +23 h) · silence_3 com cupom SUPER20 71 h depois da entrada pelo anúncio"]]],
@@ -144,7 +153,7 @@ export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": 
 
 export const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.2, .35], cpl_api: [1.6, 2.7], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
 
-export const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend"]);
+export const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend", "fixed_cost"]);
 
 export const STATUS_RUN = { success: "sucesso", error: "erro", crashed: "falhou", running: "rodando", waiting: "esperando", canceled: "cancelada" };
 
@@ -157,4 +166,4 @@ export const AD_STATUS = { ACTIVE: ["Ativo", "ok"], PAUSED: ["Pausado", ""], CAM
 export const GENDER = { 1: "homens", 2: "mulheres" };
 
 export const COMPARE = [["spend", "Gasto", "brl", 0], ["impressions", "Impressões", "n", 0], ["ctr", "CTR", "pct", 1], ["cpm", "CPM", "brl", -1], ["started", "Conversas", "n", 1], ["cpl", "CPL", "brl", -1], ["leads", "Leads", "n", 1], ["orders", "Pedidos", "n", 1], ["conv", "Conversão lead → pedido", "pct", 1], ["cpo", "Custo por pedido", "brl", -1]];
-Object.assign(RANGE, { op_margin: [8, 22], resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25], leads_ad: [20, 60], leads_organic: [10, 30], delivered_orders: [2, 7] });
+Object.assign(RANGE, { fixed_cost: [1.81, 1.81], op_margin: [8, 22], resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25], leads_ad: [20, 60], leads_organic: [10, 30], delivered_orders: [2, 7] });

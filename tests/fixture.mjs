@@ -39,6 +39,13 @@ export function fixture() {
     orders: [
       { id: "o1", external_id: "LZ1", lead_id: "lead-ana", created_at: at(3.8), updated_at: at(3.8), amount_brl: 129.9, status: "Agendado", payment_method: "cod", units: 1, size: "M", scheduled_for: "2026-10-21" },
     ],
+    // Chamadas de modelo: duas da Ana, uma transcrição de áudio (sem conversa, como grava a função whatsapp) e uma da persona.
+    llm_calls: [
+      { id: "c1", conversation_id: "11111111-1111-4111-8111-111111111111", cost_brl: 0.2, created_at: at(4.99) },
+      { id: "c2", conversation_id: "11111111-1111-4111-8111-111111111111", cost_brl: 0.1, created_at: at(3.9) },
+      { id: "c3", conversation_id: null, cost_brl: 0.05, created_at: at(4) },
+      { id: "c4", conversation_id: "55555555-5555-4555-8555-555555555555", cost_brl: 9, created_at: at(2) },
+    ],
     eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [], eval_attribution: [],
     hermes_runs: [], hermes_proposals: [], hermes_backlog: [], agent_versions: [{ version: 27, published_at: at(100), note: null }],
     meta: null, n8n: null,

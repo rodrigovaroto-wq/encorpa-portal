@@ -2,7 +2,7 @@
 // Formato: { updated, global: {...}, periods: { day, week, month, 3m, 6m, 9m, 12m } } (lib/build.mjs › build).
 import { ALL, BUCKETS, RANGE, SUMMED, OUTCOMES, PAUSE, DECISION } from "./constants.js";
 import { fmt, store } from "./format.js";
-import { CASH_LIMIT, DELIVERY_DAYS, META_TAX, RELEASE_DAYS, cashPlan } from "./economics.js";
+import { CASH_LIMIT, DELIVERY_DAYS, RELEASE_DAYS, cashPlan } from "./economics.js";
 
 const CACHE = "last:portal";
 
@@ -86,7 +86,7 @@ export function demoData() {
     periods[period] = {
       metrics, outcomes,
       hourly: Array.from({ length: 24 }, (_, h) => Math.round((h < 6 ? 1 : 6) * (1 + Math.sin(h / 4)) * Math.max(days, 1))),
-      money: { api_cost: api, api_per_day: api / (n * days), api_30d: (api / (n * days)) * 30 },
+      money: { ads: metrics.spend.value, ai: api - metrics.orders.value * 0.04, whatsapp: metrics.orders.value * 0.04, fixed: metrics.fixed_cost.value, api_cost: api, api_per_day: api / (n * days), api_30d: (api / (n * days)) * 30 },
       mix: { cod: Math.round(metrics.orders.value * 0.7), prepay: Math.round(metrics.orders.value * 0.3), units: [0.72, 0.2, 0.08].map((f) => Math.round(metrics.orders.value * f)), contribution: metrics.gross_profit.value },
       states: UFS.slice(0, 7).map((s, i) => ({ state: s, leads: 40 - i * 5, orders: Math.max(0, 6 - i), conversion: (Math.max(0, 6 - i) / (40 - i * 5)) * 100 })),
       gaps: WHY.map((w, i) => ({ reason: w, count: 6 - i, conversations: 5 - i, last: new Date(now - i * 864e5).toISOString(), version: 26 })),
@@ -118,6 +118,12 @@ export function demoData() {
     demo: true, source: "demo", updated: new Date(now).toISOString(), periods,
     global: {
       updated: new Date(now).toISOString(), totals: { leads: 210, orders: 18, spend: 240 }, funnel: { first_msg: 210, reply: 160, price: 110, link: 70, order: 18, delivered: 12 },
+      invested: { total: 404.72, contribution: 1098, result: 693.28, rows: [
+        { label: "PikaPods (n8n)", kind: "fixo", total: 54, how: "1 recarga(s) de US$ 10 × R$ 5,40 · saldo ~US$ 8,86 · próxima recarga ~28/12/2026" },
+        { label: "Número do WhatsApp", kind: "fixo", total: 55, how: "R$ 55 no início + 0 mensalidade(s) de R$ 35 · próxima 05/11/2026" },
+        { label: "Anúncios na Meta (imposto incluído)", kind: "variável", total: 240, how: "gasto da conta, ao vivo" },
+        { label: "Modelo de IA (leads)", kind: "variável", total: 55, how: "toda chamada de modelo dos leads, ao vivo" },
+        { label: "API do WhatsApp", kind: "variável", total: 0.72, how: "R$ 0,04 por pedido (template de pós-venda)" }] },
       channel: { number: "Enviando, sem erro nas últimas execuções", status: "ok", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" }, api_over_pct: 2.1, ad_budget: 50,
       versions: [24, 25, 26].map((v, i) => ({ version: `v${v}`, conversations: 60 + i * 20, resolution: 70 + i * 6, unresolved: 9 - i * 3, abandoned: 12 - i * 2, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * 0.2, cost: 0.8 - i * 0.08 })),
       gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
@@ -147,17 +153,17 @@ export function demoData() {
 
 // Os números de exemplo saem uns dos outros com as mesmas regras do cálculo real (lib/build.mjs), para fecharem entre si:
 // ticket médio com mix 70% na entrega / 30% antecipado e alguns kits; margem por pedido já descontando recusa (17%) e devolução;
-// anúncio = leads × CPL com imposto da Meta; API = leads × custo por lead + R$ 0,04 por pedido.
+// anúncio = leads × CPL (o imposto da Meta já vem dentro); API = leads × custo por lead + R$ 0,04 por pedido; fixos rateados por dia.
 const TICKET = 132, MARGIN_PER_ORDER = 61;
-function derive(leads, orders, cpl, apl) {
+function derive(leads, orders, cpl, apl, fixed) {
   const revenue = orders * TICKET, gross = orders * MARGIN_PER_ORDER, spend = leads * cpl, api = leads * apl + orders * 0.04;
-  const cost = spend * (1 + META_TAX) + api, net = gross - cost;
+  const cost = spend + api, net = gross - cost - fixed; // ROI sem os fixos
   return { api, revenue, gross_profit: gross, op_cost: revenue - gross, spend, net_profit: net, op_margin: revenue ? (net / revenue) * 100 : null, roi: cost ? gross / cost : null, conversion: leads ? (orders / leads) * 100 : null, cpl_api: cpl + apl };
 }
 function coherent(m) {
   const n = m.leads.series.length, keys = ["revenue", "gross_profit", "op_cost", "spend", "net_profit", "op_margin", "roi", "conversion", "cpl_api"];
-  const per = Array.from({ length: n }, (_, i) => derive(m.leads.series[i], m.orders.series[i], m.cpl.series[i], m.api_per_lead.series[i]));
-  const cur = derive(m.leads.value, m.orders.value, m.cpl.value, m.api_per_lead.value), prev = derive(m.leads.previous, m.orders.previous, m.cpl.previous, m.api_per_lead.previous);
+  const f = m.fixed_cost, per = Array.from({ length: n }, (_, i) => derive(m.leads.series[i], m.orders.series[i], m.cpl.series[i], m.api_per_lead.series[i], f.series[i]));
+  const cur = derive(m.leads.value, m.orders.value, m.cpl.value, m.api_per_lead.value, f.value), prev = derive(m.leads.previous, m.orders.previous, m.cpl.previous, m.api_per_lead.previous, f.previous);
   for (const k of keys) m[k] = { id: k, value: cur[k], previous: prev[k], series: per.map((x) => x[k]) };
   return cur.api;
 }

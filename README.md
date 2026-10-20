@@ -29,7 +29,8 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   aviso. Toda leitura tem limite de tempo. A página busca em `/api/data` a cada 5 min e mostra o horário em "atualizado".
 - Financeiro › Caixa (desde 19/10): o caixa necessário para rodar o orçamento diário dos anúncios ativos na Meta (ou um
   orçamento semanal digitado para simular), com as premissas ideais do teste: CPL R$ 1,25, conversão 10%, IA R$ 0,27 por lead,
-  70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Conta em `src/lib/economics.js`, com teste.
+  70% na entrega com 1 peça de R$ 129,90 e 7 dias até entregar. Sai do caixa: anúncio (imposto já incluído), IA, WhatsApp, custos
+  fixos do período e o adiantado dos pedidos na entrega. Conta em `src/lib/economics.js`, com teste.
 - `middleware.js` pede e-mail e senha (login do navegador) para o site todo e para `/api/data`.
 - Variáveis do projeto no Vercel (Settings > Environment Variables):
   - `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SERVICE_ROLE`, `SERVICE_ROLE_KEY`): a chave service_role. Só no servidor, nunca no navegador.
@@ -39,6 +40,17 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
 - `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.
+
+## Financeiro: custos (desde 20/10)
+
+- O anúncio entra pelo gasto que a Meta devolve, que **já inclui** o imposto de 13,83% (operador, 20/10). Nada é somado por cima.
+- IA = soma de `llm_calls` (toda chamada de modelo dos leads, inclusive áudio e imagem); personas (`dropSynthetic`, também em
+  `llm_calls`) e Hermes ficam fora. Dólar a R$ 5,40.
+- Fixos: PikaPods cobra por hora, US$ 3,73/mês (saldo US$ 9,46 em 20/10, recarga automática de US$ 10 abaixo de US$ 1) e número do
+  WhatsApp R$ 55 no início + R$ 35 a cada dia 5 (`PIKAPODS` e `WA_NUMBER` em `src/lib/economics.js`). No resultado do período entram rateados
+  por dia desde o primeiro lead; lucro e margem operacional descontam os fixos, o ROI não.
+- "Investido até agora" (Financeiro › Resultado) é recalculado a cada leitura: Meta, `llm_calls` e pedidos ao vivo, PikaPods pelas
+  recargas e o número pelas mensalidades. Só precisa de edição se mudar o preço do PikaPods ou do número.
 
 ## Responder pelo portal (desde 16/10)
 

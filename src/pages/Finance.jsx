@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
 import { periodDays } from "../lib/data.js";
-import { CASH_LIMIT, DELIVERY_DAYS, IDEAL, META_TAX, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
+import { CASH_LIMIT, DELIVERY_DAYS, FIXED_PER_DAY, IDEAL, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
 import { bucketLabels, fmt, metricBy, parseBrl } from "../lib/format.js";
 import { Gauge, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
@@ -15,7 +15,7 @@ export function Finance({ data, period, route, tabs }) {
     <div className="page">
       <PageHead crumb="Análise › Financeiro" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/money/${k}`)}
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
-      {sub === "result" && <Result p={p} />}
+      {sub === "result" && <Result p={p} g={g} />}
       {sub === "api" && <Api p={p} period={period} updated={data.updated} />}
       {sub === "cash" && <Cash g={g} period={period} />}
       {sub === "compare" && <Compare p={p} />}
@@ -23,17 +23,19 @@ export function Finance({ data, period, route, tabs }) {
   );
 }
 
-function Result({ p }) {
+function Result({ p, g }) {
   // Os mesmos números dos cartões (lib/build.mjs › profit): nenhuma conta própria aqui, para nunca divergirem.
-  const m = p.metrics || {}, v = (id) => m[id]?.value;
-  const rev = v("revenue") ?? 0, contrib = v("gross_profit"), spend = v("spend"), api = p.money?.api_cost ?? 0;
-  const adCost = spend == null ? null : spend * (1 + META_TAX);
+  // Retrato antigo (sem a abertura de custos): IA cai no total de API e WhatsApp e fixos ficam "—".
+  const m = p.metrics || {}, v = (id) => m[id]?.value, money = p.money || {};
+  const rev = v("revenue") ?? 0, contrib = v("gross_profit");
   const lines = [
     { label: "Faturamento (pedidos válidos)", value: rev, sign: 1 },
     { label: "Custo dos pedidos (produto, entrega, manuseio, taxa, recusas e devoluções)", value: contrib == null ? null : rev - contrib, sign: -1 },
     { label: "= Margem dos pedidos", value: contrib, sum: true },
-    { label: "Anúncio com imposto da Meta (13,83%)", value: adCost, sign: -1 },
-    { label: "API (modelo + WhatsApp pós-venda)", value: api, sign: -1 },
+    { label: "Anúncio na Meta (imposto já incluído no gasto)", value: v("spend") ?? null, sign: -1 },
+    { label: "Modelo de IA (chamadas dos leads)", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
+    { label: "WhatsApp (template de pós-venda)", value: money.whatsapp ?? null, sign: -1 },
+    { label: "Custos fixos (PikaPods + número, rateio por dia)", value: money.fixed ?? null, sign: -1 },
     { label: "= Resultado", value: v("net_profit") ?? null, sum: true },
   ];
   const max = Math.max(1, ...lines.map((l) => Math.abs(l.value || 0)));
@@ -56,7 +58,24 @@ function Result({ p }) {
           ))}
         </div>
       </Card>
-      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
+      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). O anúncio entra pelo gasto da Meta, que já traz o imposto. A IA é a soma das chamadas de modelo dos leads. Os fixos (PikaPods US$ 3,73/mês × R$ 5,40 e número R$ 35/mês) são rateados por dia desde o primeiro lead e não entram no ROI. Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
+      {g.invested && <Invested inv={g.invested} />}
+    </>
+  );
+}
+
+// Tudo o que o projeto já gastou, pelo que saiu do cartão, contra o que os pedidos já valem. Recalculado a cada leitura dos dados.
+function Invested({ inv }) {
+  return (
+    <>
+      <h2 className="section-title">Investido até agora</h2>
+      <Table name="investido-ate-agora" head={["Custo", "Tipo", "Como é contado", "Total"]}
+        rows={[...inv.rows.map((r) => [r.label, r.kind, r.how, fmt(r.total, "brl")]),
+          [<b key="t">Total investido</b>, "", "", <b key="v">{fmt(inv.total, "brl")}</b>],
+          ["Margem dos pedidos até hoje", "", "", fmt(inv.contribution, "brl")],
+          [<b key="r">Resultado acumulado</b>, "", "", <b key="w" className={inv.result < 0 ? "neg" : ""}>{fmt(inv.result, "brl")}</b>]]}
+        csv={[...inv.rows.map((r) => [r.label, r.kind, r.how, r.total]), ["Total investido", "", "", inv.total], ["Margem dos pedidos até hoje", "", "", inv.contribution], ["Resultado acumulado", "", "", inv.result]]} />
+      <Note>Desde o início do projeto, pelo que já saiu do cartão, e atualizado sozinho a cada leitura dos dados (a cada 5 min): anúncio pela Meta, IA pelas chamadas de modelo dos leads (sem personas nem Hermes), WhatsApp pelos pedidos, PikaPods pelas recargas automáticas de US$ 10 (o consumo de US$ 3,73 por mês leva o saldo abaixo de US$ 1) e o número pelas mensalidades de cada dia 5. Dólar a R$ 5,40. É diferente do resultado do período acima, que rateia os fixos por dia.</Note>
     </>
   );
 }
@@ -95,8 +114,9 @@ function Cash({ g, period }) {
         </Card>
         <Card title="Como a conta é feita" sub="premissas ideais do teste">
           {plan ? <HBars unit="brl" items={[
-            { label: `Anúncio + imposto da Meta (${fmt(META_TAX * 100, "pct")})`, value: plan.ad },
+            { label: "Anúncio (imposto da Meta já incluído)", value: plan.ad },
             { label: `IA (${fmt(IDEAL.api_per_lead, "brl")} por lead) + WhatsApp pós-venda`, value: plan.api },
+            { label: `Custos fixos (PikaPods + número, ${fmt(FIXED_PER_DAY, "brl")} por dia)`, value: plan.fixed },
             { label: `Adiantado nos pedidos na entrega (${fmt(plan.cod_orders, "n")} de ${fmt(plan.orders, "n")} pedidos)`, value: plan.upfront },
             { label: "Sai do caixa no período", value: plan.total },
             { label: `Caixa necessário (até ${plan.cycle} dias, antes do primeiro repasse)`, value: plan.need, tone: pct > 100 ? "bad" : "ok" }]} /> : <p className="empty">Sem orçamento para calcular.</p>}

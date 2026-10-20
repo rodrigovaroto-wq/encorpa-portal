@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { adBudget, buildAll, buildChats, channel, conversationStatus, dropSynthetic, orderValue, outcomeCounts } from "../lib/build.mjs";
 import { NOW, fixture } from "./fixture.mjs";
+import { FIXED_PER_DAY } from "../src/lib/economics.js";
 
 const near = (a, b, eps = 0.01) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 
@@ -140,4 +141,31 @@ test("adBudget: conjunto já encerrado e campanha sem conjunto rodando não cont
     ],
   };
   assert.equal(adBudget(m, NOW), 20);
+});
+
+// Custos (operador, 20/10): IA só dos leads, anúncio com o imposto dentro, fixos rateados por dia e fora do ROI.
+const withMeta = (spend) => ({ ...fixture(), meta: { campaigns: [], adsets: [], ads: [], daily: [{ ad_id: "a1", day: new Date(NOW - 3 * 3600000).toISOString().slice(0, 10), spend, impressions: 1000, clicks: 10, started: 4 }] } });
+
+test("IA = chamadas de modelo dos leads, com áudio sem conversa e sem a persona", async () => {
+  const { data } = await buildAll({ fixture: fixture() }, NOW);
+  near(data.periods.week.money.ai, 0.35);
+  near(data.global.invested.rows.find((r) => r.id === "ai").total, 0.35);
+});
+
+test("demonstrativo: margem − anúncio − IA − WhatsApp − fixos = lucro; ROI sem os fixos", async () => {
+  const { data } = await buildAll({ fixture: withMeta(20) }, NOW);
+  const p = data.periods.week, m = p.money, v = (id) => p.metrics[id].value;
+  near(m.ads, 20, 1e-9); // o gasto da Meta, sem acréscimo de imposto
+  near(m.fixed, (50 / 24) * FIXED_PER_DAY, 1e-6); // do primeiro lead real (50 h atrás) até agora
+  near(v("net_profit"), v("gross_profit") - m.ads - m.ai - m.whatsapp - m.fixed, 1e-9);
+  near(v("roi"), v("gross_profit") / (m.ads + m.ai + m.whatsapp), 1e-9);
+  near(v("op_margin"), (v("net_profit") / v("revenue")) * 100, 1e-9);
+});
+
+test("investido até agora: soma das linhas, anúncio ao vivo da Meta, resultado = margem dos pedidos − investido", async () => {
+  const { data } = await buildAll({ fixture: withMeta(20) }, NOW);
+  const inv = data.global.invested;
+  near(inv.total, inv.rows.reduce((a, r) => a + r.total, 0), 1e-9);
+  assert.equal(inv.rows.find((r) => r.id === "ads").total, 20);
+  near(inv.result, inv.contribution - inv.total, 1e-9);
 });
