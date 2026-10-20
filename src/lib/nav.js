@@ -23,7 +23,7 @@ export const NAV = [
     { id: "customers", label: "Clientes", icon: "users", desc: "De onde vêm as clientes, em que estado compram mais e quantas voltam." },
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],
-      ["api", "Consumo de API", "Custo do modelo (conversas e Hermes) e do WhatsApp no período, por dia, por lead e a projeção do mês."],
+      ["api", "Consumo de API", "Custo do modelo (chamadas dos leads) e do WhatsApp no período, por dia, por lead e a projeção do mês."],
       ["cash", "Caixa", "Quanto está adiantado em pedidos na entrega ainda não repassados, contra o limite."],
       ["compare", "Comparação", "Todas as métricas contra o período anterior."]] },
   ] },

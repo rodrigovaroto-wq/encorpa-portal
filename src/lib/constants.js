@@ -12,7 +12,7 @@ export const GROUPS = [
     { id: "orders", label: "Pedidos", unit: "n", src: "orders" },
     { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "orders ÷ leads", goal: "≥ 6% mín · 10% ideal" },
     { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "≤ R$ 1,75 mín · R$ 1,25 ideal" },
-    { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "eval_conversation_cost", goal: "teto R$ 1,00" },
+    { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "llm_calls (todas as chamadas de modelo dos leads) ÷ leads", goal: "teto R$ 1,00" },
     { id: "cpl_api", label: "CPL + API", unit: "brl", src: "Meta Ads + eval_conversation_cost" },
     { id: "handoff", label: "Handoff (aviso ao operador)", unit: "pct", src: "não resolvidas ÷ conversas encerradas", goal: "≤ 10%" },
     { id: "fallback", label: "Resposta pronta (fallback)", unit: "pct", src: "eval_turn_outcomes" },
@@ -23,10 +23,10 @@ export const GROUPS = [
     { id: "revenue", label: "Faturamento", unit: "brl", src: "orders" },
     { id: "op_cost", label: "Custo dos pedidos", unit: "brl", src: "faturamento − margem dos pedidos" },
     { id: "gross_profit", label: "Margem dos pedidos", unit: "brl", src: "soma do que cada pedido vale pelo status de hoje" },
-    { id: "fixed_cost", label: "Custos fixos (rateio)", unit: "brl", src: "PikaPods R$ 55 a cada ~80 dias + número R$ 35/mês, por dia desde o primeiro lead" },
+    { id: "fixed_cost", label: "Custos fixos (rateio)", unit: "brl", src: "PikaPods US$ 3,73/mês × R$ 5,40 + número R$ 35/mês, por dia desde o primeiro lead" },
     { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio (imposto incluído) − IA − WhatsApp − fixos" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(margem dos pedidos − anúncio − IA − WhatsApp − fixos) ÷ faturamento", goal: "> 0%" },
-    { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp + fixos); ≥ 1 = lucro", goal: "≥ 1,5 mín · 2,5 ideal" },
+    { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp), sem os fixos", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "cash_left", label: "Caixa reservado restante", unit: "brl", src: "manual (R$ 1.500)" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
@@ -124,16 +124,16 @@ export const REF = [
     ["Devolução depois de entregue", "− R$ 30 na entrega e − R$ 50 no antecipado; premissa de 5% a 10%"],
     ["Média esperada por pedido", "R$ 51,74 no mix 70/30 com 1 peça, recusa de 17% e devolução de 10%"],
     ["Equilíbrio", "conversão mínima de 2,9% com CPL de R$ 1,25 e de 3,4% com CPL de R$ 1,50 ((CPL + R$ 0,27 de IA por lead) ÷ R$ 51,70 por pedido, já sem o WhatsApp; o CPL da Meta já traz o imposto); os fixos pedem mais ~1,1 pedido por mês"],
-    ["Outros custos", "imposto da Meta (13,83%) já incluído no gasto do anúncio (operador, 20/10) · WhatsApp R$ 0,04 por pedido · fixos ~ R$ 55,93/mês (R$ 1,84/dia)"],
+    ["Outros custos", "imposto da Meta (13,83%) já incluído no gasto do anúncio (operador, 20/10) · WhatsApp R$ 0,04 por pedido · fixos ~ R$ 55,14/mês (R$ 1,81/dia)"],
     ["Repasse", "na entrega: 14 dias depois do pagamento na porta; antecipado: na hora"]]],
   ["Custos do projeto (planilha do operador, 20/10)", [
-    ["Fixo: PikaPods (n8n)", "R$ 55 (~US$ 10) a cada ~80 dias, ~ R$ 20,63/mês"],
-    ["Fixo: número do WhatsApp", "R$ 35 por mês, vence dia 5"],
+    ["Fixo: PikaPods (n8n)", "cobra por hora: US$ 3,73 por mês (~ R$ 20,14); saldo de US$ 9,46 em 20/10, recarga automática de US$ 10 quando fica abaixo de US$ 1"],
+    ["Fixo: número do WhatsApp", "R$ 55 no início; depois R$ 35 por mês, vence dia 5"],
     ["Variável: anúncios na Meta", "conforme o uso, imposto incluído no valor cobrado"],
     ["Variável: API do WhatsApp", "R$ 0 dentro das janelas; ~ R$ 0,04 por pedido no template de pós-venda"],
-    ["Variável: modelo de IA", "conforme o uso; medido por conversa e por rodada do Hermes"],
-    ["Gastos até 20/10", "PikaPods R$ 55 · número R$ 55 · anúncios R$ 77,38 · IA R$ 44 (US$ 8 × 5,50) · API do WhatsApp R$ 0 · total R$ 231,38"],
-    ["Onde entram", "no resultado do período (fixos rateados por dia) e em Financeiro › Resultado › Investido até agora (o acumulado)"]]],
+    ["Variável: modelo de IA", "só as chamadas de modelo dos leads (resposta, reescrita, interpretação, áudio e imagem); personas e Hermes fora"],
+    ["Câmbio", "R$ 5,40 por dólar, o mesmo do Ricos-com-AI"],
+    ["Onde entram", "no resultado do período (fixos rateados por dia, fora do ROI) e em Financeiro › Resultado › Investido até agora, ao vivo"]]],
   ["Medido × premissa", [
     ["Custo de IA por lead", "premissa R$ 0,27 · medido p50 R$ 0,268 e p95 R$ 0,546 por conversa (30/09); personas da v25 ~ R$ 0,02 por conversa (15/10)"],
     ["Teto do modelo por conversa", "R$ 1,00, sem tolerância (R18.7)"],
@@ -167,4 +167,4 @@ export const AD_STATUS = { ACTIVE: ["Ativo", "ok"], PAUSED: ["Pausado", ""], CAM
 export const GENDER = { 1: "homens", 2: "mulheres" };
 
 export const COMPARE = [["spend", "Gasto", "brl", 0], ["impressions", "Impressões", "n", 0], ["ctr", "CTR", "pct", 1], ["cpm", "CPM", "brl", -1], ["started", "Conversas", "n", 1], ["cpl", "CPL", "brl", -1], ["leads", "Leads", "n", 1], ["orders", "Pedidos", "n", 1], ["conv", "Conversão lead → pedido", "pct", 1], ["cpo", "Custo por pedido", "brl", -1]];
-Object.assign(RANGE, { fixed_cost: [1.84, 1.84], op_margin: [8, 22], resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25], leads_ad: [20, 60], leads_organic: [10, 30], delivered_orders: [2, 7] });
+Object.assign(RANGE, { fixed_cost: [1.81, 1.81], op_margin: [8, 22], resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25], leads_ad: [20, 60], leads_organic: [10, 30], delivered_orders: [2, 7] });

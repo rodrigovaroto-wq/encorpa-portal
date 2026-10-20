@@ -112,10 +112,12 @@ export function demoData() {
     demo: true, source: "demo", updated: new Date(now).toISOString(), periods,
     global: {
       updated: new Date(now).toISOString(), totals: { leads: 210, orders: 18, spend: 240 }, funnel: { first_msg: 210, reply: 160, price: 110, link: 70, order: 18, delivered: 12 },
-      invested: { until: "2026-10-20T03:00:00.000Z", total: 394, contribution: 1098, result: 704, rows: [
-        { label: "PikaPods (n8n)", kind: "fixo", paid: 55, after: 0, total: 55 }, { label: "Número do WhatsApp", kind: "fixo", paid: 55, after: 0, total: 55 },
-        { label: "Anúncios na Meta (imposto incluído)", kind: "variável", paid: 240, after: 0, total: 240, live: true }, { label: "Modelo de IA (conversas e Hermes)", kind: "variável", paid: 44, after: 0, total: 44 },
-        { label: "API do WhatsApp", kind: "variável", paid: 0, after: 0, total: 0 }] },
+      invested: { total: 404.72, contribution: 1098, result: 693.28, rows: [
+        { label: "PikaPods (n8n)", kind: "fixo", total: 54, how: "1 recarga(s) de US$ 10 × R$ 5,40 · saldo ~US$ 8,86 · próxima recarga ~28/12/2026" },
+        { label: "Número do WhatsApp", kind: "fixo", total: 55, how: "R$ 55 no início + 0 mensalidade(s) de R$ 35 · próxima 05/11/2026" },
+        { label: "Anúncios na Meta (imposto incluído)", kind: "variável", total: 240, how: "gasto da conta, ao vivo" },
+        { label: "Modelo de IA (leads)", kind: "variável", total: 55, how: "toda chamada de modelo dos leads, ao vivo" },
+        { label: "API do WhatsApp", kind: "variável", total: 0.72, how: "R$ 0,04 por pedido (template de pós-venda)" }] },
       channel: { number: "Saudável", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" }, api_over_pct: 2.1, cash_need: 540,
       versions: [24, 25, 26].map((v, i) => ({ version: `v${v}`, conversations: 60 + i * 20, resolution: 70 + i * 6, unresolved: 9 - i * 3, abandoned: 12 - i * 2, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * 0.2, cost: 0.8 - i * 0.08 })),
       gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
@@ -149,7 +151,7 @@ export function demoData() {
 const TICKET = 132, MARGIN_PER_ORDER = 61;
 function derive(leads, orders, cpl, apl, fixed) {
   const revenue = orders * TICKET, gross = orders * MARGIN_PER_ORDER, spend = leads * cpl, api = leads * apl + orders * 0.04;
-  const cost = spend + api + fixed, net = gross - cost;
+  const cost = spend + api, net = gross - cost - fixed; // ROI sem os fixos
   return { api, revenue, gross_profit: gross, op_cost: revenue - gross, spend, net_profit: net, op_margin: revenue ? (net / revenue) * 100 : null, roi: cost ? gross / cost : null, conversion: leads ? (orders / leads) * 100 : null, cpl_api: cpl + apl };
 }
 function coherent(m) {

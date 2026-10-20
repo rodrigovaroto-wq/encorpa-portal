@@ -34,9 +34,12 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 ## Financeiro: custos (desde 20/10)
 
 - O anúncio entra pelo gasto que a Meta devolve, que **já inclui** o imposto de 13,83% (operador, 20/10). Nada é somado por cima.
-- Custos fixos da planilha `Gastos_Encorpa`: PikaPods R$ 55 a cada ~80 dias e número do WhatsApp R$ 35/mês, rateados por dia desde o
-  primeiro lead (`FIXED` em `lib/build.mjs`). Lucro, margem operacional e ROI descontam anúncio, IA (conversas e Hermes), WhatsApp e fixos.
-- "Investido até agora" (Financeiro › Resultado) soma os gastos pagos até 20/10 (`SPENT`) com o que veio depois. Atualize `SPENT` a cada fatura.
+- IA = soma de `llm_calls` (toda chamada de modelo dos leads, inclusive áudio e imagem); personas e Hermes ficam fora. Dólar a R$ 5,40.
+- Fixos: PikaPods cobra por hora, US$ 3,73/mês (saldo US$ 9,46 em 20/10, recarga automática de US$ 10 abaixo de US$ 1) e número do
+  WhatsApp R$ 55 no início + R$ 35 a cada dia 5 (`PIKAPODS` e `WA_NUMBER` em `lib/build.mjs`). No resultado do período entram rateados
+  por dia desde o primeiro lead; lucro e margem operacional descontam os fixos, o ROI não.
+- "Investido até agora" (Financeiro › Resultado) é recalculado a cada leitura: Meta, `llm_calls` e pedidos ao vivo, PikaPods pelas
+  recargas e o número pelas mensalidades. Só precisa de edição se mudar o preço do PikaPods ou do número.
 
 ## Responder pelo portal (desde 16/10)
 

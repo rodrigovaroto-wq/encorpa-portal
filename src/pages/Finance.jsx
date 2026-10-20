@@ -31,7 +31,7 @@ function Result({ p, g }) {
     { label: "Custo dos pedidos (produto, entrega, manuseio, taxa, recusas e devoluções)", value: contrib == null ? null : rev - contrib, sign: -1 },
     { label: "= Margem dos pedidos", value: contrib, sum: true },
     { label: "Anúncio na Meta (imposto já incluído no gasto)", value: v("spend") ?? null, sign: -1 },
-    { label: "Modelo de IA (conversas e Hermes)", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
+    { label: "Modelo de IA (chamadas dos leads)", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
     { label: "WhatsApp (template de pós-venda)", value: money.whatsapp ?? null, sign: -1 },
     { label: "Custos fixos (PikaPods + número, rateio por dia)", value: money.fixed ?? null, sign: -1 },
     { label: "= Resultado", value: v("net_profit") ?? null, sum: true },
@@ -56,25 +56,24 @@ function Result({ p, g }) {
           ))}
         </div>
       </Card>
-      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). O anúncio entra pelo gasto da Meta, que já traz o imposto. Os fixos (PikaPods R$ 55 a cada ~80 dias e número R$ 35/mês) são rateados por dia desde o primeiro lead. Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
+      <Note>Margem de cada pedido pelo status de hoje: na entrega conta a margem cheia ao criar e vira − R$ 9,99 se recusado; antecipado só depois de pago; devolução perde a margem e paga R$ 30 (na entrega) ou R$ 50 (antecipado). O anúncio entra pelo gasto da Meta, que já traz o imposto. A IA é a soma das chamadas de modelo dos leads. Os fixos (PikaPods US$ 3,73/mês × R$ 5,40 e número R$ 35/mês) são rateados por dia desde o primeiro lead e não entram no ROI. Sem gasto de anúncio conhecido, o resultado fica "—".</Note>
       {g.invested && <Invested inv={g.invested} />}
     </>
   );
 }
 
-// Tudo o que o projeto já gastou (planilha do operador até 20/10, mais o medido depois) contra o que os pedidos já valem.
+// Tudo o que o projeto já gastou, pelo que saiu do cartão, contra o que os pedidos já valem. Recalculado a cada leitura dos dados.
 function Invested({ inv }) {
-  const until = new Date(inv.until).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
   return (
     <>
       <h2 className="section-title">Investido até agora</h2>
-      <Table name="investido-ate-agora" head={["Custo", "Tipo", `Até ${until}`, "Depois", "Total"]}
-        rows={[...inv.rows.map((r) => [r.label, r.kind, r.live ? "Meta, ao vivo" : fmt(r.paid, "brl"), r.live ? "—" : fmt(r.after, "brl"), fmt(r.total, "brl")]),
-          [<b key="t">Total investido</b>, "", "", "", <b key="v">{fmt(inv.total, "brl")}</b>],
-          ["Margem dos pedidos até hoje", "", "", "", fmt(inv.contribution, "brl")],
-          [<b key="r">Resultado acumulado</b>, "", "", "", <b key="w" className={inv.result < 0 ? "neg" : ""}>{fmt(inv.result, "brl")}</b>]]}
-        csv={[...inv.rows.map((r) => [r.label, r.kind, r.paid, r.after, r.total]), ["Total investido", "", "", "", inv.total], ["Margem dos pedidos até hoje", "", "", "", inv.contribution], ["Resultado acumulado", "", "", "", inv.result]]} />
-      <Note>Desde o início do projeto, pelo que foi pago (a planilha de gastos até {until}) e, depois, pelo medido no banco e pelo rateio dos fixos. É diferente do resultado do período acima, que rateia os fixos por dia. O modelo de IA até {until} é a fatura (US$ 8 × R$ 5,50), que inclui personas e testes; depois disso o portal só enxerga o custo gravado das conversas e do Hermes. Quando chegar fatura nova, atualize a planilha em lib/build.mjs (SPENT).</Note>
+      <Table name="investido-ate-agora" head={["Custo", "Tipo", "Como é contado", "Total"]}
+        rows={[...inv.rows.map((r) => [r.label, r.kind, r.how, fmt(r.total, "brl")]),
+          [<b key="t">Total investido</b>, "", "", <b key="v">{fmt(inv.total, "brl")}</b>],
+          ["Margem dos pedidos até hoje", "", "", fmt(inv.contribution, "brl")],
+          [<b key="r">Resultado acumulado</b>, "", "", <b key="w" className={inv.result < 0 ? "neg" : ""}>{fmt(inv.result, "brl")}</b>]]}
+        csv={[...inv.rows.map((r) => [r.label, r.kind, r.how, r.total]), ["Total investido", "", "", inv.total], ["Margem dos pedidos até hoje", "", "", inv.contribution], ["Resultado acumulado", "", "", inv.result]]} />
+      <Note>Desde o início do projeto, pelo que já saiu do cartão, e atualizado sozinho a cada leitura dos dados (a cada 5 min): anúncio pela Meta, IA pelas chamadas de modelo dos leads (sem personas nem Hermes), WhatsApp pelos pedidos, PikaPods pelas recargas automáticas de US$ 10 (o consumo de US$ 3,73 por mês leva o saldo abaixo de US$ 1) e o número pelas mensalidades de cada dia 5. Dólar a R$ 5,40. É diferente do resultado do período acima, que rateia os fixos por dia.</Note>
     </>
   );
 }
