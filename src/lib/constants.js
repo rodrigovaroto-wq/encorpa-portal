@@ -9,8 +9,8 @@ export const PERIODS = [
 export const GROUPS = [
   { title: "Operação", metrics: [
     { id: "leads", label: "Leads", unit: "n", src: "leads" },
-    { id: "orders", label: "Pedidos", unit: "n", src: "orders" },
-    { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "orders ÷ leads", goal: "≥ 6% mín · 10% ideal" },
+    { id: "orders", label: "Pedidos", unit: "n", src: "pedidos feitos: vendas, recusas na porta e devoluções (sem antecipado não pago e sem cancelado)" },
+    { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "pedidos feitos ÷ leads", goal: "≥ 6% mín · 10% ideal" },
     { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "≤ R$ 1,75 mín · R$ 1,25 ideal" },
     { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "llm_calls (todas as chamadas de modelo dos leads) ÷ leads", goal: "teto R$ 1,00" },
     { id: "cpl_api", label: "CPL + API", unit: "brl", src: "Meta Ads + eval_conversation_cost" },
@@ -27,7 +27,7 @@ export const GROUPS = [
     { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio (imposto incluído) − IA − WhatsApp − fixos" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(margem dos pedidos − anúncio − IA − WhatsApp − fixos) ÷ faturamento", goal: "> 0%" },
     { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp), sem os fixos", goal: "≥ 1,5 mín · 2,5 ideal" },
-    { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "orders" },
+    { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "antecipados ÷ pedidos feitos" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
   ]},
   { title: "Anúncio", metrics: [
@@ -45,7 +45,7 @@ export const GROUPS = [
     { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "conversas que chegaram ao link ÷ conversas" },
     { id: "rewrites", label: "Reescritas por resposta", unit: "n", src: "eval_turn_outcomes" },
     { id: "gate_blocks", label: "Bloqueios de gate", unit: "pct", src: "eval_gate_blocks" },
-    { id: "delivered", label: "Entregas concluídas ÷ pedidos", unit: "pct", src: "orders", goal: "≥ 70% mín · 83% ideal" },
+    { id: "delivered", label: "Entregas concluídas ÷ pedidos", unit: "pct", src: "entregues ÷ pedidos feitos (o recusado conta)", goal: "≥ 70% mín · 83% ideal" },
   ]},
 ];
 
