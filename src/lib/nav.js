@@ -20,6 +20,7 @@ export const NAV = [
       ["tests", "Testes de Criativos", "Os anúncios reais lado a lado, o vencedor de cada métrica, a região A × B, o piso de amostra e os critérios de pausa."],
       ["goals", "Metas", "Cada meta do teste contra o valor de agora."],
       ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
+    { id: "leads", label: "Leads", icon: "bolt", desc: "Score e perfil de cada lead: faixa, objeções, sensibilidade a preço, áudios, ocasião e onde a conversa para." },
     { id: "customers", label: "Clientes", icon: "users", desc: "De onde vêm as clientes, em que estado compram mais e quantas voltam." },
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],

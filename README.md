@@ -14,12 +14,13 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 
 ## Estrutura
 
-- `src/pages/`: Painel, Conversas, Pedidos, Malu, Anúncios, Clientes, Financeiro, Automações, Integrações, Notas.
+- `src/pages/`: Painel, Conversas, Pedidos, Malu, Anúncios, Leads, Clientes, Financeiro, Automações, Integrações, Notas.
 - `src/components/`: fundo em ondas, menu lateral que recolhe, topo (período, busca ⌘K, notificações, preferências), gráficos e peças de vidro.
 - `src/lib/`: constantes das métricas, carregamento dos dados, formatação e o menu.
 - `lib/build.mjs` (servidor): monta os dados a partir do Supabase, do n8n e da Meta. `lib/meta.mjs`: leitura do Meta Ads.
 - `api/data.js`: função do Vercel. `api/chats.js`: só as conversas, sem cache, para a tela Conversas. `api/chat.js`: resposta do
-  operador e a chave da Malu por conversa. `middleware.js`: login do site todo.
+  operador e a chave da Malu por conversa. `api/leads.js`: score e perfil por lead, da view mascarada
+  `lead_profiles_v` (Ricos-com-AI, migração 0029; sem telefone, nome, endereço, dor nem gancho). Sem a view responde `available: false`. `middleware.js`: login do site todo.
 - `n8n/`: os dois workflows do n8n que são do portal (cópia do que está ativo no PikaPods).
 
 ## Publicado no Vercel

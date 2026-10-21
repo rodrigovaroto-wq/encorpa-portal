@@ -15,11 +15,12 @@ import { Customers } from "./pages/Customers.jsx";
 import { Finance } from "./pages/Finance.jsx";
 import { Home } from "./pages/Home.jsx";
 import { Integrations } from "./pages/Integrations.jsx";
+import { Leads } from "./pages/Leads.jsx";
 import { Malu } from "./pages/Malu.jsx";
 import { Notes } from "./pages/Notes.jsx";
 import { Orders } from "./pages/Orders.jsx";
 
-const VIEWS = { home: Home, chat: Chat, orders: Orders, malu: Malu, ads: Ads, customers: Customers, money: Finance, auto: Automations, integrations: Integrations, notes: Notes };
+const VIEWS = { home: Home, chat: Chat, orders: Orders, malu: Malu, ads: Ads, customers: Customers, leads: Leads, money: Finance, auto: Automations, integrations: Integrations, notes: Notes };
 const REFRESH = 5 * 60 * 1000; // o servidor guarda a resposta 5 min
 
 export function App() {
