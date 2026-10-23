@@ -697,3 +697,5 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .settings-user { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--glass-hi); font-size: .86rem; }
 .settings code { font-size: .8rem; padding: 1px 6px; border-radius: 6px; background: var(--glass-hi); border: 1px solid var(--line); }
 @media (max-width: 700px) { .settings { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: calc(100dvh - 24px); } .settings-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px; } .settings-nav .pop-title { display: none; } .settings-nav button { flex: none; } .settings-row { flex-direction: column; align-items: flex-start; } .settings-overlay { padding: 12px; } }
+.market-note { font-size: .8rem; color: var(--dim); border-top: 1px solid var(--line); padding-top: 10px; }
+.market-note b { color: var(--text); font-size: .95rem; }

@@ -41,6 +41,7 @@ function Results({ p, g, period }) {
         <Card title="Taxa de resolução" sub="resolvidas ÷ encerradas · meta ≥ 90%">
           <Gauge value={o.resolution} tone={o.resolution == null ? "" : o.resolution >= 90 ? "ok" : o.resolution >= 75 ? "warn" : "bad"} size={150} />
           <DeltaBadge metric={m.resolution} unit="pct" id="resolution" />
+          {o.market_resolution != null && <p className="market-note"><b>{fmt(o.market_resolution, "pct")}</b> no critério comum do mercado, que conta abandono e conversa passada para uma pessoa como resolvidas, sobre todas as atendidas. O portal não conta: aqui, resolvida é quem comprou ou encerrou sem precisar de pessoa.</p>}
         </Card>
         <Card title="Desfecho das conversas">
           <Donut items={OUTCOMES.map(([id, l]) => ({ label: l, value: o[id], color: COLOR[id] }))} />
@@ -48,9 +49,9 @@ function Results({ p, g, period }) {
       </div>
       <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
-      <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
-        rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
-        csv={(g.versions || []).map((r) => [r.version, r.published ?? "", r.conversations, r.resolution, r.unresolved, r.abandoned, r.fallback, r.cost])} />
+      <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Venda", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
+        rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), r.conversations ? `${fmt(r.conversion, "pct")} (${fmt(r.bought, "n")})` : "—", fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
+        csv={(g.versions || []).map((r) => [r.version, r.published ?? "", r.conversations, r.resolution, r.conversion ?? "", r.unresolved, r.abandoned, r.fallback, r.cost])} />
       <Note>Abaixo do piso de amostra (500 leads) a diferença entre versões é ruído: leia como direção, não como veredito.</Note>
     </>
   );

@@ -73,6 +73,13 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
 - "Investido até agora" (Financeiro › Resultado) é recalculado a cada leitura: Meta, `llm_calls` e pedidos ao vivo, PikaPods pelas
   recargas e o número pelas mensalidades. Só precisa de edição se mudar o preço do PikaPods ou do número.
 
+## Onde o portal mede mais que a central de atendimento (23/10)
+
+- Malu › Resultados: a taxa de resolução honesta (comprou ou encerrou sem pessoa ÷ encerradas) e, embaixo, a mesma semana no critério
+  comum do mercado (abandono e passagem para pessoa contam como resolvidas, sobre todas as atendidas), para mostrar a diferença.
+- Resultado por versão da Malu com a venda de cada versão (conversas que terminaram em pedido ÷ conversas da versão).
+- Financeiro › Resultado: custo por pedido ((anúncio + IA + WhatsApp) ÷ pedidos), margem média por pedido e IA por pedido.
+
 ## Malu › Teste (desde 23/10)
 
 - `api/test.js`: conversas simuladas com a Malu de produção. Cada "Nova conversa" ganha um telefone inventado `55000999` + 5 dígitos

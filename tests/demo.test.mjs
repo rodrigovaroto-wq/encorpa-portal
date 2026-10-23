@@ -47,3 +47,13 @@ test("exemplo: usa os workflows de verdade guardados no navegador quando houver"
   const mine = { read: 1, runs: [], workflows: [{ id: "x", name: "Encorpa — WhatsApp envio", active: true, nodes: [], edges: [], runs: 0, errors: 0, last: null }] };
   assert.equal(demoData(mine, NOW).global.automations, mine);
 });
+
+test("exemplo: custo por pedido = (anúncio + IA + WhatsApp) ÷ pedidos; critério de mercado = (resolvidas + abandonadas + não resolvidas) ÷ atendidas", () => {
+  for (const [period, p] of Object.entries(d.periods)) {
+    const v = (id) => p.metrics[id]?.value, m = p.money;
+    if (v("orders")) close(v("cost_per_order"), (m.ads + m.ai + m.whatsapp) / v("orders"), `${period} custo por pedido`);
+    const o = p.outcomes;
+    if (o.attended) close(o.market_resolution, ((o.solved + o.abandoned + o.unresolved) / o.attended) * 100, `${period} critério de mercado`);
+  }
+  assert.ok(d.global.versions.every((x) => !x.conversations || x.conversion === (x.bought / x.conversations) * 100));
+});

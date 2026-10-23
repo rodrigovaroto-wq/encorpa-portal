@@ -26,6 +26,8 @@ export const GROUPS = [
     { id: "fixed_cost", label: "Custos fixos (vencidos)", unit: "brl", src: "cobranças que venceram no período: recarga de US$ 10 da PikaPods (R$ 54) e mensalidade de R$ 35 do número, dia 5" },
     { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio (imposto incluído) − IA − WhatsApp − fixos" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(margem dos pedidos − anúncio − IA − WhatsApp − fixos) ÷ faturamento", goal: "> 0%" },
+    { id: "cost_per_order", label: "Custo por pedido", unit: "brl", src: "(anúncio + IA + WhatsApp) ÷ pedidos feitos", goal: "< R$ 51,70 por pedido" },
+    { id: "ai_per_order", label: "IA por pedido", unit: "brl", src: "toda chamada de modelo dos leads ÷ pedidos feitos" },
     { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp), sem os fixos", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "antecipados ÷ pedidos feitos" },
     { id: "refusal", label: "Recusa na porta", unit: "pct", src: "orders", goal: "≤ 17%" },
@@ -80,7 +82,7 @@ export const SAMPLE_FLOOR = { leads: 500, orders: 50, spend: 500 };
 
 export const KPIS = ["leads", "orders", "conversion", "revenue", "resolution", "api_per_lead", "net_profit", "op_margin"];
 
-export const LOWER = new Set(["cpl", "api_per_lead", "cpl_api", "handoff", "fallback", "optout", "invalid_premise", "op_cost", "fixed_cost", "refusal", "spend", "cpm", "rewrites", "gate_blocks", "transfers", "first_response", "handle_time"]);
+export const LOWER = new Set(["cost_per_order", "ai_per_order", "cpl", "api_per_lead", "cpl_api", "handoff", "fallback", "optout", "invalid_premise", "op_cost", "fixed_cost", "refusal", "spend", "cpm", "rewrites", "gate_blocks", "transfers", "first_response", "handle_time"]);
 
 export const FUNNEL = [["first_msg", "Mandou a 1ª mensagem"], ["reply", "Respondeu à agente"], ["price", "Chegou ao preço"], ["link", "Recebeu o link"], ["order", "Pedido criado"], ["delivered", "Entrega concluída"]];
 
