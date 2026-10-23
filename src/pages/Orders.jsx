@@ -49,7 +49,7 @@ export function Orders({ data, period }) {
       </div>
       <div className="row r-2-1">
         <Card title="Criados × entregues" sub="por intervalo do período">
-          <Lines series={[{ name: "Criados", values: created, color: "var(--accent-2)" }, { name: "Entregues", values: delivered, color: "var(--ok)" }]} labels={labels} />
+          <Lines series={[{ name: "Criados", values: created, color: "var(--accent-2)" }, { name: "Entregues", values: delivered, color: "var(--ok)" }]} labels={labels} axes />
         </Card>
         <Card title="Por forma de pagamento e kit">
           <HBars unit="n" items={[

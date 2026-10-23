@@ -47,8 +47,15 @@ Por isso o caminho é gerar um novo e gravar o mesmo valor nos dois lugares:
 ### 3. Imagens nas Conversas — publicar a função `whatsapp` — operador
 
 - Código feito em rodrigovaroto-wq/Ricos-com-AI#81: a função `whatsapp` grava o id da imagem em `messages.media`.
-- Falta: aprovar e fazer o merge do PR e publicar a função (sem chave do Supabase nesta sessão):
-  `supabase functions deploy whatsapp --project-ref hbmkgakzrqmdlsvszjeo` (no Codespace do Ricos-com-AI, onde a CLI já está logada).
+- Merge feito em 23/10. Falta (pendente por acesso: esta sessão não tem chave nem conector da Supabase): publicar a função.
+  - Caminho provado (07–08/10): o **conector MCP da Supabase** (`deploy_edge_function`) com `index.ts`, `whatsapp.ts`,
+    `inbound-signature.ts`, `vendor/OpusDecoder.js`, `deno.json` e `deno.lock`, com `verify_jwt: false`.
+  - Pelo CLI, no Codespace do Ricos-com-AI:
+    `npx supabase functions deploy whatsapp --project-ref hbmkgakzrqmdlsvszjeo --use-api --no-verify-jwt`.
+    **Sem `--no-verify-jwt` a função passa a recusar os webhooks da Meta e a Malu para de receber mensagens.** O caminho do
+    CLI com o decodificador de áudio não foi reexecutado desde 08/10 (`docs/operacao/whatsapp-cloud-api.md`).
+  - Depois do deploy: mandar uma foto para o número e conferir em Conversas que ela aparece; mandar um áudio e conferir a
+    transcrição (prova de que o decodificador continua de pé).
 - Atenção: as premissas do teste dizem "Malu congelada de 23/10 a 09/11". A mudança não mexe na conversa da Malu (só grava o id
   depois de entregar), mas é um deploy de função durante o congelamento. Decisão do operador.
 - Só aparecem as imagens que chegarem depois do deploy; a Meta guarda cada uma por cerca de 30 dias.
@@ -70,16 +77,14 @@ confirmar em produção: Configurações abre e mostra o seu papel; Malu › Nú
 
 ### 6. PR rodrigovaroto-wq/Ricos-com-AI#81 (id da imagem) — operador
 
-- Em rascunho. `pnpm lint`, `pnpm typecheck` e `pnpm test` (8.738 testes) passaram aqui, e o CI do repositório (com
-  `pnpm typecheck:function`, em Deno) ficou verde no commit `e0fd44a` (23/10). Falta: tirar de rascunho, fazer o merge e então o
-  deploy do item 3. O `HANDOFF.md` do Ricos-com-AI não foi atualizado por esta sessão: registrar lá a mudança da função `whatsapp` no merge.
+- Merge feito em 23/10 (CI verde no commit `e0fd44a`, com `pnpm typecheck:function` em Deno). Falta só o deploy do item 3. O `HANDOFF.md` do Ricos-com-AI não foi atualizado por esta sessão: registrar lá a mudança da função `whatsapp` no merge.
 
 ## Ordem sugerida
 
 1. `INBOUND_SIGNING_SECRET` no Supabase e no Vercel (item 1) e `WHATSAPP_WABA_ID` no Vercel (item 2).
 2. Importar o workflow do n8n (item 4) antes de usar Malu › Teste com frequência.
 3. Merge do portal (item 5) e teste de Malu › Teste em produção.
-4. Merge do Ricos-com-AI e deploy da `whatsapp` (itens 6 e 3), quando decidir sobre o congelamento da Malu.
+4. Deploy da `whatsapp` (item 3; o merge do Ricos-com-AI já foi feito), quando decidir sobre o congelamento da Malu.
 
 ## Próximos passos (depois dos pendentes)
 

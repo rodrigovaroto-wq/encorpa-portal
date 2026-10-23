@@ -47,7 +47,7 @@ function Results({ p, g, period }) {
           <Donut items={OUTCOMES.map(([id, l]) => ({ label: l, value: o[id], color: COLOR[id] }))} />
         </Card>
       </div>
-      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" /></Card>
+      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" axes /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
       <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Venda", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
         rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), r.conversations ? `${fmt(r.conversion, "pct")} (${fmt(r.bought, "n")})` : "—", fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
