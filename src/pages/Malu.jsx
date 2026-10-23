@@ -26,7 +26,7 @@ export function Malu({ data, period, route, tabs }) {
 
 function Results({ p, g, period }) {
   const o = p.outcomes || {}, m = p.metrics || {}, res = m.resolution?.series || [];
-  const card = (label, v, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><span className="delta none">{sub}</span></div>;
+  const card = (label, v, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
   return (
     <>
       <div className="kpis">
@@ -87,7 +87,7 @@ function Health({ p, g }) {
       <div className="kpis">
         {AGENT_HEALTH.map((id) => { const x = metricBy(id); return (
           <div key={id} className="glass kpi"><div className="kpi-top"><h3>{x.label}</h3></div><div className="kpi-value">{fmt(m[id]?.value, x.unit)}</div>
-            <DeltaBadge metric={m[id]} unit={x.unit} id={id} /><Spark values={m[id]?.series} unit={x.unit} height={44} />{x.goal && <div className="kpi-goal">META {x.goal}</div>}</div>
+            <div className="kpi-foot"><DeltaBadge metric={m[id]} unit={x.unit} id={id} /><Spark values={m[id]?.series} unit={x.unit} height={44} />{x.goal && <div className="kpi-goal">META {x.goal}</div>}</div></div>
         ); })}
       </div>
       <div className="row r-1-1">
@@ -117,7 +117,7 @@ function NumberHealth({ n, demo }) {
   if (!n) return <Note>A leitura do número na Meta ainda não está ligada. No Vercel, crie WHATSAPP_TOKEN (token com whatsapp_business_management), WHATSAPP_PHONE_NUMBER_ID e, para os templates, WHATSAPP_WABA_ID. É leitura de gestão da Graph API, sem custo de mensagem.</Note>;
   if (!n.ok) return <Note>Não consegui ler o número na Meta: {n.error}</Note>;
   const chip = (map, v) => { const [l, tone] = map[v] || [v || "—", ""]; return <Chip tone={tone}>{l}</Chip>; };
-  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value num-value">{value}</div><span className="delta none">{sub}</span></div>;
+  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value num-value">{value}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
   const q = QUALITY[n.quality] || QUALITY.UNKNOWN;
   const tpl = n.templates || [];
   return (
@@ -167,7 +167,7 @@ function Hermes({ h, period, now }) {
   const count = (st) => props.filter((x) => x.status === st).length;
   const list = props.filter((x) => filter === "all" || x.status === filter);
   const mins = (r) => (r.started_at ? Math.max(1, Math.round((new Date(r.created_at) - new Date(r.started_at)) / 60000)) : null);
-  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{value}</div><span className="delta none">{sub}</span></div>;
+  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{value}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
   return (
     <>
       <div className="kpis">

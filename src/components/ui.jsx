@@ -51,8 +51,10 @@ export function Kpi({ label, metric, unit, id, goal, href, accent, onSelect, sel
         ? <a className="round" href={href} onClick={(e) => e.stopPropagation()} aria-label={`Abrir ${label}`}><Icon name="arrow" /></a>
         : <span className="round"><Icon name="arrow" /></span>)}</div>
       <div className="kpi-value"><CountUp value={metric?.value} unit={unit} /></div>
-      {sub !== undefined ? <span className="delta none">{sub}</span> : <DeltaBadge metric={metric} unit={unit} id={id} />}
-      {goal && <div className="kpi-goal">META {goal}</div>}
+      <div className="kpi-foot">
+        {sub !== undefined ? <span className="delta none">{sub}</span> : <DeltaBadge metric={metric} unit={unit} id={id} />}
+        {goal && <div className="kpi-goal">META {goal}</div>}
+      </div>
     </>
   );
   // Com onSelect o cartão escolhe o gráfico grande do Painel; a seta continua abrindo o detalhe.

@@ -2,7 +2,7 @@
 
 Encorpa Dashboard: o portal de análise e operação da Encorpa. React 19 com Vite 8 (desde 16/10/2026), fundo em ondas e cartões de
 vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI. Desde 23/10 a cor é escolhida em Preferências
-(roxo, azul, laranja, amarelo ou cinza, no tema escuro e no claro).
+(roxo, azul, laranja, amarelo, cinza, verde, branco ou preto, no tema escuro e no claro).
 
 ## Rodar no computador
 

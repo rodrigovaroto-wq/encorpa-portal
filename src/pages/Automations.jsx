@@ -58,7 +58,7 @@ function MaluFlow({ data }) {
       <div className="kpis">
         {[["Gate aprovou", o.solved, "Resposta enviada: compraram ou encerraram sem compra."], ["Vetou 5 vezes ou faltou contorno", o.unresolved, "Resposta segura para ela e e-mail ao operador (R22.1). Vira linha em Lacunas."],
           ["Silêncio dela", o.abandoned, `A régua de follow-up assume${wf("Relógio") ? " (n8n: Relógio da régua)" : ""}.`], ["Venda", o.bought, `Pedido criado; confirmação da Coinzz${wf("Venda") ? " (n8n: Venda confirmada)" : ""}.`]]
-          .map(([l, v, s]) => <div key={l} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><span className="delta none">{s}</span></div>)}
+          .map(([l, v, s]) => <div key={l} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><div className="kpi-foot"><span className="delta none">{s}</span></div></div>)}
       </div>
       <Note>O fluxo da conversa é código com teste, não editor de arrastar e soltar (decisão R11.1): esta tela mostra, não altera.</Note>
     </>

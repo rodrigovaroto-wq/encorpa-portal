@@ -36,8 +36,8 @@ export function Score({ data, period }) {
       {state?.available && (
         <>
           <div className="kpis">
-            {BANDS.map(([k, l]) => <div key={k} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(s.bands[k], "n")}</div><span className="delta none">{k === "quente" ? "score ≥ 60" : k === "morna" ? "score 30–59" : "score < 30"}</span></div>)}
-            <div className="glass kpi"><div className="kpi-top"><h3>Mandaram áudio</h3></div><div className="kpi-value">{fmt(s.audio.share, "pct")}</div><span className="delta none">{s.audio.leads} de {s.total} · média de {fmt(s.audio.avg, "n")} áudio(s) entre elas</span></div>
+            {BANDS.map(([k, l]) => <div key={k} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(s.bands[k], "n")}</div><div className="kpi-foot"><span className="delta none">{k === "quente" ? "score ≥ 60" : k === "morna" ? "score 30–59" : "score < 30"}</span></div></div>)}
+            <div className="glass kpi"><div className="kpi-top"><h3>Mandaram áudio</h3></div><div className="kpi-value">{fmt(s.audio.share, "pct")}</div><div className="kpi-foot"><span className="delta none">{s.audio.leads} de {s.total} · média de {fmt(s.audio.avg, "n")} áudio(s) entre elas</span></div></div>
           </div>
           <div className="row r-1-1-1">
             <Card title="Faixas" sub={`${s.total} leads`}><Donut items={BANDS.map(([k, l]) => ({ label: l, value: s.bands[k], color: BAND_COLOR[k] }))} /></Card>

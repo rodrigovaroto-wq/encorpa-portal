@@ -43,7 +43,7 @@ function Origin({ data, period }) {
         <Kpi label="Leads" id="leads" metric={m.leads} unit="n" />
         <Kpi label="Vindas de anúncio" id="leads_ad" metric={m.leads_ad} unit="n" />
         <Kpi label="Orgânicas" id="leads_organic" metric={m.leads_organic} unit="n" />
-        <div className="glass kpi"><div className="kpi-top"><h3>Recompra</h3></div><div className="kpi-value">{n ? fmt((repeat / n) * 100, "pct") : "—"}</div><span className="delta none">{repeat} de {n} compradoras fizeram mais de um pedido</span></div>
+        <div className="glass kpi"><div className="kpi-top"><h3>Recompra</h3></div><div className="kpi-value">{n ? fmt((repeat / n) * 100, "pct") : "—"}</div><div className="kpi-foot"><span className="delta none">{repeat} de {n} compradoras fizeram mais de um pedido</span></div></div>
       </div>
       <div className="row r-2-1">
         <Card className="main-chart" title={LINES.find(([k]) => k === sel)[1]} sub="por intervalo do período" action={
