@@ -65,7 +65,26 @@ Por isso o caminho é gerar um novo e gravar o mesmo valor nos dois lugares:
 
 ### 5. Merge do PR rodrigovaroto-wq/encorpa-portal#6 — operador
 
-CI verde. Ao fazer o merge, o Vercel publica em produção.
+CI verde até o commit `f537576`; a prévia do Vercel está no ar. Ao fazer o merge, o Vercel publica em produção. Depois do merge,
+confirmar em produção: Configurações abre e mostra o seu papel; Malu › Número do WhatsApp lê o número; Conversas sem erro.
+
+### 6. PR rodrigovaroto-wq/Ricos-com-AI#81 (id da imagem) — operador
+
+- Em rascunho. Localmente: `pnpm lint`, `pnpm typecheck` e `pnpm test` (8.738 testes) passaram; `pnpm typecheck:function` (Deno)
+  não rodou nesta sessão e fica para o CI do repositório. Conferir o CI verde, tirar de rascunho, fazer o merge e então o deploy do
+  item 3. O `HANDOFF.md` do Ricos-com-AI não foi atualizado por esta sessão: registrar lá a mudança da função `whatsapp` no merge.
+
+## Ordem sugerida
+
+1. `INBOUND_SIGNING_SECRET` no Supabase e no Vercel (item 1) e `WHATSAPP_WABA_ID` no Vercel (item 2).
+2. Importar o workflow do n8n (item 4) antes de usar Malu › Teste com frequência.
+3. Merge do portal (item 5) e teste de Malu › Teste em produção.
+4. Merge do Ricos-com-AI e deploy da `whatsapp` (itens 6 e 3), quando decidir sobre o congelamento da Malu.
+
+## Próximos passos (depois dos pendentes)
+
+- Várias empresas com dados separados (adiado: ver Decisões).
+- Revisar os números de exemplo quando houver mais dados reais, para manter a simulação perto da operação.
 
 ## Decisões registradas
 
