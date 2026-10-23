@@ -5,6 +5,7 @@ import { Bars, Donut, Gauge, HBars, Lines, Spark } from "../components/charts.js
 import { useState } from "react";
 import { periodDays } from "../lib/data.js";
 import { Card, Chip, DeltaBadge, Kpi, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
+import { MaluTest } from "./MaluTest.jsx";
 
 const COLOR = { bought: "var(--ok)", declined: "var(--accent-2)", unresolved: "var(--bad)", abandoned: "var(--warn)", open: "var(--muted)" };
 
@@ -19,6 +20,7 @@ export function Malu({ data, period, route, tabs }) {
       {sub === "service" && <Service p={p} g={g} />}
       {sub === "health" && <Health p={p} g={g} />}
       {sub === "number" && <NumberHealth n={g.number} demo={data.demo} />}
+      {sub === "test" && <MaluTest demo={data.demo} />}
       {sub === "hermes" && <Hermes h={g.hermes} period={period} now={g.updated} />}
     </div>
   );

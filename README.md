@@ -2,7 +2,7 @@
 
 Encorpa Dashboard: o portal de análise e operação da Encorpa. React 19 com Vite 8 (desde 16/10/2026), fundo em ondas e cartões de
 vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI. Desde 23/10 a cor é escolhida em Preferências
-(roxo, azul, laranja, amarelo, cinza, verde, branco ou preto, no tema escuro e no claro).
+(roxo, azul, laranja, amarelo, verde, branco ou preto, no tema escuro e no claro).
 
 ## Rodar no computador
 
@@ -50,6 +50,11 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     o id do número e o da conta do WhatsApp Business, para Malu › Número do WhatsApp (estado, qualidade, limite e templates;
     `lib/whatsapp.mjs`, a cada 15 min, leitura de gestão sem custo de mensagem). Número restrito ou com qualidade baixa pinta o
     critério de pausa "Número do WhatsApp" de vermelho.
+    O mesmo `WHATSAPP_TOKEN` serve `api/media.js`, que mostra em Conversas a imagem original que a cliente mandou (baixar mídia da Meta
+    não é cobrado; a Meta guarda cerca de 30 dias). A imagem aparece quando `messages.media` tem o id dela, o que depende de a função
+    `whatsapp` do Ricos-com-AI gravar esse id (hoje ela descreve a imagem com o modelo e descarta o id).
+  - `INBOUND_SIGNING_SECRET` (desde 23/10, o mesmo do Supabase): selo das mensagens de Malu › Teste. Sem ele, a turn recusa o teste
+    se o selo estiver ligado na produção.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
 - `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.
@@ -65,6 +70,16 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
   os fixos, o ROI não.
 - "Investido até agora" (Financeiro › Resultado) é recalculado a cada leitura: Meta, `llm_calls` e pedidos ao vivo, PikaPods pelas
   recargas e o número pelas mensalidades. Só precisa de edição se mudar o preço do PikaPods ou do número.
+
+## Malu › Teste (desde 23/10)
+
+- `api/test.js`: conversas simuladas com a Malu de produção. Cada "Nova conversa" ganha um telefone inventado `55000999` + 5 dígitos
+  (prefixo da rodada de personas; nenhum número real colide), então dá para abrir várias e voltar a qualquer uma. A mensagem vai
+  direto para a função `turn` (a turn responde e não manda nada pelo WhatsApp; quem manda é o n8n); a recepção ganha o segundo passo
+  na hora, como o nó Wait do n8n faz. Depois de cada mensagem os lembretes da régua da conversa são cancelados. Apagar remove o lead
+  de teste em cascata. Essas conversas ficam fora das métricas e das Conversas do portal; cada resposta custa as chamadas de modelo dela.
+- Atenção: o workflow "Encorpa — Portal: conversa não resolvida" ainda não ignora os telefones de teste. Uma conversa de teste que
+  caia em "não resolvida" manda o e-mail ao operador.
 
 ## Responder pelo portal (desde 16/10)
 

@@ -13,6 +13,7 @@ export const NAV = [
       ["service", "Atendimento", "Funil da conversa, tempos de resposta e volume por hora."],
       ["health", "Saúde e versões", "Resposta pronta, reescritas, gates, canal e o antes × depois de cada versão."],
       ["number", "Número do WhatsApp", "Estado, qualidade e limite de envio do número na Meta, e os templates aprovados."],
+      ["test", "Teste", "Converse com a Malu de produção como se fosse uma cliente, em quantas conversas simuladas quiser, sem nada sair pelo WhatsApp."],
       ["hermes", "Hermes", "O supervisor offline: cada rodada, as propostas com motivo e evidência, a decisão e o que mudou na Malu."]] },
     { id: "ads", label: "Anúncios", icon: "ads", subs: [
       ["campaigns", "Campanhas", "Campanhas do Meta Ads com orçamento, estado e resultado, atualizadas a cada 5 minutos."],

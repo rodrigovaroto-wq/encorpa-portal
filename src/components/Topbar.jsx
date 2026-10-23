@@ -5,7 +5,7 @@ import { ago, store } from "../lib/format.js";
 import { Icon } from "./icons.jsx";
 
 // Cores do portal (Preferências): fundo e destaques. A bolinha mostra o tom de destaque de cada uma.
-export const ACCENTS = [["purple", "Roxo", "#8b5cf6"], ["blue", "Azul", "#3b82f6"], ["orange", "Laranja", "#f97316"], ["yellow", "Amarelo", "#eab308"], ["gray", "Cinza", "#8a8a93"], ["green", "Verde", "#10b981"], ["white", "Branco", "#f4f4f5"], ["black", "Preto", "#111113"]];
+export const ACCENTS = [["purple", "Roxo", "#8b5cf6"], ["blue", "Azul", "#3b82f6"], ["orange", "Laranja", "#f97316"], ["yellow", "Amarelo", "#eab308"], ["green", "Verde", "#10b981"], ["white", "Branco", "#f4f4f5"], ["black", "Preto", "#111113"]];
 
 export function usePopover() {
   const [open, setOpen] = useState(false), ref = useRef(null);
@@ -71,7 +71,7 @@ export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPre
                 <span className="seg"><button className={prefs.theme === "dark" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "dark" })}><Icon name="moon" size={14} /> Escuro</button><button className={prefs.theme === "light" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "light" })}><Icon name="sun" size={14} /> Claro</button></span>
               </label>
               <div className="pref"><span>Cor</span>
-                <span className="swatches" role="radiogroup" aria-label="Cor">{ACCENTS.map(([k, l, c]) => <button key={k} role="radio" aria-checked={(prefs.accent || "purple") === k} aria-label={l} title={l} className={(prefs.accent || "purple") === k ? "on" : ""} style={{ background: c }} onClick={() => setPrefs({ ...prefs, accent: k })} />)}</span>
+                <span className="swatches" role="radiogroup" aria-label="Cor">{ACCENTS.map(([k, l, c]) => <button key={k} role="radio" aria-checked={(ACCENTS.some(([x]) => x === prefs.accent) ? prefs.accent : "purple") === k} aria-label={l} title={l} className={(ACCENTS.some(([x]) => x === prefs.accent) ? prefs.accent : "purple") === k ? "on" : ""} style={{ background: c }} onClick={() => setPrefs({ ...prefs, accent: k })} />)}</span>
               </div>
               <label className="pref"><span>Animações do fundo</span><input type="checkbox" checked={prefs.motion !== "off"} onChange={(e) => setPrefs({ ...prefs, motion: e.target.checked ? "on" : "off" })} /></label>
               <label className="pref"><span>Dados de exemplo</span><input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} /></label>

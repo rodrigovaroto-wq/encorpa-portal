@@ -142,7 +142,9 @@ function Thread({ c, patch, reload, demo }) {
           return (
             <div key={i}>
               {sep && <p className="day-sep"><span>{new Date(m.at).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" })}</span></p>}
-              <div className={`bubble ${m.out ? "out" : "in"}`}><p>{m.text || <i>(mídia ou mensagem sem texto)</i>}</p><small>{m.op ? "Você · " : m.out ? "Malu · " : ""}{timeOnly(m.at)}</small></div>
+              <div className={`bubble ${m.out ? "out" : "in"} ${m.media ? "has-media" : ""}`}>
+                {m.media && <Media m={m} />}
+                {m.text ? <p className={m.media ? "media-caption" : ""}>{m.text}</p> : !m.media && <p><i>(mídia ou mensagem sem texto)</i></p>}<small>{m.op ? "Você · " : m.out ? "Malu · " : ""}{timeOnly(m.at)}</small></div>
             </div>
           );
         })}
@@ -153,6 +155,15 @@ function Thread({ c, patch, reload, demo }) {
       {demo ? <footer className="composer"><p className="composer-note">Dados de exemplo: responder e pausar a Malu ficam desligados.</p></footer> : <Composer c={c} patch={patch} reload={reload} />}
     </section>
   );
+}
+
+// Imagem original da mensagem (api/media.js: da Meta, atrás do login). O texto embaixo é a descrição que a Malu leu.
+function Media({ m }) {
+  const [failed, setFailed] = useState(false);
+  const src = `api/media?m=${m.media.mid}`;
+  if (m.media.kind !== "image") return <a className="media-link" href={src} target="_blank" rel="noreferrer">Abrir {m.media.kind === "audio" ? "áudio" : m.media.kind === "video" ? "vídeo" : "arquivo"}</a>;
+  if (failed) return <p className="media-missing">Imagem indisponível (a Meta guarda por cerca de 30 dias).</p>;
+  return <a href={src} target="_blank" rel="noreferrer" className="media-img"><img src={src} alt="Imagem enviada na conversa" loading="lazy" onError={() => setFailed(true)} /></a>;
 }
 
 // Caixa de resposta do operador e a chave da Malu nesta conversa.

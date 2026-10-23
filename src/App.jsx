@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Background } from "./components/Background.jsx";
 import { Palette } from "./components/Palette.jsx";
 import { MobileNav, Sidebar } from "./components/Sidebar.jsx";
-import { Topbar } from "./components/Topbar.jsx";
+import { ACCENTS, Topbar } from "./components/Topbar.jsx";
 import { demoData, loadData } from "./lib/data.js";
 import { useLiveChats, withLive } from "./lib/live.js";
 import { store } from "./lib/format.js";
@@ -53,7 +53,7 @@ export function App() {
   }, [refresh]);
   useEffect(() => { const on = () => { setRoute(parseRoute(location.hash)); window.scrollTo(0, 0); }; window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
-  useEffect(() => { const d = document.documentElement.dataset; d.theme = prefs.theme; d.motion = prefs.motion; d.accent = prefs.accent || "purple"; }, [prefs]);
+  useEffect(() => { const d = document.documentElement.dataset; d.theme = prefs.theme; d.motion = prefs.motion; d.accent = ACCENTS.some(([k]) => k === prefs.accent) ? prefs.accent : "purple"; /* cor que saiu (cinza, 23/10) volta ao roxo */ }, [prefs]);
 
   const [live, reloadChats] = useLiveChats(!demo && location.protocol !== "file:", route.page.id === "chat" ? 15_000 : 60_000);
   const shown = useMemo(() => withLive(data, live), [data, live]);

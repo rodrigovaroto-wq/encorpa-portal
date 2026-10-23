@@ -1,7 +1,7 @@
 /* Encorpa Dashboard — vidro fosco sobre um fundo em ondas de energia (templates Glassy CRM, Glassy Dashboard, Chat App e Sidebar UI,
    adaptados à identidade da Encorpa: roxo, logo e wordmark). Uma fonte só em tudo: Inter (index.html). */
 
-/* Cores (23/10): roxo é o padrão; azul, laranja, amarelo e cinza trocam o fundo e tudo que hoje é roxo (Preferências › Cor).
+/* Cores (23/10): roxo é o padrão; azul, laranja, amarelo, verde, branco e preto trocam o fundo e tudo que hoje é roxo (Preferências › Cor).
    --accent: botões e destaques; --accent-2: texto e linha de destaque; --accent-3: fim do degradê; --pink: segunda série dos gráficos. */
 :root {
   /* escuro equilibrado (16/10): fundo menos fechado, cartões mais claros e texto com mais contraste */
@@ -33,11 +33,6 @@
   --line: rgba(255, 240, 180, .22); --line-hi: rgba(255, 240, 180, .42); --text: #fffcef; --muted: #eee5c4; --dim: #c9bc8e;
   --accent: #a16207; --accent-2: #facc15; --accent-3: #ca8a04; --pink: #fb923c; --logo-filter: hue-rotate(140deg) saturate(1.8) brightness(1.7);
 }
-:root[data-accent="gray"] {
-  --bg: #131416; --bg-2: #25272c; --glass: rgba(60, 63, 70, .58); --glass-2: rgba(82, 86, 95, .6);
-  --line: rgba(220, 225, 235, .2); --line-hi: rgba(220, 225, 235, .4); --text: #f7f7f8; --muted: #d4d6dc; --dim: #a3a7b0;
-  --accent: #52525b; --accent-2: #b4b4bc; --accent-3: #71717a; --pink: #e4e4e7; --logo-filter: grayscale(1) brightness(1.9);
-}
 :root[data-accent="green"] {
   --bg: #071a12; --bg-2: #0f3322; --glass: rgba(22, 84, 58, .55); --glass-2: rgba(30, 110, 76, .58);
   --line: rgba(180, 255, 215, .2); --line-hi: rgba(180, 255, 215, .4); --text: #f3fff9; --muted: #c7ecd9; --dim: #98c7ae;
@@ -67,7 +62,6 @@
 :root[data-theme="light"][data-accent="blue"] { --bg: #e8eefb; --bg-2: #d6e2f8; --text: #0f1d3a; --muted: #4b5d7e; --dim: #7a8aa8; --accent: #2563eb; --accent-2: #1d4ed8; --accent-3: #3b82f6; --pink: #0891b2; }
 :root[data-theme="light"][data-accent="orange"] { --bg: #fbeee6; --bg-2: #f7dac6; --text: #3a1a0a; --muted: #7d5642; --dim: #a8826c; --accent: #ea580c; --accent-2: #c2410c; --accent-3: #f97316; --pink: #db2777; --logo-filter: hue-rotate(115deg) saturate(1.5); }
 :root[data-theme="light"][data-accent="yellow"] { --bg: #fbf6e2; --bg-2: #f4e9bd; --text: #33290a; --muted: #74663a; --dim: #9e8f5f; --accent: #a16207; --accent-2: #a16207; --accent-3: #ca8a04; --pink: #ea580c; --logo-filter: hue-rotate(140deg) saturate(1.6) brightness(1.1); }
-:root[data-theme="light"][data-accent="gray"] { --bg: #f1f2f4; --bg-2: #e2e4e8; --text: #18181b; --muted: #52525b; --dim: #80808a; --accent: #52525b; --accent-2: #3f3f46; --accent-3: #71717a; --pink: #9ca3af; --logo-filter: grayscale(1) brightness(.75); }
 :root[data-theme="light"][data-accent="green"] { --bg: #e9f8f0; --bg-2: #d3f0e1; --text: #062817; --muted: #3f6b55; --dim: #6f957f; --accent: #059669; --accent-2: #047857; --accent-3: #10b981; --pink: #0284c7; --ok: #4d7c0f; --logo-filter: hue-rotate(-110deg) saturate(1.2) brightness(.9); }
 :root[data-theme="light"][data-accent="white"] { --bg: #ffffff; --bg-2: #f4f4f5; --glass: rgba(255, 255, 255, .8); --glass-2: rgba(255, 255, 255, .92); --text: #18181b; --muted: #52525b; --dim: #8a8a93; --accent: #3f3f46; --accent-2: #27272a; --accent-3: #71717a; --pink: #a1a1aa; --on-accent: #fff; --glow: rgba(0, 0, 0, .14); --logo-filter: grayscale(1) brightness(.55); }
 :root[data-theme="light"][data-accent="black"] { --bg: #f2f2f3; --bg-2: #e4e4e6; --glass: rgba(255, 255, 255, .62); --glass-2: rgba(255, 255, 255, .76); --text: #0a0a0a; --muted: #4b4b50; --dim: #7c7c84; --accent: #0a0a0a; --accent-2: #18181b; --accent-3: #3f3f46; --pink: #71717a; --glow: rgba(0, 0, 0, .25); --logo-filter: grayscale(1) brightness(0); }
@@ -667,3 +661,16 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 /* blocos com minigráfico: a faixa de baixo reserva variação, gráfico e a linha da meta, tenha meta ou não */
 .kpi:has(.spark) { --kpi-foot: 96px; }
 .kpi:has(.spark) .kpi-foot { justify-content: flex-start; }
+/* imagem na conversa (api/media.js) */
+.media-img img { display: block; max-width: 100%; max-height: 320px; border-radius: 12px; object-fit: contain; background: var(--glass-hi); }
+.bubble.has-media .media-caption { margin-top: 6px; font-size: .78rem; opacity: .75; }
+.media-link { text-decoration: underline; font-size: .84rem; }
+.media-missing { font-size: .78rem; color: var(--dim); font-style: italic; }
+/* Malu › Teste */
+.test-shell { grid-template-columns: 300px minmax(0, 1fr); }
+.test-shell .chat-list > .primary { width: 100%; }
+.test-shell .thread { padding: 6px 6px 6px 10px; }
+.test-shell .thread .thread-body { text-align: left; padding: 4px 0; }
+.test-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.test-meta .chip { font-size: .7rem; padding: 2px 8px; background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .25); color: inherit; }
+@media (max-width: 900px) { .test-shell { grid-template-columns: 1fr; } }
