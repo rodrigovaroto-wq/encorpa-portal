@@ -2,12 +2,15 @@
 import { useId, useState } from "react";
 import { fmt } from "../lib/format.js";
 
+// Topo da escala arredondado (1, 2, 2,5 ou 5 vezes uma potência de 10 por marca), para as 4 marcas do eixo saírem redondas.
+const niceMax = (max) => { if (!(max > 0)) return 1; const raw = max / 4, p = 10 ** Math.floor(Math.log10(raw)); return 4 * p * [1, 2, 2.5, 5, 10].find((f) => f * p >= raw - 1e-9); };
+
 // Barras verticais. items: [{ label, value }]. A barra sob o mouse acende e mostra o valor.
 export function Bars({ items, unit = "n", height = 220, highlight }) {
   const [hover, setHover] = useState(null);
   const id = useId().replace(/:/g, "");
   if (!items?.length || items.every((x) => !x.value)) return <Empty />;
-  const max = Math.max(...items.map((x) => x.value || 0)) || 1, w = 100 / items.length;
+  const max = niceMax(Math.max(...items.map((x) => x.value || 0))), w = 100 / items.length;
   const active = hover ?? highlight ?? null;
   return (
     <div className="bars-chart" style={{ height }}>
@@ -37,8 +40,9 @@ export function Lines({ series, labels, unit = "n", height = 220, axes = false }
   if (axes) return (
     <div className="axes-chart" style={{ height }}>
       <AxisY series={series} unit={unit} />
-      <div className="axes-plot"><Lines series={series} labels={labels} unit={unit} height={height - 24} /></div>
+      <div className="axes-plot"><LinesPlot series={series} labels={labels} unit={unit} height={height - 24 - (series.length > 1 ? 22 : 0)} legend={false} /></div>
       <div className="axis-x">{(labels || []).map((l, i, a) => (i % Math.ceil(a.length / 6) === 0 || i === a.length - 1) && <span key={i} style={{ left: `${a.length > 1 ? (i / (a.length - 1)) * 100 : 50}%` }}>{l}</span>)}</div>
+      {series.length > 1 && <Legend series={series} />}
     </div>
   );
   return <LinesPlot series={series} labels={labels} unit={unit} height={height} />;
@@ -48,16 +52,16 @@ export function Lines({ series, labels, unit = "n", height = 220, axes = false }
 function AxisY({ series, unit }) {
   const all = series.flatMap((s) => s.values).filter((v) => v != null);
   if (all.length < 2) return <div className="axis-y" />;
-  const max = Math.max(...all) || 1, min = Math.min(0, ...all), span = max - min || 1;
+  const max = niceMax(Math.max(...all)), min = Math.min(0, ...all), span = max - min || 1;
   return <div className="axis-y">{[1, 0.75, 0.5, 0.25, 0].map((f) => <span key={f} style={{ top: `${94 - f * 86}%` }}>{fmt(min + span * f, unit)}</span>)}</div>;
 }
 
-function LinesPlot({ series, labels, unit = "n", height = 220 }) {
+function LinesPlot({ series, labels, unit = "n", height = 220, legend = true }) {
   const [hover, setHover] = useState(null);
   const id = useId().replace(/:/g, "");
   const all = series.flatMap((s) => s.values).filter((v) => v != null);
   if (all.length < 2) return <Empty />;
-  const n = Math.max(...series.map((s) => s.values.length)), max = Math.max(...all) || 1, min = Math.min(0, ...all), span = max - min || 1;
+  const n = Math.max(...series.map((s) => s.values.length)), max = niceMax(Math.max(...all)), min = Math.min(0, ...all), span = max - min || 1;
   const X = (i) => (n > 1 ? (i / (n - 1)) * 100 : 50), Y = (v) => 94 - ((v - min) / span) * 86;
   // Intervalo sem dado (taxa sem base) fica como lacuna, nunca como zero: a linha para e recomeça.
   const runs = (vals) => vals.reduce((out, v, i) => { if (v == null) return out; const last = out.at(-1); if (last && last.at(-1)[2] === i - 1) last.push([X(i), Y(v), i]); else out.push([[X(i), Y(v), i]]); return out; }, []);
@@ -83,10 +87,11 @@ function LinesPlot({ series, labels, unit = "n", height = 220 }) {
           {series.map((s, k) => <b key={k} style={{ color: s.color }}>{s.name ? `${s.name}: ` : ""}{fmt(s.values[hover], unit)}</b>)}
         </div>
       )}
-      {series.length > 1 && <div className="legend">{series.map((s, k) => <span key={k}><i style={{ background: s.color }} />{s.name}</span>)}</div>}
+      {legend && series.length > 1 && <Legend series={series} />}
     </div>
   );
 }
+const Legend = ({ series }) => <div className="legend">{series.map((s, k) => <span key={k}><i style={{ background: s.color }} />{s.name}</span>)}</div>;
 
 // Rosca com legenda. items: [{ label, value, color }]
 export function Donut({ items, unit = "n", size = 170, center }) {
