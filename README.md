@@ -1,12 +1,17 @@
 # encorpa-portal
 
-Portal de análise e operação da Encorpa. React 19 com Vite 8 (desde 16/10/2026), fundo roxo em ondas e cartões de vidro,
-a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
+Encorpa Dashboard: o portal de análise e operação da Encorpa. React 19 com Vite 8 (desde 16/10/2026), fundo em ondas e cartões de
+vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI. Desde 23/10 a cor é escolhida em Preferências
+(roxo, azul, laranja, amarelo ou cinza, no tema escuro e no claro).
 
 ## Rodar no computador
 
 - `npm install` e depois `npm run dev` (abre em http://localhost:5173). Sem o Vercel não existe `/api/data`: o portal usa o
   último retrato guardado no navegador ou `public/data.js`. Em Preferências (engrenagem) dá para ligar os dados de exemplo.
+- Dados de exemplo (desde 23/10, `src/lib/demo.js`): um ano de operação simulada, tabela por tabela (leads, conversas, mensagens,
+  respostas da Malu, pedidos, chamadas de modelo, Meta, Hermes), passado pela mesma conta do servidor (`lib/build.mjs › build`), num
+  worker. Todo número fecha entre as abas. Os workflows são os do n8n de verdade, da última leitura guardada no navegador. Responder e
+  pausar a Malu ficam desligados no exemplo.
 - `npm run build` gera `dist/`, que é o que o Vercel publica.
 - `npm test` roda os testes das contas (`lib/build.mjs`) e das funções (`api/`) com dados sintéticos (`tests/fixture.mjs`);
   `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build). `npm run check` faz os três.
@@ -14,7 +19,10 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
 
 ## Estrutura
 
-- `src/pages/`: Painel, Conversas, Pedidos, Malu, Anúncios, Leads, Clientes, Financeiro, Automações, Integrações, Notas.
+- `src/pages/`: Painel, Conversas, Pedidos, Malu, Anúncios, Clientes (Origem e recompra; Score e Perfil, que era a aba Leads até
+  23/10), Financeiro, Automações, Integrações, Notas.
+- Painel (23/10): caixa de entrada em 3 blocos de meia altura (não respondidas, com pessoa, tempo excedido de 15 min, `src/lib/inbox.js`);
+  cada um abre Conversas no filtro. Todo bloco tem o formato da fileira de 4 (3 por fileira = 4/3 maior, CSS "Proporção dos blocos").
 - `src/components/`: fundo em ondas, menu lateral que recolhe, topo (período, busca ⌘K, notificações, preferências), gráficos e peças de vidro.
 - `src/lib/`: constantes das métricas, carregamento dos dados, formatação e o menu.
 - `lib/build.mjs` (servidor): monta os dados a partir do Supabase, do n8n e da Meta. `lib/meta.mjs`: leitura do Meta Ads.
@@ -38,6 +46,10 @@ a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI.
   - `SUPABASE_URL` (opcional; padrão: o projeto da Encorpa).
   - `N8N_API_KEY` (opcional): chave da API do n8n para a seção Automações (workflows e execuções). `N8N_URL` opcional; padrão: o n8n da Encorpa no PikaPods. O portal lê só nome, tipo, posição e ligação dos nós, nunca os parâmetros.
   - `META_ACCESS_TOKEN` e `META_AD_ACCOUNT_ID`: token só de leitura (`ads_read`) e a conta de anúncios, para a seção Anúncios.
+  - `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_WABA_ID` (opcionais, desde 23/10): token com `whatsapp_business_management`,
+    o id do número e o da conta do WhatsApp Business, para Malu › Número do WhatsApp (estado, qualidade, limite e templates;
+    `lib/whatsapp.mjs`, a cada 15 min, leitura de gestão sem custo de mensagem). Número restrito ou com qualidade baixa pinta o
+    critério de pausa "Número do WhatsApp" de vermelho.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
 - `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.

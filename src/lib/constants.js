@@ -151,9 +151,7 @@ export const REF = [
 
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 
-export const RANGE = { leads: [40, 90], orders: [3, 9], conversion: [5, 11], cpl: [1.1, 1.9], api_per_lead: [.04, .06], cpl_api: [1.15, 1.95], handoff: [6, 13], fallback: [2, 6], optout: [1, 3.2], invalid_premise: [2, 6.5], revenue: [390, 1170], op_cost: [200, 600], gross_profit: [120, 420], net_profit: [60, 300], roi: [1.2, 2.9], ticket_pieces: [1, 1.4], prepaid_share: [20, 40], refusal: [10, 19], spend: [60, 110], cpm: [12, 28], ctr: [.8, 2.4], cpc: [.5, 1.4], view_content: [50, 80], add_to_cart: [15, 35], checkout: [40, 70], site_conversion: [2, 4.5], cpa: [25, 45], failed_delivery: [12, 19], reply_rate: [55, 80], price_reach: [35, 60], link_reach: [20, 40], rewrites: [.3, 1.2], gate_blocks: [3, 9], delivered: [65, 88] };
 
-export const SUMMED = new Set(["leads", "orders", "transfers", "revenue", "op_cost", "gross_profit", "net_profit", "spend", "fixed_cost"]);
 
 export const STATUS_RUN = { success: "sucesso", error: "erro", crashed: "falhou", running: "rodando", waiting: "esperando", canceled: "cancelada" };
 
@@ -166,4 +164,4 @@ export const AD_STATUS = { ACTIVE: ["Ativo", "ok"], PAUSED: ["Pausado", ""], CAM
 export const GENDER = { 1: "homens", 2: "mulheres" };
 
 export const COMPARE = [["spend", "Gasto", "brl", 0], ["impressions", "Impressões", "n", 0], ["ctr", "CTR", "pct", 1], ["cpm", "CPM", "brl", -1], ["started", "Conversas", "n", 1], ["cpl", "CPL", "brl", -1], ["leads", "Leads", "n", 1], ["orders", "Pedidos", "n", 1], ["conv", "Conversão lead → pedido", "pct", 1], ["cpo", "Custo por pedido", "brl", -1]];
-Object.assign(RANGE, { op_margin: [8, 22], resolution: [85, 95], transfers: [2, 6], first_response: [.2, 1.2], handle_time: [8, 25], leads_ad: [20, 60], leads_organic: [10, 30], delivered_orders: [2, 7] });
+

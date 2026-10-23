@@ -12,6 +12,7 @@ export const NAV = [
       ["gaps", "Lacunas", "O que a Malu ainda não resolve sozinha: cada linha é um contorno a construir."],
       ["service", "Atendimento", "Funil da conversa, tempos de resposta e volume por hora."],
       ["health", "Saúde e versões", "Resposta pronta, reescritas, gates, canal e o antes × depois de cada versão."],
+      ["number", "Número do WhatsApp", "Estado, qualidade e limite de envio do número na Meta, e os templates aprovados."],
       ["hermes", "Hermes", "O supervisor offline: cada rodada, as propostas com motivo e evidência, a decisão e o que mudou na Malu."]] },
     { id: "ads", label: "Anúncios", icon: "ads", subs: [
       ["campaigns", "Campanhas", "Campanhas do Meta Ads com orçamento, estado e resultado, atualizadas a cada 5 minutos."],
@@ -20,8 +21,9 @@ export const NAV = [
       ["tests", "Testes de Criativos", "Os anúncios reais lado a lado, o vencedor de cada métrica, a região A × B, o piso de amostra e os critérios de pausa."],
       ["goals", "Metas", "Cada meta do teste contra o valor de agora."],
       ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
-    { id: "leads", label: "Leads", icon: "bolt", desc: "Score e perfil de cada lead: faixa, objeções, sensibilidade a preço, áudios, ocasião e onde a conversa para." },
-    { id: "customers", label: "Clientes", icon: "users", desc: "De onde vêm as clientes, em que estado compram mais e quantas voltam." },
+    { id: "customers", label: "Clientes", icon: "users", subs: [
+      ["origin", "Origem e recompra", "De onde vêm as clientes, em que estado compram mais e quantas voltam."],
+      ["score", "Score e Perfil", "Quão perto de comprar cada lead está, o que ela objeta e onde a conversa para. Sem telefone e sem nome."]] },
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],
       ["api", "Consumo de API", "Custo do modelo (chamadas dos leads) e do WhatsApp no período, por dia, por lead e a projeção do mês."],
@@ -44,7 +46,8 @@ export const pageBy = (id) => PAGES.find((p) => p.id === id) || PAGES[0];
 // "#/malu/gaps" ou "#/chat?c=<id>": página, sub-aba e parâmetros.
 export function parseRoute(hash) {
   const [path, qs = ""] = hash.replace(/^#\/?/, "").split("?");
-  const [id, sub] = path.split("/");
+  let [id, sub] = path.split("/");
+  if (id === "leads") [id, sub] = ["customers", "score"]; // a aba Leads virou Clientes › Score e Perfil (23/10)
   const page = pageBy(id);
   const s = page.subs ? page.subs.find(([k]) => k === sub) || page.subs[0] : null;
   return { page, sub: s, query: Object.fromEntries(new URLSearchParams(qs)) };

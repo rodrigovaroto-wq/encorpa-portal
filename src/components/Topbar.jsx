@@ -4,6 +4,9 @@ import { PERIODS } from "../lib/constants.js";
 import { ago, store } from "../lib/format.js";
 import { Icon } from "./icons.jsx";
 
+// Cores do portal (Preferências): fundo e destaques. A bolinha mostra o tom de destaque de cada uma.
+export const ACCENTS = [["purple", "Roxo", "#8b5cf6"], ["blue", "Azul", "#3b82f6"], ["orange", "Laranja", "#f97316"], ["yellow", "Amarelo", "#eab308"], ["gray", "Cinza", "#8a8a93"]];
+
 export function usePopover() {
   const [open, setOpen] = useState(false), ref = useRef(null);
   useEffect(() => {
@@ -35,7 +38,7 @@ export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPre
   const live = data?.source === "live";
   return (
     <header className="topbar">
-      <a href="#/home" className="m-brand" aria-label="Painel"><img src="/logo.svg" alt="" width="32" height="32" /></a>
+      <a href="#/home" className="m-brand" aria-label="Painel"><img src="/wordmark.svg" alt="" className="wordmark" /></a>
       <button className="glass search" onClick={onSearch} aria-label="Buscar"><Icon name="search" /><span>Buscar conversas, anúncios, páginas…</span><kbd>⌘K</kbd></button>
       <span className="today"><Icon name="calendar" size={15} /> Hoje, {today}</span>
       <span className={`status-dot ${live ? "live" : ""}`} title={data?.updated ? `Atualizado ${ago(data.updated)}` : ""}>
@@ -67,6 +70,9 @@ export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPre
               <label className="pref"><span>Tema</span>
                 <span className="seg"><button className={prefs.theme === "dark" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "dark" })}><Icon name="moon" size={14} /> Escuro</button><button className={prefs.theme === "light" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "light" })}><Icon name="sun" size={14} /> Claro</button></span>
               </label>
+              <div className="pref"><span>Cor</span>
+                <span className="swatches" role="radiogroup" aria-label="Cor">{ACCENTS.map(([k, l, c]) => <button key={k} role="radio" aria-checked={(prefs.accent || "purple") === k} aria-label={l} title={l} className={(prefs.accent || "purple") === k ? "on" : ""} style={{ background: c }} onClick={() => setPrefs({ ...prefs, accent: k })} />)}</span>
+              </div>
               <label className="pref"><span>Animações do fundo</span><input type="checkbox" checked={prefs.motion !== "off"} onChange={(e) => setPrefs({ ...prefs, motion: e.target.checked ? "on" : "off" })} /></label>
               <label className="pref"><span>Dados de exemplo</span><input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} /></label>
               <p className="note">Fuso de Brasília · valores em reais · atualiza a cada 5 minutos.</p>

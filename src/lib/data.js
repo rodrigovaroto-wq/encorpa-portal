@@ -1,8 +1,8 @@
 // Dados do portal. Ordem: /api/data ao vivo (Vercel) → último retrato bom guardado neste navegador → data.js (cópia estática).
 // Formato: { updated, global: {...}, periods: { day, week, month, 3m, 6m, 9m, 12m } } (lib/build.mjs › build).
-import { ALL, BUCKETS, RANGE, SUMMED, OUTCOMES, PAUSE, DECISION } from "./constants.js";
+import { BUCKETS, PAUSE, DECISION } from "./constants.js";
 import { fmt, store } from "./format.js";
-import { DELIVERY_DAYS, RELEASE_DAYS, cashPlan, fixedDue } from "./economics.js";
+import { DELIVERY_DAYS, RELEASE_DAYS, cashPlan } from "./economics.js";
 
 const CACHE = "last:portal";
 
@@ -56,132 +56,17 @@ export function computePause(p, g) {
 export const PAUSE_IDS = PAUSE.map((c) => c.id);
 export { DECISION };
 
-// ---- dados de exemplo (NÃO são reais) ----
-function rng(seed) { let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
-const NAMES = ["Ana Paula", "Bruna Lima", "Carla Souza", "Daniela Rocha", "Elaine Costa", "Fernanda Alves", "Gabriela Nunes", "Helena Dias", "Isabela Ramos", "Juliana Melo", "Karina Lopes", "Larissa Pinto"];
-const UFS = ["SP", "SP", "RJ", "MG", "PE", "BA", "PR", "RS", "RN", "GO"];
-const WHY = ["a cliente quer 6 peças, mais que o maior kit (3)", "a cliente pergunta sobre um pedido existente", "nenhuma reescrita passou", "sem tempo para reescrever"];
-
-export function demoData() {
-  const now = Date.now(), periods = {};
-  for (const [period, [n, days]] of Object.entries(BUCKETS)) {
-    const metrics = {};
-    for (const x of ALL) {
-      const [lo, hi] = RANGE[x.id] || [1, 10], r = rng(period + x.id), k = SUMMED.has(x.id) ? days : 1;
-      const gen = () => Array.from({ length: n }, (_, i) => (lo + (hi - lo) * (0.25 + 0.5 * r() + 0.25 * Math.sin(i / 3))) * k);
-      const cur = gen(), prev = gen(), sum = (s) => s.reduce((a, b) => a + b, 0);
-      const agg = (s) => (SUMMED.has(x.id) ? sum(s) : sum(s) / s.length);
-      const rd = ["leads", "orders"].includes(x.id) ? Math.round : (v) => v;
-      metrics[x.id] = { id: x.id, value: rd(agg(cur)), previous: rd(agg(prev)), series: cur.map(rd) };
-    }
-    for (const id of ["leads_ad", "leads_organic", "delivered_orders"]) {
-      const r = rng(period + id), [lo, hi] = RANGE[id];
-      const s = Array.from({ length: n }, (_, i) => Math.round((lo + (hi - lo) * (0.4 + 0.4 * r() + 0.2 * Math.sin(i / 2))) * Math.max(days, 0.3)));
-      metrics[id] = { id, value: s.reduce((a, b) => a + b, 0), previous: Math.round(s.reduce((a, b) => a + b, 0) * 0.9), series: s };
-    }
-    // Fixos pelas datas de vencimento de verdade, como no servidor: só o intervalo em que uma cobrança vence tem valor.
-    const step = days * 864e5, start = now - n * step;
-    metrics.fixed_cost = { id: "fixed_cost", value: fixedDue(start, now), previous: fixedDue(start - n * step, start), series: Array.from({ length: n }, (_, i) => fixedDue(start + i * step, start + (i + 1) * step)) };
-    const api = coherent(metrics);
-    const r = rng("o" + period), stat = ["bought", "declined", "declined", "unresolved", "abandoned", "abandoned", "open"];
-    const outcomes = Object.fromEntries(OUTCOMES.map(([id]) => [id, 0]));
-    for (let i = 0; i < 40; i++) outcomes[stat[Math.floor(r() * stat.length)]]++;
-    outcomes.attended = 40; outcomes.solved = outcomes.bought + outcomes.declined; outcomes.resolution = (outcomes.solved / (40 - outcomes.open)) * 100;
-    periods[period] = {
-      metrics, outcomes,
-      hourly: Array.from({ length: 24 }, (_, h) => Math.round((h < 6 ? 1 : 6) * (1 + Math.sin(h / 4)) * Math.max(days, 1))),
-      money: { ads: metrics.spend.value, ai: api - metrics.orders.value * 0.04, whatsapp: metrics.orders.value * 0.04, fixed: metrics.fixed_cost.value, api_cost: api, api_per_day: api / (n * days), api_30d: (api / (n * days)) * 30 },
-      mix: { cod: Math.round(metrics.orders.value * 0.7), prepay: Math.round(metrics.orders.value * 0.3), units: [0.72, 0.2, 0.08].map((f) => Math.round(metrics.orders.value * f)), contribution: metrics.gross_profit.value },
-      states: UFS.slice(0, 7).map((s, i) => ({ state: s, leads: 40 - i * 5, orders: Math.max(0, 6 - i), conversion: (Math.max(0, 6 - i) / (40 - i * 5)) * 100 })),
-      gaps: WHY.map((w, i) => ({ reason: w, count: 6 - i, conversations: 5 - i, last: new Date(now - i * 864e5).toISOString(), version: 26 })),
-      meta: demoMeta(),
-    };
+// Dados de exemplo (NÃO são reais): src/lib/demo.js simula um ano de operação e passa pela mesma conta do servidor.
+// Os workflows são os do n8n de verdade, da última leitura guardada neste navegador (o operador pediu para manter os dele).
+// A conta roda num worker (src/lib/demo.worker.js); sem worker, roda aqui mesmo.
+export async function demoData() {
+  let automations = null;
+  try { automations = JSON.parse(store.get(CACHE) || "null")?.global?.automations ?? null; } catch { /* sem retrato: workflows de exemplo */ }
+  try {
+    const w = new Worker(new URL("./demo.worker.js", import.meta.url), { type: "module" });
+    return await new Promise((done, fail) => { w.onmessage = (e) => { w.terminate(); done(e.data); }; w.onerror = (e) => { w.terminate(); fail(e); }; w.postMessage({ automations }); });
+  } catch {
+    const { demoData: make } = await import("./demo.js");
+    return make(automations);
   }
-  const chats = NAMES.map((name, i) => {
-    const st = ["bought", "declined", "unresolved", "abandoned", "open"][i % 5];
-    const base = now - i * 3.6e6 * 5;
-    return {
-      id: `demo-${i}`, short: `d3m0${i}abc`.slice(0, 8), name, phone: `…${1000 + i * 37}`, state: UFS[i % UFS.length], size: ["P", "M", "G", "GG"][i % 4], origin: i % 3 ? "anúncio" : "orgânico",
-      stage: { bought: "pedido_criado", declined: "perdido", unresolved: "conversando", abandoned: "link_enviado", open: "tamanho_definido" }[st], status: st, version: 26, cost: 0.05 + i * 0.01,
-      last: new Date(base).toISOString(), paused: i === 2, pausedAt: i === 2 ? new Date(base - 3e5).toISOString() : null, windowOpen: i < 4, optedOut: false, rewrites: i % 4, fallbacks: st === "unresolved" ? 1 : 0, reasons: st === "unresolved" ? [WHY[i % 4]] : [], orders: st === "bought" ? [{ status: "Agendado", method: "cod", amount: 129.9, units: 1 }] : [],
-      messages: [
-        { out: false, text: "Oi, vi o anúncio do colete. Quanto custa?", at: new Date(base - 9e5).toISOString() },
-        { out: true, text: "Oi! Tudo bem? 💜 O colete sai por R$ 129,90 com pagamento na entrega e frete grátis. Qual a sua cintura em cm?", at: new Date(base - 8.4e5).toISOString() },
-        { out: false, text: "uns 82", at: new Date(base - 6e5).toISOString() },
-        { out: true, text: "Perfeito, pra 82 cm o tamanho ideal é o M. Me passa o seu CEP que eu vejo se chega pagando na entrega?", at: new Date(base - 5.4e5).toISOString() },
-      ],
-    };
-  });
-  const steps = ["created", "en_route", "delivered", "delivered", "refused", "unpaid"];
-  const orders = Array.from({ length: 16 }, (_, i) => ({
-    id: `LZ${48210 + i}`, name: NAMES[i % NAMES.length], state: UFS[i % UFS.length], status: ["Agendado", "Em rota", "Completo", "Completo", "Frustrado", "Pedido criado"][i % 6], step: steps[i % 6],
-    method: i % 6 === 5 ? "prepay" : "cod", units: 1 + (i % 3 === 2 ? 1 : 0), size: "M", amount: i % 3 === 2 ? 233.82 : 129.9, value: steps[i % 6] === "refused" ? -9.99 : 67.18,
-    created: new Date(now - i * 864e5 * 0.7).toISOString(), updated: new Date(now - i * 864e5 * 0.5).toISOString(), scheduled: new Date(now + (i - 5) * 864e5).toISOString().slice(0, 10),
-  }));
-  return {
-    demo: true, source: "demo", updated: new Date(now).toISOString(), periods,
-    global: {
-      updated: new Date(now).toISOString(), totals: { leads: 210, orders: 18, spend: 240 }, funnel: { first_msg: 210, reply: 160, price: 110, link: 70, order: 18, delivered: 12 },
-      invested: { total: 404.72, contribution: 1098, result: 693.28, rows: [
-        { label: "PikaPods (n8n)", kind: "fixo", total: 54, how: "1 recarga(s) de US$ 10 × R$ 5,40 · saldo ~US$ 8,86 · próxima recarga ~28/12/2026" },
-        { label: "Número do WhatsApp", kind: "fixo", total: 55, how: "R$ 55 no início + 0 mensalidade(s) de R$ 35 · próxima 05/11/2026" },
-        { label: "Anúncios na Meta (imposto incluído)", kind: "variável", total: 240, how: "gasto da conta, ao vivo" },
-        { label: "Modelo de IA (leads)", kind: "variável", total: 55, how: "toda chamada de modelo dos leads, ao vivo" },
-        { label: "API do WhatsApp", kind: "variável", total: 0.72, how: "R$ 0,04 por pedido (template de pós-venda)" }] },
-      channel: { number: "Enviando, sem erro nas últimas execuções", status: "ok", cloud_api: "Operando", window: "72 h ativa", templates: "3 aprovados" }, api_over_pct: 2.1, ad_budget: 50, ad_spend_day: 50,
-      versions: [24, 25, 26].map((v, i) => ({ version: `v${v}`, conversations: 60 + i * 20, resolution: 70 + i * 6, unresolved: 9 - i * 3, abandoned: 12 - i * 2, turns: 400 + i * 120, handoff: 12 - i * 2, fallback: 5 - i, rewrites: 1.1 - i * 0.2, cost: 0.8 - i * 0.08 })),
-      gates: ["tamanho", "endereço", "identidade", "cobertura", "checkout"].map((g, i) => ({ gate: g, checks: 300 - i * 30, blocks: 20 - i * 3, rate: ((20 - i * 3) / (300 - i * 30)) * 100 })),
-      chats, orders,
-      hermes: {
-        every: 50, backlog: { leads: 32, lastRun: new Date(now - 3 * 864e5).toISOString(), due: false },
-        runs: [{ id: "r1", created_at: new Date(now - 3 * 864e5).toISOString(), started_at: new Date(now - 3 * 864e5 - 4.2e5).toISOString(), source: "production", model: "muse-spark-1.3", conversations_seen: 50, leads_seen: 50, proposals_ok: 2, proposals_rejected: 1, cost_brl: 2.27, premise_conversations: 2, commit_sha: "a1b2c3d", version: 25, proposals: 2 }],
-        proposals: [
-          { id: "p1", code: "H-8", target: "prompt", status: "proposed", rationale: "Três clientes perguntaram se o colete marca na roupa e a Malu não respondeu a pergunta.", version: 25, diff: "+ Quando ela perguntar se marca na roupa, responder que o tecido é fino e não aparece por baixo de blusa justa.", evidence: { o_que: "Responder quando a cliente pergunta se o colete marca na roupa", por_que: "Três clientes perguntaram e ficaram sem resposta; duas sumiram depois.", objetivo: "Nenhuma pergunta sobre marcar na roupa sem resposta", como_medir: "Conversas com a pergunta e sem resposta na próxima rodada", classe: "venda_perdida", severidade: "media", evidencias: [{ conversa: "conversa-07", mensagem: 4, trecho: "marca na roupa?" }, { conversa: "conversa-19", mensagem: 2, trecho: "aparece por baixo da blusa?" }] }, leads_seen: 50, run_id: "r1", created_at: new Date(now - 3 * 864e5).toISOString() },
-          { id: "p2", code: "H-7", version: 25, target: "gate", status: "published", rationale: "A Malu prometeu prazo de entrega sem consultar a cobertura.", evidence: { o_que: "2 conversas" }, leads_seen: 50, run_id: "r1", created_at: new Date(now - 3 * 864e5).toISOString(), decided_at: new Date(now - 2.8 * 864e5).toISOString(), decision_reason: "Aprovado: prazo só depois da cobertura.", executed_at: new Date(now - 2.7 * 864e5).toISOString(), execution_ref: "f00ba12 (turn v26)", published_at: new Date(now - 2.6 * 864e5).toISOString(), result: "Guarda: teste prazo-sem-cobertura." },
-          { id: "p3", code: "H-6", version: 24, target: "prompt", status: "rejected", rationale: "Sugeriu oferecer desconto para quem hesita.", leads_seen: 50, run_id: null, created_at: new Date(now - 9 * 864e5).toISOString(), decided_at: new Date(now - 8.9 * 864e5).toISOString(), decision_reason: "Recusado: desconto não sustenta a margem." },
-        ],
-      },
-      health: { supabase: { ok: true, detail: "dados de exemplo" }, n8n: { ok: true, detail: "7 workflows ativos" }, meta: { ok: true, detail: "1 campanha, 3 anúncios" }, whatsapp: { ok: true, detail: `última mensagem da Malu ${new Date(now - 6e5).toISOString()}` }, malu: { ok: true, detail: "versão 26", version: 26 }, hermes: { ok: true, detail: "última rodada ontem" } },
-      automations: {
-        read: 300,
-        workflows: [
-          { id: "w1", name: "Encorpa — Turno da agente", active: true, runs: 140, errors: 0, last: { status: "success", at: new Date(now).toISOString() }, nodes: [["Mensagem chega", "webhook", 0, 0], ["Chama a função turn", "httpRequest", 220, 0], ["Deu certo?", "if", 440, 0], ["Responde", "respondToWebhook", 660, -80], ["Avisa o operador", "emailSend", 660, 80]].map(([name, type, x, y]) => ({ name, type, x, y })), edges: [["Mensagem chega", "Chama a função turn"], ["Chama a função turn", "Deu certo?"], ["Deu certo?", "Responde"], ["Deu certo?", "Avisa o operador"]] },
-          { id: "w2", name: "Encorpa — Relógio da régua", active: true, runs: 96, errors: 1, last: { status: "error", at: new Date(now).toISOString() }, nodes: [["A cada 10 min", "scheduleTrigger", 0, 0], ["Varre follow-ups", "httpRequest", 220, 0], ["Avisa o operador", "emailSend", 440, 0]].map(([name, type, x, y]) => ({ name, type, x, y })), edges: [["A cada 10 min", "Varre follow-ups"], ["Varre follow-ups", "Avisa o operador"]] },
-          { id: "w3", name: "TEMP — teste", active: false, runs: 0, errors: 0, last: null, nodes: [{ name: "Manual", type: "manualTrigger", x: 0, y: 0 }], edges: [] },
-        ],
-        runs: Array.from({ length: 12 }, (_, i) => ({ workflow: i % 3 ? "Encorpa — Turno da agente" : "Encorpa — Relógio da régua", status: i === 4 ? "error" : "success", mode: i % 3 ? "webhook" : "trigger", at: new Date(now - i * 6e5).toISOString(), ms: 400 + i * 90 })),
-      },
-    },
-  };
-}
-
-// Os números de exemplo saem uns dos outros com as mesmas regras do cálculo real (lib/build.mjs), para fecharem entre si:
-// ticket médio com mix 70% na entrega / 30% antecipado e alguns kits; margem por pedido já descontando recusa (17%) e devolução;
-// anúncio = leads × CPL (o imposto da Meta já vem dentro); API = leads × custo por lead + R$ 0,04 por pedido; fixos só quando vencem.
-const TICKET = 132, MARGIN_PER_ORDER = 61;
-function derive(leads, orders, cpl, apl, fixed) {
-  const revenue = orders * TICKET, gross = orders * MARGIN_PER_ORDER, spend = leads * cpl, api = leads * apl + orders * 0.04;
-  const cost = spend + api, net = gross - cost - fixed; // ROI sem os fixos
-  return { api, revenue, gross_profit: gross, op_cost: revenue - gross, spend, net_profit: net, op_margin: revenue ? (net / revenue) * 100 : null, roi: cost ? gross / cost : null, conversion: leads ? (orders / leads) * 100 : null, cpl_api: cpl + apl };
-}
-function coherent(m) {
-  const n = m.leads.series.length, keys = ["revenue", "gross_profit", "op_cost", "spend", "net_profit", "op_margin", "roi", "conversion", "cpl_api"];
-  const f = m.fixed_cost, per = Array.from({ length: n }, (_, i) => derive(m.leads.series[i], m.orders.series[i], m.cpl.series[i], m.api_per_lead.series[i], f.series[i]));
-  const cur = derive(m.leads.value, m.orders.value, m.cpl.value, m.api_per_lead.value, f.value), prev = derive(m.leads.previous, m.orders.previous, m.cpl.previous, m.api_per_lead.previous, f.previous);
-  for (const k of keys) m[k] = { id: k, value: cur[k], previous: prev[k], series: per.map((x) => x[k]) };
-  return cur.api;
-}
-
-function demoMeta() {
-  const ad = (id, name, spend, imp, clicks, started, leads, orders, status = "ACTIVE") => ({ id, name, adset_id: "s1", campaign_id: "c1", status, spend, impressions: imp, clicks, started, leads, orders,
-    ctr: imp ? (clicks / imp) * 100 : null, cpm: imp ? (spend / imp) * 1000 : null, cpl: started ? spend / started : null, creative: { body: "Cintura marcada na hora, sem apertar.", thumb: "" } });
-  const ads = [ad("a1", "Vídeo 1 — gancho dor nas costas", 80, 6400, 120, 52, 40, 5), ad("a2", "Vídeo 2 — antes e depois", 70, 5900, 95, 41, 33, 3), ad("a3", "Vídeo 3 — prova social", 60, 5100, 70, 25, 20, 1, "PAUSED")];
-  const roll = (xs) => { const t = xs.reduce((a, b) => ({ spend: a.spend + b.spend, impressions: a.impressions + b.impressions, clicks: a.clicks + b.clicks, started: a.started + b.started, leads: a.leads + b.leads, orders: a.orders + b.orders }), { spend: 0, impressions: 0, clicks: 0, started: 0, leads: 0, orders: 0 });
-    return { ...t, ctr: (t.clicks / t.impressions) * 100, cpm: (t.spend / t.impressions) * 1000, cpl: t.spend / t.started, ads: xs.length }; };
-  return {
-    campaigns: [{ id: "c1", name: "Encorpa — CTWA — Teste", objective: "OUTCOME_ENGAGEMENT", status: "ACTIVE", daily_budget: 50, ...roll(ads) }],
-    adsets: [{ id: "s1", name: "Conjunto A — estados com mais de 5 cidades", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, optimization: "CONVERSATIONS", audience: { age: "18–55", genders: [2], places: "BR" }, ...roll(ads.slice(0, 2)) },
-      { id: "s2", name: "Conjunto B — Sudeste, Centro-Oeste e Sul", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, optimization: "CONVERSATIONS", audience: { age: "18–55", genders: [2], places: "SP, RJ, MG, PR" }, ...roll(ads.slice(2)) }],
-    ads,
-  };
 }

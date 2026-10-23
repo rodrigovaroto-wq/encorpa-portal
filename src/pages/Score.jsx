@@ -1,37 +1,35 @@
-// Leads: score de prontidão e perfil de cada lead (api/leads.js › lead_profiles_v), sem telefone e sem nome: só o começo do id.
-// O agregado e a tabela seguem o período do topo (pela criação do lead) e o filtro de faixa.
+// Clientes › Score e Perfil (era a aba Leads até 23/10): score de prontidão e perfil de cada lead (api/leads.js › lead_profiles_v),
+// sem telefone e sem nome: só o começo do id. Uma tela só, sem sub-abas por faixa: o agregado e a tabela seguem o período do topo
+// (pela criação do lead). Com os dados de exemplo, os perfis vêm do mesmo ano simulado das outras telas (data.global.profiles).
 import { useEffect, useMemo, useState } from "react";
 import { STAGE } from "../lib/constants.js";
 import { periodDays } from "../lib/data.js";
 import { fmt, when } from "../lib/format.js";
 import { BANDS, OBJECTION, SENSITIVITY, audiosOf, objectionsOf, profileSummary } from "../lib/profiles.js";
 import { Donut, HBars } from "../components/charts.jsx";
-import { Card, Chip, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
+import { Card, Chip, Note, Table } from "../components/ui.jsx";
 
 const BAND = Object.fromEntries(BANDS.map(([k, l, tone]) => [k, { l, tone }]));
 const SENS = Object.fromEntries(SENSITIVITY);
 const BAND_COLOR = { quente: "var(--bad)", morna: "var(--warn)", fria: "var(--accent-2)" };
 
-export function Leads({ data, period }) {
-  const [state, setState] = useState(null), [band, setBand] = useState("all"), [desc, setDesc] = useState(true);
+export function Score({ data, period }) {
+  const [state, setState] = useState(null), [desc, setDesc] = useState(true);
   useEffect(() => {
-    if (data.demo || location.protocol === "file:") return setState({ error: "Sem dados de exemplo nesta tela: ela lê só o banco ao vivo." });
+    if (data.demo) return setState({ available: true, updated: data.updated, leads: data.global.profiles || [] });
+    if (location.protocol === "file:") return setState({ error: "Esta tela lê só o banco ao vivo." });
     fetch("api/leads", { cache: "no-store", credentials: "same-origin" })
       .then(async (r) => { const out = await r.json().catch(() => ({})); setState(r.ok ? out : { error: out.error || `HTTP ${r.status}` }); })
       .catch(() => setState({ error: "Não consegui ler os leads agora." }));
-  }, [data.demo]);
+  }, [data.demo, data.updated, data.global.profiles]);
 
   const from = Date.parse(state?.updated || data.global.updated) - periodDays(period) * 864e5;
-  const inPeriod = useMemo(() => (state?.leads || []).filter((l) => Date.parse(l.created_at) >= from), [state, from]);
-  const leads = band === "all" ? inPeriod : inPeriod.filter((l) => l.score_band === band);
+  const leads = useMemo(() => (state?.leads || []).filter((l) => Date.parse(l.created_at) >= from), [state, from]);
   const s = profileSummary(leads);
-  const rows = [...leads].sort((a, b) => (a.score == null) - (b.score == null) || ((desc ? b.score - a.score : a.score - b.score) || 0));
-  const counts = { all: inPeriod.length, ...profileSummary(inPeriod).bands };
+  const rows = useMemo(() => [...leads].sort((a, b) => (a.score == null) - (b.score == null) || ((desc ? b.score - a.score : a.score - b.score) || 0)).slice(0, 100), [leads, desc]);
 
   return (
-    <div className="page">
-      <PageHead crumb="Análise" title="Leads — score e perfil" desc="Quão perto de comprar cada lead está, o que ela objeta e onde a conversa para. Sem telefone e sem nome."
-        tabs={[["all", "Todas"], ...BANDS.map(([k, l]) => [k, l])]} tab={band} onTab={setBand} counts={counts} />
+    <>
       {!state && <div className="loading"><span className="spinner" /> Carregando os leads…</div>}
       {state?.error && <Note>{state.error}</Note>}
       {state?.available === false && <Note>O score e o perfil ainda não existem no banco (migração 0029 do Ricos-com-AI não aplicada). A tela enche sozinha quando ela for aplicada.</Note>}
@@ -54,9 +52,9 @@ export function Leads({ data, period }) {
             rows={rows.map((l) => [l.id.slice(0, 8), fmt(l.score, "n"), l.score_band ? <Chip tone={BAND[l.score_band]?.tone}>{BAND[l.score_band]?.l || l.score_band}</Chip> : "—", STAGE[l.stage] || l.stage || "—",
               objectionsOf(l).map((o) => OBJECTION[o] || o).join(", ") || "—", SENS[l.price_sensitivity] || "—", audiosOf(l), l.occasion || "—", when(l.score_at)])}
             csv={rows.map((l) => [l.id.slice(0, 8), l.score, l.score_band, l.stage, objectionsOf(l).join(","), l.price_sensitivity, audiosOf(l), l.occasion, l.score_at])} />
-          <Note>Período pela criação do lead. Score de 0 a 100 somado pelo código a partir dos sinais da conversa (pesos são hipótese até ~200 leads reais). Pedido criado = 100.</Note>
+          <Note>Período pela criação do lead. Score de 0 a 100 somado pelo código a partir dos sinais da conversa (pesos são hipótese até ~200 leads reais). Pedido criado = 100.{rows.length < leads.length ? ` A tabela mostra os ${rows.length} primeiros pela ordem escolhida.` : ""}</Note>
         </>
       )}
-    </div>
+    </>
   );
 }

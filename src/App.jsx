@@ -15,12 +15,11 @@ import { Customers } from "./pages/Customers.jsx";
 import { Finance } from "./pages/Finance.jsx";
 import { Home } from "./pages/Home.jsx";
 import { Integrations } from "./pages/Integrations.jsx";
-import { Leads } from "./pages/Leads.jsx";
 import { Malu } from "./pages/Malu.jsx";
 import { Notes } from "./pages/Notes.jsx";
 import { Orders } from "./pages/Orders.jsx";
 
-const VIEWS = { home: Home, chat: Chat, orders: Orders, malu: Malu, ads: Ads, customers: Customers, leads: Leads, money: Finance, auto: Automations, integrations: Integrations, notes: Notes };
+const VIEWS = { home: Home, chat: Chat, orders: Orders, malu: Malu, ads: Ads, customers: Customers, money: Finance, auto: Automations, integrations: Integrations, notes: Notes };
 const REFRESH = 5 * 60 * 1000; // o servidor guarda a resposta 5 min
 
 export function App() {
@@ -39,7 +38,7 @@ export function App() {
   // Uma carga que cai no retrato do navegador (sem conversas) mantém as conversas da última carga ao vivo: antes, uma falha
   // de rede esvaziava a tela Conversas e a conversa aberta "sumia" no meio do atendimento.
   const refresh = useCallback(async () => {
-    const next = demo ? demoData() : (await loadData()) || false;
+    const next = demo ? await demoData() : (await loadData()) || false;
     setData((prev) => (next && next.source !== "live" && !next.demo && !prev?.demo && prev?.global?.chats?.length ? { ...next, global: { ...next.global, chats: prev.global.chats } } : next));
   }, [demo]);
   // Com a aba escondida não busca; ao voltar, busca se o último retrato passou de 5 min.
@@ -54,7 +53,7 @@ export function App() {
   }, [refresh]);
   useEffect(() => { const on = () => { setRoute(parseRoute(location.hash)); window.scrollTo(0, 0); }; window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
-  useEffect(() => { document.documentElement.dataset.theme = prefs.theme; document.documentElement.dataset.motion = prefs.motion; }, [prefs]);
+  useEffect(() => { const d = document.documentElement.dataset; d.theme = prefs.theme; d.motion = prefs.motion; d.accent = prefs.accent || "purple"; }, [prefs]);
 
   const [live, reloadChats] = useLiveChats(!demo && location.protocol !== "file:", route.page.id === "chat" ? 15_000 : 60_000);
   const shown = useMemo(() => withLive(data, live), [data, live]);
