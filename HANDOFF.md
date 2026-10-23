@@ -70,9 +70,9 @@ confirmar em produção: Configurações abre e mostra o seu papel; Malu › Nú
 
 ### 6. PR rodrigovaroto-wq/Ricos-com-AI#81 (id da imagem) — operador
 
-- Em rascunho. Localmente: `pnpm lint`, `pnpm typecheck` e `pnpm test` (8.738 testes) passaram; `pnpm typecheck:function` (Deno)
-  não rodou nesta sessão e fica para o CI do repositório. Conferir o CI verde, tirar de rascunho, fazer o merge e então o deploy do
-  item 3. O `HANDOFF.md` do Ricos-com-AI não foi atualizado por esta sessão: registrar lá a mudança da função `whatsapp` no merge.
+- Em rascunho. `pnpm lint`, `pnpm typecheck` e `pnpm test` (8.738 testes) passaram aqui, e o CI do repositório (com
+  `pnpm typecheck:function`, em Deno) ficou verde no commit `e0fd44a` (23/10). Falta: tirar de rascunho, fazer o merge e então o
+  deploy do item 3. O `HANDOFF.md` do Ricos-com-AI não foi atualizado por esta sessão: registrar lá a mudança da função `whatsapp` no merge.
 
 ## Ordem sugerida
 
