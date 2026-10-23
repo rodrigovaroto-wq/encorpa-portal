@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Background } from "./components/Background.jsx";
 import { Palette } from "./components/Palette.jsx";
+import { Settings } from "./components/Settings.jsx";
 import { MobileNav, Sidebar } from "./components/Sidebar.jsx";
 import { ACCENTS, Topbar } from "./components/Topbar.jsx";
 import { demoData, loadData } from "./lib/data.js";
@@ -28,7 +29,10 @@ export function App() {
   const [demo, setDemoState] = useState(() => store.get("demo") === "1");
   const [prefs, setPrefsState] = useState(() => { try { return { theme: "dark", motion: "on", ...JSON.parse(store.get("prefs") || "{}") }; } catch { return { theme: "dark", motion: "on" }; } });
   const [collapsed, setCollapsed] = useState(() => store.get("side") === "1");
-  const [palette, setPalette] = useState(false);
+  const [palette, setPalette] = useState(false), [settings, setSettings] = useState(false);
+  // Quem está logado e o papel (api/me.js). Sem o servidor (arquivo local ou teste), fica sem: as funções que escrevem conferem de novo.
+  const [me, setMe] = useState(null);
+  useEffect(() => { if (location.protocol !== "file:") fetch("api/me", { cache: "no-store", credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)).then(setMe).catch(() => setMe(null)); }, []);
   const [data, setData] = useState(null);
 
   const setPeriod = (p) => { setPeriodState(p); store.set("period", p); };
@@ -65,12 +69,13 @@ export function App() {
       <div className={`shell ${collapsed ? "side-collapsed" : ""}`}>
         <Sidebar route={route} collapsed={collapsed} onToggle={() => { setCollapsed(!collapsed); store.set("side", collapsed ? "0" : "1"); }} data={shown} period={period} />
         <main className="main">
-          <Topbar route={route} period={period} setPeriod={setPeriod} data={shown} onSearch={() => setPalette(true)} prefs={prefs} setPrefs={setPrefs} demo={demo} setDemo={setDemo} />
-          {shown ? <View key={route.page.id} data={shown} period={period} route={route} live={live} reloadChats={reloadChats} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
+          <Topbar route={route} period={period} setPeriod={setPeriod} data={shown} onSearch={() => setPalette(true)} onSettings={() => setSettings(true)} />
+          {shown ? <View key={route.page.id} data={shown} period={period} route={route} live={live} reloadChats={reloadChats} role={me?.role} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
         </main>
       </div>
       <MobileNav route={route} data={shown} period={period} />
       <Palette open={palette} onClose={() => setPalette(false)} data={shown} period={period} />
+      <Settings open={settings} onClose={() => setSettings(false)} prefs={prefs} setPrefs={setPrefs} demo={demo} setDemo={setDemo} data={shown} me={me} />
     </>
   );
 }

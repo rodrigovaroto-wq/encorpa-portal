@@ -16,7 +16,7 @@ const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toL
 let LOCAL = {};
 const ms = (s) => new Date(s).getTime();
 
-export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
+export function Chat({ data, route, live = {}, reloadChats = () => {}, role }) {
   const [local, setLocalState] = useState(LOCAL);
   const setLocal = (f) => setLocalState((x) => (LOCAL = f(x)));
   const reload = reloadChats;
@@ -78,7 +78,7 @@ export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
             {!list.length && <p className="empty">Nenhuma conversa neste filtro.</p>}
           </div>
         </aside>
-        {current ? <Thread c={current} patch={patch} reload={reload} demo={data.demo} /> : <div className="chat-empty">{!base.chats.length && !live.chats && !live.failedAt && !data.demo ? "Carregando as conversas…" : missing ? "Essa conversa não está entre as 150 clientes com movimento mais recente. Escolha outra na lista." : "Escolha uma conversa."}</div>}
+        {current ? <Thread c={current} patch={patch} reload={reload} demo={data.demo} readOnly={role === "leitura"} /> : <div className="chat-empty">{!base.chats.length && !live.chats && !live.failedAt && !data.demo ? "Carregando as conversas…" : missing ? "Essa conversa não está entre as 150 clientes com movimento mais recente. Escolha outra na lista." : "Escolha uma conversa."}</div>}
         {current && <Profile c={current} />}
       </div>
     </div>
@@ -117,7 +117,7 @@ function ScrollRow({ children }) {
 
 // Rola para o fim ao abrir a conversa, ao enviar e quando chega mensagem com você já no fim. Lendo o histórico mais acima,
 // a tela fica parada e aparece "Novas mensagens" (antes a atualização de 15 s puxava a leitura para baixo).
-function Thread({ c, patch, reload, demo }) {
+function Thread({ c, patch, reload, demo, readOnly }) {
   const end = useRef(null), box = useRef(null), atEnd = useRef(true), seen = useRef({ id: null, n: 0 });
   const [fresh, setFresh] = useState(false);
   const toEnd = () => { end.current?.scrollIntoView({ block: "end" }); atEnd.current = true; setFresh(false); };
@@ -152,7 +152,7 @@ function Thread({ c, patch, reload, demo }) {
         <div ref={end} />
         {fresh && <button className="new-msgs glass pill" onClick={toEnd}>Novas mensagens ↓</button>}
       </div>
-      {demo ? <footer className="composer"><p className="composer-note">Dados de exemplo: responder e pausar a Malu ficam desligados.</p></footer> : <Composer c={c} patch={patch} reload={reload} />}
+      {demo || readOnly ? <footer className="composer"><p className="composer-note">{demo ? "Dados de exemplo: responder e pausar a Malu ficam desligados." : "Seu usuário é só de leitura: responder e pausar a Malu ficam com operador ou admin."}</p></footer> : <Composer c={c} patch={patch} reload={reload} />}
     </section>
   );
 }

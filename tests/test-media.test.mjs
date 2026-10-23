@@ -8,7 +8,7 @@ import media from "../api/media.js";
 const CONV = "33333333-3333-4333-8333-333333333333";
 let calls, turnReplies;
 beforeEach(() => {
-  process.env.SUPABASE_SERVICE_ROLE_KEY = "k"; process.env.WHATSAPP_TOKEN = "wa"; process.env.INBOUND_SIGNING_SECRET = "segredo";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "k"; process.env.WHATSAPP_TOKEN = "wa"; process.env.INBOUND_SIGNING_SECRET = "segredo"; process.env.PORTAL_USERS = "op@encorpa.com:s:operador";
   calls = [];
   turnReplies = [{ status: "welcomed", bubbles: [{ text: "Oi! Sou a Malu 💜" }] }, { status: "sent", reply: "Qual a sua cintura?", rewrites: 1, costBrl: 0.012 }];
   globalThis.fetch = async (url, init = {}) => {
@@ -29,7 +29,7 @@ const run = (handler, req) => new Promise((done) => {
   const res = { code: 0, h: {}, setHeader(k, v) { this.h[k] = v; }, status(c) { this.code = c; return this; }, json(b) { done({ code: this.code, body: b, h: this.h }); }, send(b) { done({ code: this.code, body: b, h: this.h }); }, redirect(c, u) { done({ code: c, location: u }); } };
   handler(req, res);
 });
-const post = (body) => run(testApi, { method: "POST", headers: { "content-type": "application/json" }, body });
+const post = (body) => run(testApi, { method: "POST", headers: { "content-type": "application/json", authorization: `Basic ${btoa("op@encorpa.com:s")}` }, body });
 
 test("teste: o selo é o mesmo HMAC do Ricos-com-AI (inbound-signature.ts)", async () => {
   const m = { externalId: "x", from: "5500099912345", body: "oi" };

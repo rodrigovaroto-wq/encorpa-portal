@@ -1,10 +1,10 @@
-// Topo (Glassy CRM): saudação na página inicial, data de hoje, período em menu, busca (⌘K), notificações e preferências.
+// Topo (Glassy CRM): data de hoje, período em menu, busca (⌘K), notificações e o botão das Configurações (components/Settings.jsx).
 import { useEffect, useRef, useState } from "react";
 import { PERIODS } from "../lib/constants.js";
 import { ago, store } from "../lib/format.js";
 import { Icon } from "./icons.jsx";
 
-// Cores do portal (Preferências): fundo e destaques. A bolinha mostra o tom de destaque de cada uma.
+// Cores do portal (Configurações › Aparência): fundo e destaques. A bolinha mostra o tom de destaque de cada uma.
 export const ACCENTS = [["purple", "Roxo", "#8b5cf6"], ["blue", "Azul", "#3b82f6"], ["orange", "Laranja", "#f97316"], ["yellow", "Amarelo", "#eab308"], ["green", "Verde", "#10b981"], ["white", "Branco", "#f4f4f5"], ["black", "Preto", "#111113"]];
 
 export function usePopover() {
@@ -29,8 +29,8 @@ export function notifications(data) {
   return out.sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0)).slice(0, 12);
 }
 
-export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPrefs, demo, setDemo }) {
-  const per = usePopover(), bell = usePopover(), gear = usePopover();
+export function Topbar({ route, period, setPeriod, data, onSearch, onSettings }) {
+  const per = usePopover(), bell = usePopover();
   const list = notifications(data);
   const seen = Number(store.get("seen:notif") || 0);
   const unseen = list.filter((n) => new Date(n.at || 0).getTime() > seen).length;
@@ -62,23 +62,7 @@ export function Topbar({ route, period, setPeriod, data, onSearch, prefs, setPre
             </div>
           )}
         </div>
-        <div className="pop" ref={gear.ref}>
-          <button className="glass round big" aria-label="Preferências" onClick={() => gear.setOpen(!gear.open)}><Icon name="gear" /></button>
-          {gear.open && (
-            <div className="glass popover wide">
-              <p className="pop-title">Preferências</p>
-              <label className="pref"><span>Tema</span>
-                <span className="seg"><button className={prefs.theme === "dark" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "dark" })}><Icon name="moon" size={14} /> Escuro</button><button className={prefs.theme === "light" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "light" })}><Icon name="sun" size={14} /> Claro</button></span>
-              </label>
-              <div className="pref"><span>Cor</span>
-                <span className="swatches" role="radiogroup" aria-label="Cor">{ACCENTS.map(([k, l, c]) => <button key={k} role="radio" aria-checked={(ACCENTS.some(([x]) => x === prefs.accent) ? prefs.accent : "purple") === k} aria-label={l} title={l} className={(ACCENTS.some(([x]) => x === prefs.accent) ? prefs.accent : "purple") === k ? "on" : ""} style={{ background: c }} onClick={() => setPrefs({ ...prefs, accent: k })} />)}</span>
-              </div>
-              <label className="pref"><span>Animações do fundo</span><input type="checkbox" checked={prefs.motion !== "off"} onChange={(e) => setPrefs({ ...prefs, motion: e.target.checked ? "on" : "off" })} /></label>
-              <label className="pref"><span>Dados de exemplo</span><input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} /></label>
-              <p className="note">Fuso de Brasília · valores em reais · atualiza a cada 5 minutos.</p>
-            </div>
-          )}
-        </div>
+        <button className="glass round big" aria-label="Configurações" title="Configurações" onClick={onSettings}><Icon name="gear" /></button>
       </div>
     </header>
   );

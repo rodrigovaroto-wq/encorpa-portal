@@ -1,13 +1,13 @@
 # encorpa-portal
 
 Encorpa Dashboard: o portal de análise e operação da Encorpa. React 19 com Vite 8 (desde 16/10/2026), fundo em ondas e cartões de
-vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI. Desde 23/10 a cor é escolhida em Preferências
+vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sidebar UI. Desde 23/10 a cor é escolhida em Configurações › Aparência
 (roxo, azul, laranja, amarelo, verde, branco ou preto, no tema escuro e no claro).
 
 ## Rodar no computador
 
 - `npm install` e depois `npm run dev` (abre em http://localhost:5173). Sem o Vercel não existe `/api/data`: o portal usa o
-  último retrato guardado no navegador ou `public/data.js`. Em Preferências (engrenagem) dá para ligar os dados de exemplo.
+  último retrato guardado no navegador ou `public/data.js`. Em Configurações (engrenagem › Dados) dá para ligar os dados de exemplo.
 - Dados de exemplo (desde 23/10, `src/lib/demo.js`): um ano de operação simulada, tabela por tabela (leads, conversas, mensagens,
   respostas da Malu, pedidos, chamadas de modelo, Meta, Hermes), passado pela mesma conta do servidor (`lib/build.mjs › build`), num
   worker. Todo número fecha entre as abas. Os workflows são os do n8n de verdade, da última leitura guardada no navegador. Responder e
@@ -55,7 +55,9 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     `whatsapp` do Ricos-com-AI gravar esse id (hoje ela descreve a imagem com o modelo e descarta o id).
   - `INBOUND_SIGNING_SECRET` (desde 23/10, o mesmo do Supabase): selo das mensagens de Malu › Teste. Sem ele, a turn recusa o teste
     se o selo estiver ligado na produção.
-  - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1,email2:senha2`. **Sem ela ninguém entra.**
+  - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1:papel,email2:senha2`. **Sem ela ninguém entra.** Papel (desde 23/10,
+    `lib/auth.mjs`): `admin` (tudo, e vê os usuários em Configurações), `operador` (responde, pausa a Malu, usa Malu › Teste) ou
+    `leitura` (só vê). Sem papel, admin. Responder (`api/chat.js`) e testar (`api/test.js`) conferem o papel no servidor.
 - `lib/build.mjs` tem a conta das métricas (usada pela função e por `scripts/build-data.mjs`). Desde 16/10 (operador) traz as conversas com as clientes para a tela Conversas: nome, final do telefone, UF e o texto. Nunca endereço completo, CPF ou telefone inteiro.
 - `public/data.js` é uma cópia de segurança sem conversas nem nomes de clientes (o git guarda para sempre). Se `/api/data` falhar, o portal mostra primeiro o último retrato bom guardado no navegador e só depois esse arquivo.
 

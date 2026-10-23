@@ -10,6 +10,7 @@
 //   { action: "send", phone, text }           manda como se fosse a cliente; devolve o que a Malu respondeu
 //   { action: "delete", phone }               apaga o lead de teste (em cascata: conversa, mensagens, custos, lembretes)
 import { NO_KEY, SUPABASE_URL, serviceKey } from "../lib/env.mjs";
+import { canWrite, userOf } from "../lib/auth.mjs";
 
 export const config = { maxDuration: 300 }; // a turn tem até 150 s por mensagem (o mesmo limite do n8n) e a recepção pede um segundo passo
 export const TEST_PREFIX = "55000999";
@@ -33,6 +34,7 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") return res.status(405).json({ error: "use POST" });
   if (!String(req.headers["content-type"] || "").startsWith("application/json")) return res.status(415).json({ error: "use JSON" }); // CSRF, como api/chat.js
+  if (!canWrite(userOf(req.headers.authorization)?.role)) return res.status(403).json({ error: "Seu usuário é só de leitura: Malu › Teste fica com operador ou admin." });
   const key = serviceKey();
   if (!key) return res.status(500).json({ error: NO_KEY });
   const { action, phone, text } = req.body || {};

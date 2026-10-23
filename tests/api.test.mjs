@@ -8,6 +8,7 @@ let calls, lead, n8nReply;
 beforeEach(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
   process.env.N8N_API_KEY = "n8n-key";
+  process.env.PORTAL_USERS = "op@encorpa.com:segredo:operador,ver@encorpa.com:x:leitura";
   calls = [];
   lead = { id: "lead-bia", phone: "5511900000002", handoff_at: null };
   n8nReply = { status: "sent" };
@@ -21,7 +22,8 @@ beforeEach(() => {
   };
 });
 
-function call(body, headers = { "content-type": "application/json" }) {
+const AUTH = `Basic ${btoa("op@encorpa.com:segredo")}`;
+function call(body, headers = { "content-type": "application/json", authorization: AUTH }) {
   return new Promise((done) => {
     const res = { code: 0, status(c) { this.code = c; return this; }, setHeader() {}, json(b) { done({ code: this.code, body: b }); } };
     chat({ method: "POST", headers, body }, res);

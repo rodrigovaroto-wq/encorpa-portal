@@ -1,7 +1,7 @@
 /* Encorpa Dashboard — vidro fosco sobre um fundo em ondas de energia (templates Glassy CRM, Glassy Dashboard, Chat App e Sidebar UI,
    adaptados à identidade da Encorpa: roxo, logo e wordmark). Uma fonte só em tudo: Inter (index.html). */
 
-/* Cores (23/10): roxo é o padrão; azul, laranja, amarelo, verde, branco e preto trocam o fundo e tudo que hoje é roxo (Preferências › Cor).
+/* Cores (23/10): roxo é o padrão; azul, laranja, amarelo, verde, branco e preto trocam o fundo e tudo que hoje é roxo (Configurações › Aparência).
    --accent: botões e destaques; --accent-2: texto e linha de destaque; --accent-3: fim do degradê; --pink: segunda série dos gráficos. */
 :root {
   /* escuro equilibrado (16/10): fundo menos fechado, cartões mais claros e texto com mais contraste */
@@ -674,3 +674,26 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .test-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .test-meta .chip { font-size: .7rem; padding: 2px 8px; background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .25); color: inherit; }
 @media (max-width: 900px) { .test-shell { grid-template-columns: 1fr; } }
+/* Configurações (23/10): bloco grande no meio da tela, fundo desfocado, abas à esquerda */
+.settings-overlay { place-items: center; padding: 24px; background: rgba(5, 0, 15, .45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+:root[data-theme="light"] .settings-overlay { background: rgba(30, 20, 60, .18); }
+.settings { width: min(920px, 100%); height: min(620px, calc(100dvh - 48px)); display: grid; grid-template-columns: 220px minmax(0, 1fr); padding: 0; overflow: hidden; animation: pop .18s ease-out;
+  background: color-mix(in srgb, var(--bg-2) 97%, transparent); border-color: var(--line-hi); box-shadow: 0 30px 80px rgba(0, 0, 0, .5); }
+:root[data-theme="light"] .settings { background: color-mix(in srgb, #fff 94%, var(--bg-2)); }
+.settings-nav { border-right: 1px solid var(--line); padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--glass-hi); }
+.settings-nav button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--muted); text-align: left; font-size: .9rem; }
+.settings-nav button:hover { color: var(--text); background: var(--glass-hi); }
+.settings-nav button.on { color: var(--on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-3)); }
+.settings-body { padding: 20px 26px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.settings-head { display: flex; justify-content: space-between; align-items: center; }
+.settings-head h2 { font-size: 1.3rem; }
+.settings-rows { display: flex; flex-direction: column; }
+.settings-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.settings-row b { font-weight: 600; } .settings-row p { color: var(--dim); font-size: .82rem; margin-top: 2px; max-width: 420px; }
+.settings-ctl { flex: none; display: flex; align-items: center; } .settings-ctl .ghost { margin: 0; }
+.settings-value { color: var(--muted); font-size: .86rem; display: inline-flex; gap: 8px; align-items: center; }
+.settings .pref.toggle { padding: 0; }
+.settings-users { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; }
+.settings-user { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--glass-hi); font-size: .86rem; }
+.settings code { font-size: .8rem; padding: 1px 6px; border-radius: 6px; background: var(--glass-hi); border: 1px solid var(--line); }
+@media (max-width: 700px) { .settings { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: calc(100dvh - 24px); } .settings-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px; } .settings-nav .pop-title { display: none; } .settings-nav button { flex: none; } .settings-row { flex-direction: column; align-items: flex-start; } .settings-overlay { padding: 12px; } }

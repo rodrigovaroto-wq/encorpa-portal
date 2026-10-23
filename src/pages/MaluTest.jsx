@@ -16,11 +16,12 @@ async function call(body) {
 const label = (phone) => `Teste ${phone.slice(-5)}`;
 const STATUS = { sent: ["respondeu", "ok"], welcomed: ["recepção", ""], resumed: ["respondeu", "ok"], handoff: ["avisou o operador", "bad"], fallback: ["resposta pronta", "warn"], opted_out: ["opt-out", "warn"] };
 
-export function MaluTest({ demo }) {
+export function MaluTest({ demo, readOnly }) {
   const [tests, setTests] = useState(null), [phone, setPhone] = useState(null), [error, setError] = useState(null);
   const load = () => call({ action: "list" }).then((x) => setTests(x.tests)).catch((e) => setError(e.message));
-  useEffect(() => { if (!demo) load(); }, [demo]);
-  if (demo) return <Note>Com os dados de exemplo o teste fica desligado: ele fala com a Malu de verdade. Desligue "Dados de exemplo" em Preferências.</Note>;
+  useEffect(() => { if (!demo && !readOnly) load(); }, [demo, readOnly]);
+  if (readOnly) return <Note>Seu usuário é só de leitura: Malu › Teste fica com operador ou admin.</Note>;
+  if (demo) return <Note>Com os dados de exemplo o teste fica desligado: ele fala com a Malu de verdade. Desligue "Dados de exemplo" em Configurações › Dados.</Note>;
 
   const create = async () => {
     setError(null);

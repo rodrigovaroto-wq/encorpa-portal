@@ -1,4 +1,4 @@
-// Fundo em movimento (na cor escolhida em Preferências): ondas de energia que fluem, faixas de luz e orbes que flutuam (pedido do operador, 16/10).
+// Fundo em movimento (na cor escolhida em Configurações › Aparência): ondas de energia que fluem, faixas de luz e orbes que flutuam (pedido do operador, 16/10).
 // Tudo em CSS/SVG, sem biblioteca; para quando "reduzir animação" está ligado.
 const WAVES = [
   { d: "M0,260 C240,180 420,340 720,250 C1020,160 1200,330 1440,240", w: 2.2, o: 0.55, t: 18 },
