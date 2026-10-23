@@ -10,8 +10,7 @@ export function Sidebar({ route, collapsed, onToggle, data, period }) {
     <nav className={`side glass ${collapsed ? "collapsed" : ""}`} aria-label="Seções">
       <div className="side-top">
         <a href="#/home" className="brand" aria-label="Painel">
-          <img src="/logo.svg" alt="" width="34" height="34" />
-          <img src="/wordmark.svg" alt="Encorpa" className="wordmark" />
+          <img src="/wordmark.svg" alt="Encorpa Dashboard" className="wordmark" />
         </a>
         <button className="round collapse-btn" onClick={onToggle} aria-label={collapsed ? "Abrir menu" : "Recolher menu"}><Icon name={collapsed ? "expand" : "collapse"} size={16} /></button>
       </div>

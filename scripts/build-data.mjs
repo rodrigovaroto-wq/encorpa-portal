@@ -7,7 +7,7 @@ import { buildAll } from "../lib/build.mjs";
 
 const fixtureArg = process.argv.indexOf("--fixture");
 const fixture = fixtureArg > 0 ? JSON.parse(await readFile(process.argv[fixtureArg + 1], "utf8")) : null;
-const { data, D } = await buildAll({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY, n8nUrl: process.env.N8N_URL, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID, fixture });
+const { data, D } = await buildAll({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY, n8nUrl: process.env.N8N_URL, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID, waToken: process.env.WHATSAPP_TOKEN, waPhoneId: process.env.WHATSAPP_PHONE_NUMBER_ID, waWabaId: process.env.WHATSAPP_WABA_ID, fixture });
 // O retrato vai para o git, que guarda para sempre: sem conversas nem nomes de clientes.
 data.global.chats = [];
 if (data.global.hermes) data.global.hermes.proposals = data.global.hermes.proposals.map(({ evidence, diff, ...x }) => ({ ...x, evidence: null, diff: null }));

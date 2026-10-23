@@ -1,5 +1,6 @@
-// Painel inicial: saudação, 6 cartões (3 por linha) na ordem do operador e um só gráfico de barras com seletor, com forma de pagamento
-// e peças por pedido empilhadas à direita (30% mais altas que os cartões). Clicar num bloco também escolhe o gráfico. Metas ficam nas seções próprias.
+// Painel inicial: saudação, 6 cartões (3 por linha) na ordem do operador, a caixa de entrada em 3 blocos de meia altura (23/10) e um só
+// gráfico de barras com seletor, com forma de pagamento e peças por pedido empilhadas à direita (30% mais altas que os cartões).
+// Clicar num bloco também escolhe o gráfico. Metas ficam nas seções próprias.
 import { useState } from "react";
 import { BUCKETS, PERIODS } from "../lib/constants.js";
 import { bucketLabels, fmt, metricBy, store } from "../lib/format.js";
@@ -7,6 +8,7 @@ import { Bars, Donut } from "../components/charts.jsx";
 import { Card, Kpi } from "../components/ui.jsx";
 import { usePopover } from "../components/Topbar.jsx";
 import { Icon } from "../components/icons.jsx";
+import { INBOX, inboxCounts } from "../lib/inbox.js";
 
 // Ordem pedida pelo operador (16/10): faturamento → conversão → margem → lucro → pedidos → resolução.
 const HOME_KPIS = ["revenue", "conversion", "op_margin", "net_profit", "orders", "resolution"];
@@ -41,6 +43,7 @@ export function Home({ data, period }) {
       <div className="kpis k3 home-kpis">
         {HOME_KPIS.map((id) => { const k = metricBy(id); return <Kpi key={id} id={id} label={k.label} metric={m[id]} unit={k.unit} href={HREF[id]} selected={sel === id} onSelect={() => setSel(id)} />; })}
       </div>
+      <Inbox chats={data.global.chats} />
       <div className="home-chart-row">
         <Card className="main-chart" title={OPTIONS.find(([k]) => k === sel)[1]} action={
           <div className="pop" ref={pick.ref}>
@@ -55,6 +58,21 @@ export function Home({ data, period }) {
           <DonutBlock title="Peças por pedido" items={units} href={HREF.units} selected={sel === "units"} onSelect={() => setSel("units")} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// Caixa de entrada: quantas conversas esperam resposta, estão com pessoa ou passaram do tempo. Cada bloco abre Conversas no filtro.
+function Inbox({ chats }) {
+  const n = inboxCounts(chats);
+  return (
+    <div className="kpis k3 half inbox">
+      {INBOX.map(([id, label, sub]) => (
+        <a key={id} href={`#/chat?f=${id}`} className={`glass kpi inbox-block ${id === "overdue" && n[id] ? "alert" : ""}`}>
+          <div><h3>{label}</h3><span className="delta none">{sub}</span></div>
+          <b className="kpi-value">{fmt(n[id], "n")}</b>
+        </a>
+      ))}
     </div>
   );
 }

@@ -6,7 +6,9 @@ import { OUTCOME, OUTCOMES, STAGE } from "../lib/constants.js";
 import { ago, dayKey, fmt, initials, timeOnly, when } from "../lib/format.js";
 import { Chip, PageHead, Tabs } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
+import { INBOX, inboxTest } from "../lib/inbox.js";
 
+const FILTERS = [["all", "Todas"], ...INBOX.map(([id, l]) => [id, l]), ...OUTCOMES.map(([id, l]) => [id, l])];
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 // O que o operador fez nesta sessão (envio, pausa) vale na hora, até o servidor mostrar o mesmo.
@@ -14,7 +16,7 @@ const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toL
 let LOCAL = {};
 const ms = (s) => new Date(s).getTime();
 
-export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
+export function Chat({ data, route, live = {}, reloadChats = () => {}, role }) {
   const [local, setLocalState] = useState(LOCAL);
   const setLocal = (f) => setLocalState((x) => (LOCAL = f(x)));
   const reload = reloadChats;
@@ -30,11 +32,14 @@ export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
     return { ...c, ...pause, messages: [...c.messages, ...sent], last: sent.at(-1)?.at || c.last };
   }), [base, local]);
   const patch = (id, f) => setLocal((x) => ({ ...x, [id]: f(x[id] || {}) }));
-  const [q, setQ] = useState(""), [filter, setFilter] = useState("all");
+  // Filtro: desfecho ou caixa de entrada (?f= vem dos blocos do Painel).
+  const [q, setQ] = useState(""), [filter, setFilter] = useState(() => (FILTERS.some(([k]) => k === route.query.f) ? route.query.f : "all"));
+  useEffect(() => { if (FILTERS.some(([k]) => k === route.query.f)) setFilter(route.query.f); }, [route.query.f]);
   // O link do e-mail traz o id de uma conversa; a lista tem uma linha por cliente, com todas as conversas dela.
   const selected = chats.find((c) => c.id === route.query.c || c.ids?.includes(route.query.c)) || null;
-  const list = useMemo(() => chats.filter((c) => (filter === "all" || c.status === filter) && (!q || norm(`${c.name} ${c.phone} ${c.state} ${c.messages.map((m) => m.text).join(" ")}`).includes(norm(q)))), [chats, filter, q]);
-  const counts = Object.fromEntries([["all", chats.length], ...OUTCOMES.map(([id]) => [id, chats.filter((c) => c.status === id).length])]);
+  const now = Date.now(), inFilter = (c) => filter === "all" || (inboxTest(filter) ? inboxTest(filter)(c, now) : c.status === filter);
+  const list = useMemo(() => chats.filter((c) => inFilter(c) && (!q || norm(`${c.name} ${c.phone} ${c.state} ${c.messages.map((m) => m.text).join(" ")}`).includes(norm(q)))), [chats, filter, q]);
+  const counts = Object.fromEntries([["all", chats.length], ...INBOX.map(([id, , , test]) => [id, chats.filter((c) => test(c, now)).length]), ...OUTCOMES.map(([id]) => [id, chats.filter((c) => c.status === id).length])]);
   const open = chats.filter((c) => c.status === "open");
   const pick = (id) => { location.hash = `#/chat?c=${id}`; };
   // Sem ?c= abre a primeira; com um ?c= que não está na lista (fora das 150 mais recentes ou no retrato), avisa em vez de abrir outra cliente.
@@ -54,7 +59,7 @@ export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
             </div>
           )}
           <ScrollRow>
-            <Tabs items={[["all", "Todas"], ...OUTCOMES.map(([id, l]) => [id, l])]} value={filter} onChange={setFilter} counts={counts} />
+            <Tabs items={FILTERS} value={filter} onChange={setFilter} counts={counts} />
           </ScrollRow>
           <div className="threads">
             {list.map((c) => {
@@ -73,7 +78,7 @@ export function Chat({ data, route, live = {}, reloadChats = () => {} }) {
             {!list.length && <p className="empty">Nenhuma conversa neste filtro.</p>}
           </div>
         </aside>
-        {current ? <Thread c={current} patch={patch} reload={reload} /> : <div className="chat-empty">{!base.chats.length && !live.chats && !live.failedAt && !data.demo ? "Carregando as conversas…" : missing ? "Essa conversa não está entre as 150 clientes com movimento mais recente. Escolha outra na lista." : "Escolha uma conversa."}</div>}
+        {current ? <Thread c={current} patch={patch} reload={reload} demo={data.demo} readOnly={role === "leitura"} /> : <div className="chat-empty">{!base.chats.length && !live.chats && !live.failedAt && !data.demo ? "Carregando as conversas…" : missing ? "Essa conversa não está entre as 150 clientes com movimento mais recente. Escolha outra na lista." : "Escolha uma conversa."}</div>}
         {current && <Profile c={current} />}
       </div>
     </div>
@@ -112,7 +117,7 @@ function ScrollRow({ children }) {
 
 // Rola para o fim ao abrir a conversa, ao enviar e quando chega mensagem com você já no fim. Lendo o histórico mais acima,
 // a tela fica parada e aparece "Novas mensagens" (antes a atualização de 15 s puxava a leitura para baixo).
-function Thread({ c, patch, reload }) {
+function Thread({ c, patch, reload, demo, readOnly }) {
   const end = useRef(null), box = useRef(null), atEnd = useRef(true), seen = useRef({ id: null, n: 0 });
   const [fresh, setFresh] = useState(false);
   const toEnd = () => { end.current?.scrollIntoView({ block: "end" }); atEnd.current = true; setFresh(false); };
@@ -137,7 +142,9 @@ function Thread({ c, patch, reload }) {
           return (
             <div key={i}>
               {sep && <p className="day-sep"><span>{new Date(m.at).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" })}</span></p>}
-              <div className={`bubble ${m.out ? "out" : "in"}`}><p>{m.text || <i>(mídia ou mensagem sem texto)</i>}</p><small>{m.op ? "Você · " : m.out ? "Malu · " : ""}{timeOnly(m.at)}</small></div>
+              <div className={`bubble ${m.out ? "out" : "in"} ${m.media ? "has-media" : ""}`}>
+                {m.media && <Media m={m} />}
+                {m.text ? <p className={m.media ? "media-caption" : ""}>{m.text}</p> : !m.media && <p><i>(mídia ou mensagem sem texto)</i></p>}<small>{m.op ? "Você · " : m.out ? "Malu · " : ""}{timeOnly(m.at)}</small></div>
             </div>
           );
         })}
@@ -145,9 +152,18 @@ function Thread({ c, patch, reload }) {
         <div ref={end} />
         {fresh && <button className="new-msgs glass pill" onClick={toEnd}>Novas mensagens ↓</button>}
       </div>
-      <Composer c={c} patch={patch} reload={reload} />
+      {demo || readOnly ? <footer className="composer"><p className="composer-note">{demo ? "Dados de exemplo: responder e pausar a Malu ficam desligados." : "Seu usuário é só de leitura: responder e pausar a Malu ficam com operador ou admin."}</p></footer> : <Composer c={c} patch={patch} reload={reload} />}
     </section>
   );
+}
+
+// Imagem original da mensagem (api/media.js: da Meta, atrás do login). O texto embaixo é a descrição que a Malu leu.
+function Media({ m }) {
+  const [failed, setFailed] = useState(false);
+  const src = `api/media?m=${m.media.mid}`;
+  if (m.media.kind !== "image") return <a className="media-link" href={src} target="_blank" rel="noreferrer">Abrir {m.media.kind === "audio" ? "áudio" : m.media.kind === "video" ? "vídeo" : "arquivo"}</a>;
+  if (failed) return <p className="media-missing">Imagem indisponível (a Meta guarda por cerca de 30 dias).</p>;
+  return <a href={src} target="_blank" rel="noreferrer" className="media-img"><img src={src} alt="Imagem enviada na conversa" loading="lazy" onError={() => setFailed(true)} /></a>;
 }
 
 // Caixa de resposta do operador e a chave da Malu nesta conversa.

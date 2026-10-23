@@ -16,7 +16,8 @@ export default async function handler(req, res) {
   if (!key) return res.status(500).json({ error: NO_KEY });
   try {
     if (!memo || Date.now() - memo.at > TTL) {
-      const promise = buildAll({ url: SUPABASE_URL, key, n8nUrl: process.env.N8N_API_KEY ? N8N_URL : null, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID });
+      const promise = buildAll({ url: SUPABASE_URL, key, n8nUrl: process.env.N8N_API_KEY ? N8N_URL : null, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID,
+        waToken: process.env.WHATSAPP_TOKEN, waPhoneId: process.env.WHATSAPP_PHONE_NUMBER_ID, waWabaId: process.env.WHATSAPP_WABA_ID });
       memo = { at: Date.now(), promise };
       promise.catch(() => { if (memo?.promise === promise) memo = null; }); // falha não fica guardada
     }

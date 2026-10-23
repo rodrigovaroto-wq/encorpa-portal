@@ -6,6 +6,7 @@
 //     (a Malu não responde e a régua não manda nada enquanto houver handoff_at).
 import { isSynthetic } from "../lib/build.mjs";
 import { N8N_URL, NO_KEY, SUPABASE_URL, serviceKey } from "../lib/env.mjs";
+import { canWrite, userOf } from "../lib/auth.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -13,6 +14,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "use POST" });
   // Só JSON: um formulário de outro site não consegue mandar este tipo sem a checagem do navegador (CSRF).
   if (!String(req.headers["content-type"] || "").startsWith("application/json")) return res.status(415).json({ error: "use JSON" });
+  if (!canWrite(userOf(req.headers.authorization)?.role)) return res.status(403).json({ error: "Seu usuário é só de leitura: responder e pausar a Malu ficam com operador ou admin." });
   const key = serviceKey();
   if (!key) return res.status(500).json({ error: NO_KEY });
   const { action, conversationId, text } = req.body || {};

@@ -8,6 +8,7 @@ const SOURCES = [
   ["meta", "Meta Ads", "Campanhas, conjuntos, anúncios e métricas diárias", "ads"],
   ["n8n", "n8n", "Workflows e execuções", "flow"],
   ["whatsapp", "WhatsApp (Malu respondendo)", "Última mensagem que a Malu mandou", "chat"],
+  ["number", "Número na Meta", "Estado e qualidade do número (Malu › Número do WhatsApp)", "chat"],
   ["malu", "Versão da Malu", "Versão do agente no ar", "agent"],
   ["hermes", "Hermes", "Supervisor offline: última rodada", "bolt"],
 ];

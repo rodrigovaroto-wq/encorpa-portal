@@ -23,6 +23,9 @@ export function Finance({ data, period, route, tabs }) {
   );
 }
 
+// Margem dos pedidos ÷ pedidos, no período e no anterior (a variação do cartão compara os dois).
+const perOrder = (gross, orders) => (gross?.value != null && orders?.value ? { value: gross.value / orders.value, ...(gross.previous != null && orders.previous ? { previous: gross.previous / orders.previous } : {}) } : null);
+
 function Result({ p, g }) {
   // Os mesmos números dos cartões (lib/build.mjs › profit): nenhuma conta própria aqui, para nunca divergirem.
   // Retrato antigo (sem a abertura de custos): IA cai no total de API e WhatsApp e fixos ficam "—".
@@ -46,6 +49,13 @@ function Result({ p, g }) {
         <Kpi label="Lucro líquido" id="net_profit" metric={m.net_profit} unit="brl" />
         <Kpi label="Margem operacional" id="op_margin" metric={m.op_margin} unit="pct" goal="> 0%" />
         <Kpi label="ROI" id="roi" metric={m.roi} unit="x" goal={metricBy("roi")?.goal} />
+      </div>
+      {/* Por pedido (23/10): quanto custa trazer um pedido contra quanto ele deixa. Custo abaixo da margem = cada pedido paga a si mesmo. */}
+      <div className="kpis">
+        <Kpi label="Custo por pedido" id="cost_per_order" metric={m.cost_per_order} unit="brl" goal={metricBy("cost_per_order")?.goal} />
+        <Kpi label="Margem média por pedido" id="gross_per_order" metric={perOrder(m.gross_profit, m.orders)} unit="brl" />
+        <Kpi label="IA por pedido" id="ai_per_order" metric={m.ai_per_order} unit="brl" />
+        <Kpi label="Pedidos" id="orders" metric={m.orders} unit="n" />
       </div>
       <Card title="Demonstrativo de resultado" sub="do faturamento ao que sobra, no período">
         <div className="ledger">

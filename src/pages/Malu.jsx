@@ -5,10 +5,11 @@ import { Bars, Donut, Gauge, HBars, Lines, Spark } from "../components/charts.js
 import { useState } from "react";
 import { periodDays } from "../lib/data.js";
 import { Card, Chip, DeltaBadge, Kpi, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
+import { MaluTest } from "./MaluTest.jsx";
 
 const COLOR = { bought: "var(--ok)", declined: "var(--accent-2)", unresolved: "var(--bad)", abandoned: "var(--warn)", open: "var(--muted)" };
 
-export function Malu({ data, period, route, tabs }) {
+export function Malu({ data, period, route, tabs, role }) {
   const p = data.periods[period] || {}, g = data.global;
   const sub = route.sub[0];
   return (
@@ -18,6 +19,8 @@ export function Malu({ data, period, route, tabs }) {
       {sub === "gaps" && <Gaps p={p} />}
       {sub === "service" && <Service p={p} g={g} />}
       {sub === "health" && <Health p={p} g={g} />}
+      {sub === "number" && <NumberHealth n={g.number} demo={data.demo} />}
+      {sub === "test" && <MaluTest demo={data.demo} readOnly={role === "leitura"} />}
       {sub === "hermes" && <Hermes h={g.hermes} period={period} now={g.updated} />}
     </div>
   );
@@ -25,7 +28,7 @@ export function Malu({ data, period, route, tabs }) {
 
 function Results({ p, g, period }) {
   const o = p.outcomes || {}, m = p.metrics || {}, res = m.resolution?.series || [];
-  const card = (label, v, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><span className="delta none">{sub}</span></div>;
+  const card = (label, v, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
   return (
     <>
       <div className="kpis">
@@ -38,6 +41,7 @@ function Results({ p, g, period }) {
         <Card title="Taxa de resolução" sub="resolvidas ÷ encerradas · meta ≥ 90%">
           <Gauge value={o.resolution} tone={o.resolution == null ? "" : o.resolution >= 90 ? "ok" : o.resolution >= 75 ? "warn" : "bad"} size={150} />
           <DeltaBadge metric={m.resolution} unit="pct" id="resolution" />
+          {o.market_resolution != null && <p className="market-note"><b>{fmt(o.market_resolution, "pct")}</b> no critério comum do mercado, que conta abandono e conversa passada para uma pessoa como resolvidas, sobre todas as atendidas. O portal não conta: aqui, resolvida é quem comprou ou encerrou sem precisar de pessoa.</p>}
         </Card>
         <Card title="Desfecho das conversas">
           <Donut items={OUTCOMES.map(([id, l]) => ({ label: l, value: o[id], color: COLOR[id] }))} />
@@ -45,9 +49,9 @@ function Results({ p, g, period }) {
       </div>
       <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
-      <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
-        rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
-        csv={(g.versions || []).map((r) => [r.version, r.published ?? "", r.conversations, r.resolution, r.unresolved, r.abandoned, r.fallback, r.cost])} />
+      <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Venda", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
+        rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), r.conversations ? `${fmt(r.conversion, "pct")} (${fmt(r.bought, "n")})` : "—", fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
+        csv={(g.versions || []).map((r) => [r.version, r.published ?? "", r.conversations, r.resolution, r.conversion ?? "", r.unresolved, r.abandoned, r.fallback, r.cost])} />
       <Note>Abaixo do piso de amostra (500 leads) a diferença entre versões é ruído: leia como direção, não como veredito.</Note>
     </>
   );
@@ -86,7 +90,7 @@ function Health({ p, g }) {
       <div className="kpis">
         {AGENT_HEALTH.map((id) => { const x = metricBy(id); return (
           <div key={id} className="glass kpi"><div className="kpi-top"><h3>{x.label}</h3></div><div className="kpi-value">{fmt(m[id]?.value, x.unit)}</div>
-            <DeltaBadge metric={m[id]} unit={x.unit} id={id} /><Spark values={m[id]?.series} unit={x.unit} height={44} />{x.goal && <div className="kpi-goal">META {x.goal}</div>}</div>
+            <div className="kpi-foot"><DeltaBadge metric={m[id]} unit={x.unit} id={id} /><Spark values={m[id]?.series} unit={x.unit} height={44} />{x.goal && <div className="kpi-goal">META {x.goal}</div>}</div></div>
         ); })}
       </div>
       <div className="row r-1-1">
@@ -99,6 +103,52 @@ function Health({ p, g }) {
       </div>
       <Table name="versoes-tecnico" head={["Versão", "Publicada em", "Respostas", "Handoff", "Resposta pronta", "Reescritas", "Custo"]}
         rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.turns, "n"), fmt(r.handoff, "pct"), fmt(r.fallback, "pct"), fmt(r.rewrites, "n"), fmt(r.cost, "brl")])} />
+    </>
+  );
+}
+
+// Número do WhatsApp na Meta (lib/whatsapp.mjs, a cada 15 min): o que a Meta acha do número. Qualidade cai com bloqueio e denúncia
+// das clientes; o limite é quantas clientes novas o número pode chamar por dia fora da janela. Leitura de gestão, sem custo de mensagem.
+const NUM_STATUS = { CONNECTED: ["Conectado", "ok"], PENDING: ["Pendente", "warn"], FLAGGED: ["Sinalizado", "bad"], RESTRICTED: ["Restrito", "bad"], BANNED: ["Banido", "bad"], DISCONNECTED: ["Desconectado", "bad"], RATE_LIMITED: ["Limite excedido", "bad"], UNVERIFIED: ["Não verificado", "warn"], MIGRATED: ["Migrado", ""], DELETED: ["Apagado", "bad"] };
+const QUALITY = { GREEN: ["Alta", "ok", "as clientes recebem bem as mensagens"], YELLOW: ["Média", "warn", "muitas clientes bloquearam ou denunciaram nos últimos 7 dias"], RED: ["Baixa", "bad", "a Meta pode restringir o número: reveja o que está sendo enviado"], UNKNOWN: ["Sem nota ainda", "", "a Meta ainda não avaliou"] };
+const TIER = { TIER_50: "50", TIER_250: "250", TIER_1K: "1.000", TIER_2K: "2.000", TIER_10K: "10.000", TIER_100K: "100.000", TIER_UNLIMITED: "sem limite" };
+const NAME = { APPROVED: ["Aprovado", "ok"], AVAILABLE_WITHOUT_REVIEW: ["Liberado sem revisão", "ok"], PENDING_REVIEW: ["Em revisão", "warn"], DECLINED: ["Recusado", "bad"], EXPIRED: ["Expirado", "bad"], NONE: ["Sem nome", ""] };
+const REVIEW = { APPROVED: "aprovada", PENDING: "pendente", REJECTED: "recusada", verified: "verificada", unverified: "não verificada", pending: "pendente", VERIFIED: "verificado", NOT_VERIFIED: "não verificado", EXPIRED: "expirada" };
+const TPL = { APPROVED: ["Aprovado", "ok"], PENDING: ["Em análise", "warn"], REJECTED: ["Recusado", "bad"], PAUSED: ["Pausado", "warn"], DISABLED: ["Desativado", "bad"], IN_APPEAL: ["Em recurso", "warn"] };
+
+function NumberHealth({ n, demo }) {
+  if (!n) return <Note>A leitura do número na Meta ainda não está ligada. No Vercel, crie WHATSAPP_TOKEN (token com whatsapp_business_management), WHATSAPP_PHONE_NUMBER_ID e, para os templates, WHATSAPP_WABA_ID. É leitura de gestão da Graph API, sem custo de mensagem.</Note>;
+  if (!n.ok) return <Note>Não consegui ler o número na Meta: {n.error}</Note>;
+  const chip = (map, v) => { const [l, tone] = map[v] || [v || "—", ""]; return <Chip tone={tone}>{l}</Chip>; };
+  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value num-value">{value}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
+  const q = QUALITY[n.quality] || QUALITY.UNKNOWN;
+  const tpl = n.templates || [];
+  return (
+    <>
+      <div className="kpis">
+        {card("Estado", chip(NUM_STATUS, n.status), n.phone ? `${n.phone} · ${n.name || ""}` : "número na Cloud API")}
+        {card("Qualidade", <Chip tone={q[1]}>{q[0]}</Chip>, q[2])}
+        {card("Limite de envio", n.tier ? TIER[n.tier] || n.tier : "—", "clientes novas por dia fora da janela de 24 h")}
+        {card("Nome exibido", chip(NAME, n.name_status), n.name ? `"${n.name}" no perfil do WhatsApp` : "nome que a cliente vê")}
+      </div>
+      <div className="row r-1-1">
+        <Card title="Conta e número">
+          <dl className="facts">
+            {[["Conta do WhatsApp Business", n.account?.name], ["Revisão da conta", REVIEW[n.account?.review] || n.account?.review], ["Verificação da empresa", REVIEW[n.account?.verification] || n.account?.verification], ["Verificação do número", REVIEW[n.verification] || n.verification], ["Vazão de envio", n.throughput === "HIGH" ? "alta" : n.throughput === "STANDARD" ? "padrão (80 mensagens/s)" : n.throughput], ["Modo", n.mode === "LIVE" ? "produção" : n.mode], ["Lido em", demo ? "dados de exemplo" : n.at ? when(n.at) : null]]
+              .map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v || "—"}</dd></div>)}
+          </dl>
+        </Card>
+        <Card title="O que fazer" sub="quando a Meta muda a nota do número">
+          <ul className="todo">
+            <li><b>Qualidade média ou baixa:</b> veja em Malu › Lacunas e no opt-out se alguma mensagem está incomodando; a régua de lembretes é a primeira suspeita.</li>
+            <li><b>Restrito ou sinalizado:</b> o critério de pausa do teste fica vermelho; pause os anúncios até a nota voltar.</li>
+            <li><b>Limite perto do teto:</b> o limite sobe sozinho quando o número usa metade dele com qualidade alta por 7 dias.</li>
+          </ul>
+        </Card>
+      </div>
+      {n.templates && <Table name="templates" head={["Template", "Categoria", "Idioma", "Estado", "Qualidade"]}
+        rows={tpl.map((t) => [t.name, t.category === "UTILITY" ? "Utilidade" : t.category === "MARKETING" ? "Marketing" : t.category === "AUTHENTICATION" ? "Autenticação" : t.category, t.language, chip(TPL, t.status), t.quality ? <Chip tone={QUALITY[t.quality]?.[1]}>{QUALITY[t.quality]?.[0] || t.quality}</Chip> : "—"])}
+        csv={tpl.map((t) => [t.name, t.category, t.language, t.status, t.quality])} />}
     </>
   );
 }
@@ -120,7 +170,7 @@ function Hermes({ h, period, now }) {
   const count = (st) => props.filter((x) => x.status === st).length;
   const list = props.filter((x) => filter === "all" || x.status === filter);
   const mins = (r) => (r.started_at ? Math.max(1, Math.round((new Date(r.created_at) - new Date(r.started_at)) / 60000)) : null);
-  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{value}</div><span className="delta none">{sub}</span></div>;
+  const card = (label, value, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{value}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
   return (
     <>
       <div className="kpis">

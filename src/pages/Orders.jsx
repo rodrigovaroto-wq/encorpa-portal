@@ -27,7 +27,7 @@ export function Orders({ data, period }) {
       <div className="kpis">
         <Kpi label="Pedidos no período" id="orders" metric={m.orders} unit="n" />
         <Kpi label="Entregues no período" id="delivered_orders" metric={m.delivered_orders} unit="n" />
-        <div className="glass kpi"><div className="kpi-top"><h3>Tempo médio até entregar</h3></div><div className="kpi-value">{days.length ? `${fmt(days.reduce((a, b) => a + b, 0) / days.length, "n")} dias` : "—"}</div><span className="delta none">pedidos do período, da criação ao "Completo"</span></div>
+        <div className="glass kpi"><div className="kpi-top"><h3>Tempo médio até entregar</h3></div><div className="kpi-value">{days.length ? `${fmt(days.reduce((a, b) => a + b, 0) / days.length, "n")} dias` : "—"}</div><div className="kpi-foot"><span className="delta none">pedidos do período, da criação ao "Completo"</span></div></div>
         <Kpi label="Recusa na porta" id="refusal" metric={m.refusal} unit="pct" goal="≤ 17%" />
       </div>
       <div className="row r-2-1">

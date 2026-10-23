@@ -1,4 +1,4 @@
-// Fundo roxo em movimento: ondas de energia que fluem, faixas de luz e orbes que flutuam (pedido do operador, 16/10).
+// Fundo em movimento (na cor escolhida em Configurações › Aparência): ondas de energia que fluem, faixas de luz e orbes que flutuam (pedido do operador, 16/10).
 // Tudo em CSS/SVG, sem biblioteca; para quando "reduzir animação" está ligado.
 const WAVES = [
   { d: "M0,260 C240,180 420,340 720,250 C1020,160 1200,330 1440,240", w: 2.2, o: 0.55, t: 18 },
@@ -15,10 +15,10 @@ export function Background() {
       <svg className="waves" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
         <defs>
           <linearGradient id="wv" x1="0" x2="1">
-            <stop offset="0" stopColor="#7c3aed" stopOpacity="0" />
-            <stop offset=".35" stopColor="#a78bfa" />
-            <stop offset=".65" stopColor="#e879f9" />
-            <stop offset="1" stopColor="#7c3aed" stopOpacity="0" />
+            <stop offset="0" style={{ stopColor: "var(--accent-3)" }} stopOpacity="0" />
+            <stop offset=".35" style={{ stopColor: "var(--accent-2)" }} />
+            <stop offset=".65" style={{ stopColor: "var(--pink)" }} />
+            <stop offset="1" style={{ stopColor: "var(--accent-3)" }} stopOpacity="0" />
           </linearGradient>
           <filter id="glow"><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         </defs>
