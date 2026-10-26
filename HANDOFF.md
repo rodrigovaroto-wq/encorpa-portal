@@ -60,7 +60,11 @@ Por isso o caminho é gerar um novo e gravar o mesmo valor nos dois lugares:
   depois de entregar), mas é um deploy de função durante o congelamento. Decisão do operador.
 - Só aparecem as imagens que chegarem depois do deploy; a Meta guarda cada uma por cerca de 30 dias.
 
-### 4. Workflow "Encorpa — Portal: conversa não resolvida" no n8n — operador
+### 4. Workflow "Encorpa — Portal: conversa não resolvida" no n8n — FEITO em 26/10
+
+- Nó "Monta os e-mails" atualizado no n8n ativo via API (continua Active; filtro dos telefones 5500099… conferido). Nada a fazer.
+
+(Passo a passo antigo, só para referência:)
 
 - Código feito: `n8n/conversa-nao-resolvida.json` pula os telefones inventados (5500099…), para Malu › Teste não mandar e-mail.
 - Falta importar no n8n do PikaPods (sem chave do n8n nesta sessão):
@@ -70,7 +74,7 @@ Por isso o caminho é gerar um novo e gravar o mesmo valor nos dois lugares:
   3. Salvar e conferir que continua **Active**. A credencial de e-mail é a mesma.
 - Até lá: uma conversa de teste que caia em "não resolvida" manda o e-mail ao operador. Apagar a conversa de teste logo depois evita.
 
-### 5. Merge do PR rodrigovaroto-wq/encorpa-portal#6 — operador
+### 5. Merge do portal — FEITO (PRs #6, #7 e #8 mergeados); falta só conferir em produção
 
 CI verde até o commit `f537576`; a prévia do Vercel está no ar. Ao fazer o merge, o Vercel publica em produção. Depois do merge,
 confirmar em produção: Configurações abre e mostra o seu papel; Malu › Número do WhatsApp lê o número; Conversas sem erro.
