@@ -1,10 +1,9 @@
 // Casca do portal: fundo em ondas, menu lateral, topo, busca e a página da rota (#/pagina/sub-aba).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Background } from "./components/Background.jsx";
 import { Palette } from "./components/Palette.jsx";
 import { Settings } from "./components/Settings.jsx";
 import { MobileNav, Sidebar } from "./components/Sidebar.jsx";
-import { ACCENTS, Topbar } from "./components/Topbar.jsx";
+import { Topbar } from "./components/Topbar.jsx";
 import { demoData, loadData } from "./lib/data.js";
 import { useLiveChats, withLive } from "./lib/live.js";
 import { store } from "./lib/format.js";
@@ -57,7 +56,7 @@ export function App() {
   }, [refresh]);
   useEffect(() => { const on = () => { setRoute(parseRoute(location.hash)); window.scrollTo(0, 0); }; window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
-  useEffect(() => { const d = document.documentElement.dataset; d.theme = prefs.theme; d.motion = prefs.motion; d.accent = ACCENTS.some(([k]) => k === prefs.accent) ? prefs.accent : "purple"; /* cor que saiu (cinza, 23/10) volta ao roxo */ }, [prefs]);
+  useEffect(() => { const d = document.documentElement.dataset; d.theme = prefs.theme === "light" ? "light" : "dark"; d.motion = prefs.motion; }, [prefs]); // só Escuro ou Claro (03/11)
 
   const [live, reloadChats] = useLiveChats(!demo && location.protocol !== "file:", route.page.id === "chat" ? 15_000 : 60_000);
   const shown = useMemo(() => withLive(data, live), [data, live]);
@@ -65,7 +64,6 @@ export function App() {
   const View = VIEWS[route.page.id] || Home;
   return (
     <>
-      <Background />
       <div className={`shell ${collapsed ? "side-collapsed" : ""}`}>
         <Sidebar route={route} collapsed={collapsed} onToggle={() => { setCollapsed(!collapsed); store.set("side", collapsed ? "0" : "1"); }} data={shown} period={period} />
         <main className="main">

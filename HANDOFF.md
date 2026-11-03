@@ -1,7 +1,28 @@
 # Handoff — encorpa-portal
 
-> Atualizado em 23/10/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
+> Atualizado em 03/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
+
+## Feito em 03/11 (branch `claude/fervent-allen-wwf47s`)
+
+- **Painel novo:** 4 cartões (Faturamento, Pedidos, Taxa de conversão, Margem operacional) com minigráfico neon na ordem azul, verde,
+  laranja, roxo; gráfico de **linha** de ponta a ponta do cartão escolhido, com eixo Y pelo `yScale` (topo +10% do maior valor, piso
+  zero ou −10% do menor quando há negativo); depois a caixa de entrada (3 blocos) e as roscas de pagamento e peças. Lucro líquido saiu do Painel.
+- **Tema:** só Escuro (preto) e Claro (branco); sem fundo animado e sem escolha de cor. Destaques neutros; neon só nos gráficos.
+- **Economia da oferta de 27/10:** R$ 109,90 / 197,82 / 263,76; na entrega a conta da Logzz (a OmniCash da Coinzz) dá R$ 48,58 por 1 peça;
+  antecipado por fórmula (`prepayMargin`), com o frete grátis pago pela operação (média R$ 26,36 nas 22 cidades). Esperado por pedido
+  R$ 33,06 no mix 70/30 (entrega R$ 32,10, a mesma conta do Ricos-com-AI de 28/10).
+- **Anúncios › Testes de Criativos e Metas:** teste A/B Site × WhatsApp (`src/lib/abtest.js`): braço pelo destino do conjunto na Meta
+  (`destination_type`), metas e limites de pausa do grafo §140 do Ricos-com-AI, veredito por conjunto (R$ 50 com limite estourado ou
+  R$ 75 sem pedido = PAUSAR). Lê a janela de 12 meses: pedidos por anúncio vêm sem janela (`eval_attribution`), e o gasto tem de falar
+  do mesmo intervalo. **Premissas** reescritas com a oferta, a economia e o teste atuais. CPC entrou nas tabelas da Meta.
+
+### Pendente desta rodada
+
+- **Pedidos do conjunto Site:** o portal não lê o pedido da Coinzz por `utm_campaign=ab-site`; a conversão e o custo por pedido do Site
+  aparecem como "na Coinzz". Precisa gravar a UTM no pedido (webhook "Venda confirmada" do n8n) para o portal contar.
+- **Anúncios e criativos (aba por período):** a comparação divide o gasto do período pelos pedidos de todo o tempo do anúncio (mesma
+  origem, `eval_attribution`); o custo por pedido ali só vale no período de 12 meses. Não mexido nesta rodada.
 
 ## Feito (PR rodrigovaroto-wq/encorpa-portal#6, branch `claude/wonderful-davinci-mxhcb8`)
 

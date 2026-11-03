@@ -1,15 +1,19 @@
 // Anúncios do Meta Ads (só leitura, a cada 5 min): campanhas, conjuntos, anúncios com comparação, testes de criativos, metas e premissas.
 import { AD_STATUS, COMPARE, GENDER, PAUSE, PHASES, REF, SAMPLE_FLOOR } from "../lib/constants.js";
 import { computePause } from "../lib/data.js";
+import { ARMS, armTotals, armVerdict, goalStatus } from "../lib/abtest.js";
 import { fmt, when } from "../lib/format.js";
 import { HBars } from "../components/charts.jsx";
 import { Card, Chip, Note, PageHead, Table } from "../components/ui.jsx";
 
+// Pedidos e leads por anúncio vêm de eval_attribution sem janela (o total do anúncio): o teste A/B lê o gasto da janela inteira (12 meses)
+// para gasto e pedido falarem do mesmo intervalo, seja qual for o período na tela.
+const whole = (data) => data.periods["12m"]?.meta;
 const stat = (s) => { const [l, c] = AD_STATUS[s] || [s, ""]; return <Chip tone={c}>{l}</Chip>; };
 const budget = (x) => (x.daily_budget ? `${fmt(x.daily_budget, "brl")}/dia` : x.lifetime_budget ? `${fmt(x.lifetime_budget, "brl")} no total` : "—");
-const PERF = ["Gasto", "Impressões", "CTR", "CPM", "Conversas", "CPL", "Leads", "Pedidos"];
-const perf = (x) => [fmt(x.spend, "brl"), fmt(x.impressions, "n"), fmt(x.ctr, "pct"), fmt(x.cpm, "brl"), fmt(x.started, "n"), fmt(x.cpl, "brl"), fmt(x.leads, "n"), fmt(x.orders, "n")];
-const perfCsv = (x) => [x.spend, x.impressions, x.ctr, x.cpm, x.started, x.cpl, x.leads, x.orders];
+const PERF = ["Gasto", "Impressões", "CTR", "CPC", "CPM", "Conversas", "CPL", "Leads", "Pedidos"];
+const perf = (x) => [fmt(x.spend, "brl"), fmt(x.impressions, "n"), fmt(x.ctr, "pct"), fmt(x.cpc, "brl"), fmt(x.cpm, "brl"), fmt(x.started, "n"), fmt(x.cpl, "brl"), fmt(x.leads, "n"), fmt(x.orders, "n")];
+const perfCsv = (x) => [x.spend, x.impressions, x.ctr, x.cpc, x.cpm, x.started, x.cpl, x.leads, x.orders];
 
 export function Ads({ data, period, route, tabs }) {
   const p = data.periods[period] || {}, g = data.global, m = p.meta, sub = route.sub[0];
@@ -23,8 +27,8 @@ export function Ads({ data, period, route, tabs }) {
       {sub === "campaigns" && m?.campaigns && <Campaigns m={m} />}
       {sub === "adsets" && m?.adsets && <Adsets m={m} />}
       {sub === "ads" && m?.ads && <AdsView m={m} p={p} />}
-      {sub === "tests" && <Tests m={m} p={p} g={g} />}
-      {sub === "goals" && <Goals p={p} />}
+      {sub === "tests" && <Tests m={whole(data)} p={p} g={g} />}
+      {sub === "goals" && <Goals m={whole(data)} />}
       {sub === "ref" && <Ref />}
     </div>
   );
@@ -116,56 +120,66 @@ export function PauseList({ p, g }) {
   );
 }
 
+function ArmCard({ k, t }) {
+  const [verdict, tone] = armVerdict(k, t);
+  return (
+    <div className="glass arm">
+      <div className="goal-head"><b>Conjunto {ARMS[k].label}</b><Chip tone={tone}>{verdict}</Chip></div>
+      <HBars unit="n" items={[{ label: "Verba gasta", value: Math.min(100, (t.spend / SAMPLE_FLOOR.spend) * 100), right: `${fmt(t.spend, "brl")} / ${fmt(SAMPLE_FLOOR.spend, "brl")}` }]} />
+      <Table head={["Métrica", "Agora", "Meta", "Pausa com R$ 50"]} rows={ARMS[k].goals.map((x) => {
+        const v = t[x.id], st = goalStatus(x, v, t.spend);
+        return [x.label, <span key="v" className={st}>{v == null ? (k === "site" && ["conv", "cpo"].includes(x.id) ? "na Coinzz" : "—") : fmt(v, x.unit)}</span>,
+          `${x.dir > 0 ? "≥" : "≤"} ${fmt(x.ideal, x.unit)}`, x.id === "cpo" ? "sem pedido com R$ 75" : x.pause != null ? `${x.dir > 0 ? "<" : ">"} ${fmt(x.pause, x.unit)}` : "—"];
+      })} />
+    </div>
+  );
+}
+
 function Tests({ m, p, g }) {
-  const t = g.totals || {};
+  const arms = armTotals(m?.adsets);
   return (
     <>
-      <div className="row r-1-1">
-        <Card title="Progresso do teste" sub="piso de amostra">
-          <HBars unit="n" items={[["Leads atendidos", "leads", "n"], ["Pedidos criados", "orders", "n"], ["Verba do anúncio", "spend", "brl"]].map(([l, k, u]) => ({ label: l, value: Math.min(100, ((t[k] || 0) / SAMPLE_FLOOR[k]) * 100), right: `${fmt(t[k] || 0, u)} / ${fmt(SAMPLE_FLOOR[k], u)}` }))} />
-        </Card>
-        <div><h3 className="mini-title">Critérios de pausa</h3><PauseList p={p} g={g} /></div>
-      </div>
+      <h2 className="section-title">Teste A/B: Site × WhatsApp (o teste inteiro, independe do período)</h2>
+      {m?.adsets ? <div className="row r-1-1">{Object.keys(ARMS).map((k) => <ArmCard key={k} k={k} t={arms[k]} />)}</div> : <Note>Meta Ads não ligado.</Note>}
+      <Note>Vence o conjunto com custo de anúncio por pedido criado ≤ R$ 27. Pedidos do WhatsApp: leads com a marca do anúncio. Pedidos do Site: na Coinzz, com utm_campaign=ab-site (o portal ainda não lê).</Note>
+      <h2 className="section-title">Regras do teste</h2>
+      <Table head={["Quando", "O quê", "Depois"]} rows={PHASES.map(([f, a, b]) => [f, a, b])} />
       <h2 className="section-title">Criativos</h2>
       {m?.ads ? <><AdCards m={{ ...m, ads: m.ads.filter((a) => !["DELETED", "ARCHIVED"].includes(a.status)) }} /><h2 className="section-title">Comparação entre os criativos</h2><Compare items={m.ads.filter((a) => !["DELETED", "ARCHIVED"].includes(a.status))} label="criativo" /></> : <Note>Meta Ads não ligado.</Note>}
-      <h2 className="section-title">Região (conjuntos A × B)</h2>
-      {m?.adsets ? <Compare items={m.adsets} label="conjunto" /> : <Note>Meta Ads não ligado.</Note>}
+      <h2 className="section-title">Saúde da Malu durante o teste</h2>
+      <PauseList p={p} g={g} />
     </>
   );
 }
 
-// Metas × realizado (a "matriz de cápsulas" do Glassy CRM): cada meta com faixa mínima e ideal e o valor de agora.
-const GOALS = [
-  { id: "cpl", label: "CPL", unit: "brl", min: 1.75, ideal: 1.25, lower: true },
-  { id: "ctr", label: "CTR do link", unit: "pct", min: 1, ideal: 2 },
-  { id: "reply_rate", label: "Taxa de resposta", unit: "pct", min: 60, ideal: 75 },
-  { id: "price_reach", label: "% que chega ao preço", unit: "pct", min: 40, ideal: 55 },
-  { id: "conversion", label: "Conversão", unit: "pct", min: 6, ideal: 10 },
-  { id: "resolution", label: "Taxa de resolução", unit: "pct", min: 90, ideal: 95 },
-  { id: "delivered", label: "Entregas concluídas ÷ pedidos", unit: "pct", min: 70, ideal: 83 },
-];
-function Goals({ p }) {
-  const m = p.metrics || {};
+// Metas × realizado (a "matriz de cápsulas"): cada meta de cada conjunto com a faixa entre o limite de pausa e a meta, e o valor de agora.
+function Goals({ m }) {
+  const arms = armTotals(m?.adsets);
   return (
     <>
-      <div className="goals">
-        {GOALS.map((x) => {
-          const v = m[x.id]?.value, hi = Math.max(x.min, x.ideal) * 1.4, pos = (val) => `${Math.min(100, Math.max(0, (val / hi) * 100))}%`;
-          const ok = v == null ? null : x.lower ? (v <= x.ideal ? "ok" : v <= x.min ? "warn" : "bad") : v >= x.ideal ? "ok" : v >= x.min ? "warn" : "bad";
-          return (
-            <div key={x.id} className="glass goal">
-              <div className="goal-head"><b>{x.label}</b><span className={ok || ""}>{fmt(v, x.unit)}</span></div>
-              <div className="capsule">
-                <i className="band" style={{ left: pos(Math.min(x.min, x.ideal)), width: `calc(${pos(Math.max(x.min, x.ideal))} - ${pos(Math.min(x.min, x.ideal))})` }} />
-                {v != null && <i className={`now ${ok}`} style={{ left: pos(v) }} />}
-              </div>
-              <div className="goal-foot"><span>mínima {fmt(x.min, x.unit)}</span><span>ideal {fmt(x.ideal, x.unit)}</span></div>
-            </div>
-          );
-        })}
-      </div>
-      <h2 className="section-title">Metas por fase</h2>
-      <Table head={["Fase", "Mínima", "Ideal"]} rows={PHASES.map(([f, a, b]) => [f, a, b])} />
+      {Object.keys(ARMS).map((k) => (
+        <div key={k}>
+          <h2 className="section-title">Conjunto {ARMS[k].label}</h2>
+          <div className="goals">
+            {ARMS[k].goals.map((x) => {
+              const v = arms[k][x.id], lo = Math.min(x.ideal, x.pause ?? x.ideal), hi = Math.max(x.ideal, x.pause ?? x.ideal, v ?? 0) * 1.3 || 1;
+              const pos = (val) => `${Math.min(100, Math.max(0, (val / hi) * 100))}%`, st = goalStatus(x, v, arms[k].spend);
+              return (
+                <div key={x.id} className="glass goal">
+                  <div className="goal-head"><b>{x.label}</b><span className={st}>{v == null ? (k === "site" && ["conv", "cpo"].includes(x.id) ? "na Coinzz" : "—") : fmt(v, x.unit)}</span></div>
+                  <div className="capsule">
+                    <i className={`band ${x.dir < 0 ? "rev" : ""}`} style={{ left: pos(lo), width: `calc(${pos(Math.max(x.ideal, x.pause ?? x.ideal))} - ${pos(lo)})` }} />
+                    {v != null && <i className={`now ${st}`} style={{ left: pos(v) }} />}
+                  </div>
+                  <div className="goal-foot"><span>meta {x.dir > 0 ? "≥" : "≤"} {fmt(x.ideal, x.unit)}</span><span>{x.pause != null ? `pausa ${x.dir > 0 ? "<" : ">"} ${fmt(x.pause, x.unit)}` : "sem limite de pausa"}</span></div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <h2 className="section-title">Regras do teste</h2>
+      <Table head={["Quando", "O quê", "Depois"]} rows={PHASES.map(([f, a, b]) => [f, a, b])} />
     </>
   );
 }

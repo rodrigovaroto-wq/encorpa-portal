@@ -34,8 +34,8 @@ function Origin({ data, period }) {
   const st = (p.states || []).filter((x) => x.state !== "sem estado");
   const ad = m.leads_ad?.series || [], org = m.leads_organic?.series || [];
   const series = sel === "origin"
-    ? [{ name: "Anúncio", values: ad, color: "var(--accent-2)" }, { name: "Orgânico", values: org, color: "var(--ok)" }]
-    : [{ name: metricBy(sel)?.label || LINES.find(([k]) => k === sel)[1], values: m[sel]?.series || [], color: "var(--accent-2)" }];
+    ? [{ name: "Anúncio", values: ad, color: "var(--neon-blue)" }, { name: "Orgânico", values: org, color: "var(--ok)" }]
+    : [{ name: metricBy(sel)?.label || LINES.find(([k]) => k === sel)[1], values: m[sel]?.series || [], color: "var(--neon-blue)" }];
   const unit = sel === "origin" ? "n" : metricBy(sel)?.unit || "n";
   return (
     <>
@@ -54,7 +54,7 @@ function Origin({ data, period }) {
         }>
           <Lines key={sel} series={series} labels={bucketLabels(period, BUCKETS, series[0].values.length, data.updated)} unit={unit} height={260} axes />
         </Card>
-        <Card title="Origem no período"><Donut items={[{ label: "Anúncio", value: m.leads_ad?.value, color: "var(--accent-2)" }, { label: "Orgânico", value: m.leads_organic?.value, color: "var(--ok)" }]} /></Card>
+        <Card title="Origem no período"><Donut items={[{ label: "Anúncio", value: m.leads_ad?.value, color: "var(--neon-blue)" }, { label: "Orgânico", value: m.leads_organic?.value, color: "var(--ok)" }]} /></Card>
       </div>
       <div className="row r-1-1">
         <Card title="Conversão por estado" sub="pedidos ÷ leads"><HBars items={st.map((x) => ({ label: `${x.state} · ${x.orders}/${x.leads}`, value: x.conversion || 0 }))} /></Card>

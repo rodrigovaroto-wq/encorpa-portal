@@ -6,7 +6,7 @@ import { cashPlan, codUpfront, fixedDue, fixedPayments, pikapods, waNumber } fro
 const near = (a, b, eps = 0.01) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 
 test("adiantado de um pedido na entrega de 1 peça: produto, entrega, manuseio e taxa", () => {
-  near(codUpfront(129.9, 1), 62.72);
+  near(codUpfront(109.9, 1), 61.32);
 });
 
 test("R$ 100 por semana: 80 leads, 8 pedidos, 5,6 na entrega", () => {
@@ -15,7 +15,7 @@ test("R$ 100 por semana: 80 leads, 8 pedidos, 5,6 na entrega", () => {
   near(p.ad, 100);                    // o imposto da Meta já está dentro do gasto (operador, 20/10)
   assert.equal(p.fixed, undefined);   // os fixos ficam fora do caixa da operação (operador, 20/10)
   near(p.api, 80 * 0.05 + 8 * 0.04);  // IA por lead + WhatsApp por pedido
-  near(p.upfront, 5.6 * 62.72, 0.05);
+  near(p.upfront, 5.6 * 61.32, 0.05);
   near(p.need, p.total, 1e-9);        // uma semana cabe antes do primeiro repasse
 });
 

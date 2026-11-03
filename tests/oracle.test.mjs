@@ -9,10 +9,11 @@ const NOW = Date.parse("2026-11-08T12:00:00Z"); // a semana (1 a 8/11) pega o ve
 const H = 3600000, D = 24 * H, at = (h) => new Date(NOW - h * H).toISOString(), day = (h) => new Date(NOW - h * H - 3 * H).toISOString().slice(0, 10);
 const near = (a, b, msg, eps = 1e-6) => assert.ok(a != null && Math.abs(a - b) < eps, `${msg}: portal ${a} ≠ conta ${b}`);
 
-// Economia por pedido, escrita de novo a partir das regras (operador, 15/10): produto R$ 30/peça, entrega R$ 19,99, manuseio R$ 5,
-// transação 6,99% da comissão + R$ 2,49; antecipado pela tabela; recusa − R$ 9,99; devolução − R$ 30 (entrega) ou − R$ 50 (antecipado).
+// Economia por pedido, escrita de novo a partir das regras (operador, 15/10; oferta de 27/10): produto R$ 30/peça, entrega R$ 19,99,
+// manuseio R$ 5, transação 6,99% da comissão + R$ 2,49; antecipado = preço − produto − manuseio − Mercado Pago (média de Pix e cartão)
+// − frete médio R$ 26,36 (frete grátis para a cliente); recusa − R$ 9,99; devolução − R$ 30 (entrega) ou − R$ 50 (antecipado).
 const cod = (price, n) => { const c = price - 30 * n - 19.99 - 5; return c - c * 0.0699 - 2.49; };
-const PREPAY = { 1: 77.92, 2: 136.14, 3: 169.15 };
+const pre = (price, n) => price - 30 * n - 5 - (0.5 * (price * 0.0099 + 1) + 0.5 * price * 0.0498) - 26.36;
 
 const ORDERS = [
   // id, horas atrás, status, forma, peças, preço, tipo esperado
@@ -27,7 +28,7 @@ const ORDERS = [
   ["o9", 60, "Reembolsado", "prepay", 1, 116.91, "returned"],
   ["o10", 24 * 12, "Completo", "cod", 1, 129.9, "sale"], // fora da semana (12 dias atrás)
 ];
-const value = ([, , , method, n, price, kind]) => kind === "sale" ? (method === "cod" ? cod(price, n) : PREPAY[n]) : kind === "refused" ? -9.99 : kind === "returned" ? (method === "cod" ? -30 : -50) : 0;
+const value = ([, , , method, n, price, kind]) => kind === "sale" ? (method === "cod" ? cod(price, n) : pre(price, n)) : kind === "refused" ? -9.99 : kind === "returned" ? (method === "cod" ? -30 : -50) : 0;
 
 function data() {
   const leads = Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, name: null, phone: `55119000000${String(i).padStart(2, "0")}`, size: null, created_at: at(i < 10 ? 10 + i * 12 : 24 * 15 + i), handoff_at: null, opted_out_at: i === 3 ? at(5) : null, state: i % 2 ? "SP" : "MG", ctwa: i % 3 ? `clid${i}` : null }));
@@ -114,8 +115,10 @@ test("conta independente: investido até agora e resultado acumulado", async () 
   near(inv.result, contribution - total, "resultado acumulado");
 });
 
-test("conta independente: margem por pedido das premissas (R$ 67,18 · 135,94 · 180,53) e média esperada R$ 51,74", () => {
-  near(cod(129.9, 1), 67.18, "1 peça", 0.005); near(cod(233.82, 2), 135.94, "2 peças", 0.005); near(cod(311.76, 3), 180.53, "3 peças", 0.005);
-  const codExp = 0.83 * (0.9 * cod(129.9, 1) + 0.1 * -30) + 0.17 * -9.99, preExp = 0.9 * 77.92 + 0.1 * -50;
-  near(0.7 * codExp + 0.3 * preExp, 51.74, "média esperada", 0.01);
+test("conta independente: margem por pedido das premissas (R$ 48,58 · 102,45 · 135,88) e média esperada R$ 33,06", () => {
+  near(cod(109.9, 1), 48.58, "1 peça", 0.005); near(cod(197.82, 2), 102.45, "2 peças", 0.005); near(cod(263.76, 3), 135.88, "3 peças", 0.005);
+  near(pre(109.9, 1), 44.76, "antecipado, 1 peça", 0.005);
+  const codExp = 0.83 * (0.9 * cod(109.9, 1) + 0.1 * -30) + 0.17 * -9.99, preExp = 0.9 * pre(109.9, 1) + 0.1 * -50;
+  near(codExp, 32.10, "esperado na entrega (a conta de 28/10 do Ricos-com-AI)", 0.005);
+  near(0.7 * codExp + 0.3 * preExp, 33.06, "média esperada", 0.01);
 });

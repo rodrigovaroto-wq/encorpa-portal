@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { ago } from "../lib/format.js";
 import { Chip } from "./ui.jsx";
 import { Icon } from "./icons.jsx";
-import { ACCENTS } from "./Topbar.jsx";
 
 const TABS = [["look", "Aparência", "sun"], ["data", "Dados", "live"], ["access", "Usuários e acesso", "users"], ["company", "Empresa", "plug"]];
 export const ROLE_LABEL = { admin: "Administrador", operador: "Operador", leitura: "Só leitura" };
@@ -14,7 +13,6 @@ export function Settings({ open, onClose, prefs, setPrefs, demo, setDemo, data, 
   const [tab, setTab] = useState("look");
   useEffect(() => { if (!open) return; const esc = (e) => e.key === "Escape" && onClose(); document.addEventListener("keydown", esc); return () => document.removeEventListener("keydown", esc); }, [open, onClose]);
   if (!open) return null;
-  const accent = ACCENTS.some(([k]) => k === prefs.accent) ? prefs.accent : "purple";
   return (
     <div className="overlay settings-overlay" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="glass settings" role="dialog" aria-modal="true" aria-label="Configurações">
@@ -26,14 +24,8 @@ export function Settings({ open, onClose, prefs, setPrefs, demo, setDemo, data, 
           <header className="settings-head"><h2>{TABS.find(([k]) => k === tab)[1]}</h2><button className="round" aria-label="Fechar" onClick={onClose}><Icon name="x" size={14} /></button></header>
           {tab === "look" && (
             <div className="settings-rows">
-              <Row label="Tema" what="Escuro ou claro, em todas as cores.">
+              <Row label="Tema" what="Escuro (fundo preto) ou Claro (fundo branco).">
                 <span className="seg"><button className={prefs.theme === "dark" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "dark" })}><Icon name="moon" size={14} /> Escuro</button><button className={prefs.theme === "light" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "light" })}><Icon name="sun" size={14} /> Claro</button></span>
-              </Row>
-              <Row label="Cor" what={`Fundo e destaques: ${ACCENTS.find(([k]) => k === accent)[1].toLowerCase()}.`}>
-                <span className="swatches" role="radiogroup" aria-label="Cor">{ACCENTS.map(([k, l, c]) => <button key={k} role="radio" aria-checked={accent === k} aria-label={l} title={l} className={accent === k ? "on" : ""} style={{ background: c }} onClick={() => setPrefs({ ...prefs, accent: k })} />)}</span>
-              </Row>
-              <Row label="Animações do fundo" what="Ondas e luzes em movimento. Desligue para economizar bateria.">
-                <Toggle checked={prefs.motion !== "off"} onChange={(v) => setPrefs({ ...prefs, motion: v ? "on" : "off" })} />
               </Row>
             </div>
           )}

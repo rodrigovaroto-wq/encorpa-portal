@@ -14,7 +14,7 @@ test("orderValue: na entrega, margem cheia ao criar e − R$ 9,99 se frustrado",
 test("orderValue: antecipado só conta depois de pago; devolução paga o frete de volta", () => {
   assert.equal(orderValue({ status: "Aguardando pagamento", payment_method: "prepay", amount_brl: 116.91, units: 1 }).kind, "unpaid");
   assert.equal(orderValue({ status: "não pago", payment_method: "prepay", amount_brl: 116.91, units: 1 }).kind, "unpaid");
-  assert.equal(orderValue({ status: "Pagamento aprovado", payment_method: "prepay", amount_brl: 116.91, units: 1 }).contribution, 77.92);
+  near(orderValue({ status: "Pagamento aprovado", payment_method: "prepay", amount_brl: 109.9, units: 1 }).contribution, 44.76); // frete grátis: a operação paga ~R$ 26,36
   assert.deepEqual(orderValue({ status: "Reembolsado", payment_method: "prepay", amount_brl: 116.91, units: 1 }), { kind: "returned", revenue: 0, contribution: -50 });
 });
 
