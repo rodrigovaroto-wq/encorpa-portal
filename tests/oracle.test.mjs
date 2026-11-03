@@ -43,7 +43,7 @@ function data() {
       { id: "a3", conversation_id: null, cost_brl: 0.01, created_at: at(23) }, // áudio, sem conversa
       { id: "a4", conversation_id: "c11", cost_brl: 0.5, created_at: at(24 * 15) }, // fora da semana
     ],
-    eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [], eval_attribution: [],
+    eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [],
     hermes_runs: [], hermes_proposals: [], hermes_backlog: [], agent_versions: [],
     meta: { campaigns: [], adsets: [], ads: [], daily: [
       { ad_id: "x", day: day(20), spend: 30, impressions: 3000, clicks: 30, started: 20 },

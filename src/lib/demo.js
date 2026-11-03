@@ -75,9 +75,9 @@ export function demoRaw(now = Date.now()) {
   const today0 = now - ((now - BRT) % DAY); // meia-noite de hoje em Brasília
   const start = today0 - DAYS * DAY;
   const versions = Array.from({ length: VERSIONS }, (_, i) => ({ version: i + 1, at: start + 3 * DAY + (i / (VERSIONS - 1)) * (DAYS - 9) * DAY + (14 * 60 + 17 * (i % 3)) * MIN }));
-  const D = { leads: [], conversations: [], messages: [], turn_outcomes: [], orders: [], llm_calls: [], eval_attribution: [], eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [], hermes_runs: [], hermes_proposals: [], hermes_backlog: [], profiles: [] };
+  const D = { leads: [], conversations: [], messages: [], turn_outcomes: [], orders: [], llm_calls: [], eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [], hermes_runs: [], hermes_proposals: [], hermes_backlog: [], profiles: [] };
   D.agent_versions = versions.map((v) => ({ version: v.version, published_at: iso(v.at), note: null }));
-  const daily = [], perAd = Object.fromEntries(ADS.map((a) => [a.id, { leads: 0, ordered: 0, delivered: 0, opted: 0 }]));
+  const daily = [];
   const turnsByDay = {}, gatesByDay = {}, byVersion = {};
   let seq = 0, orderSeq = 48000;
 
@@ -105,7 +105,7 @@ export function demoRaw(now = Date.now()) {
       const lr = rng(`lead ${dayKey} ${seq}`);
       const t0 = day0 + weighted(lr, HOURS) * HOUR + lr() * HOUR;
       if (t0 > now) { seq++; continue; }
-      lead(D, lr, `${dayKey.replaceAll("-", "")}${String(seq++).padStart(5, "0")}`, t0, L.ad, versionAt(versions, t0), now, { perAd, turnsByDay, gatesByDay, byVersion, order: () => orderSeq++ });
+      lead(D, lr, `${dayKey.replaceAll("-", "")}${String(seq++).padStart(5, "0")}`, t0, L.ad, versionAt(versions, t0), now, { turnsByDay, gatesByDay, byVersion, order: () => orderSeq++ });
     }
   }
 
@@ -113,7 +113,6 @@ export function demoRaw(now = Date.now()) {
   for (const [day, x] of Object.entries(turnsByDay)) D.eval_turn_outcomes.push({ day, turns: x.turns, sent: x.sent, fallbacks: x.fallbacks, handoffs: x.handoffs, avg_rewrites: x.turns ? x.rewrites / x.turns : 0, cost_brl: Math.round(x.cost * 100) / 100 });
   for (const [k, x] of Object.entries(gatesByDay)) { const [day, gate] = k.split("|"); D.eval_gate_blocks.push({ day, gate, checks: x.checks, blocks: x.blocks }); }
   for (const [v, x] of Object.entries(byVersion)) D.eval_version_outcomes.push({ agent_version: +v, turns: x.turns, fallbacks: x.fallbacks, handoffs: x.handoffs, avg_rewrites: x.turns ? x.rewrites / x.turns : 0, cost_brl: x.convs ? x.cost / x.convs : 0 });
-  D.eval_attribution = ADS.map((a) => ({ ad: a.id, headline: a.name, leads: perAd[a.id].leads, leads_ordered: perAd[a.id].ordered, leads_delivered: perAd[a.id].delivered, leads_opted_out: perAd[a.id].opted }));
   hermes(D, versions, now);
   D.meta = metaRaw(daily);
   return D;
@@ -127,7 +126,7 @@ function lead(D, r, n, t0, ad, ver, now, acc) {
   const waist = waist0 + Math.round(between(r, -3, 3));
   const first = pick(r, FIRST), name = `${first} ${pick(r, LAST)}`;
   const id = uuid(r), conv = uuid(r);
-  const L = { id, name, phone: `55${pick(r, ddds)}9${String(Math.floor(r() * 1e8)).padStart(8, "0")}`, size: null, created_at: iso(t0), handoff_at: null, opted_out_at: null, state: null, ctwa: ad ? `demo-clid-${n}` : null };
+  const L = { id, name, phone: `55${pick(r, ddds)}9${String(Math.floor(r() * 1e8)).padStart(8, "0")}`, size: null, created_at: iso(t0), handoff_at: null, opted_out_at: null, state: null, ctwa: ad ? `demo-clid-${n}` : null, ad: ad ? ad.id : null };
   const msgs = [], turns = [], calls = [];
   let stage = "novo", at = t0, lastIn = t0, lastOut = null, cost = 0, flagged = null;
   const says = (text, delay) => { at += delay; if (at > now) return false; msgs.push({ id: `${conv}-${msgs.length}`, conversation_id: conv, direction: "inbound", body: text, created_at: iso(at), external_id: `wamid.demo${n}${msgs.length}` }); lastIn = at; calls.push({ id: `${conv}-i${calls.length}`, conversation_id: conv, cost_brl: 0.002, created_at: iso(at) }); return true; };
@@ -176,7 +175,6 @@ function lead(D, r, n, t0, ad, ver, now, acc) {
     const o = orderFor(r, at, now, units, prepay, size, acc.order());
     D.orders.push({ ...o, id: uuid(r), lead_id: id });
     stage = o.stage;
-    if (ad) { acc.perAd[ad.id].ordered++; if (o.delivered) acc.perAd[ad.id].delivered++; }
   }
   // Sem resposta dela: a régua manda os lembretes (60 min, 9h do dia seguinte, cupom em 71 h) e encerra depois de 72 h.
   if (fate === "silent" || (!ok && fate !== "optout" && !flagged)) {
@@ -185,7 +183,6 @@ function lead(D, r, n, t0, ad, ver, now, acc) {
     remind("Última chamada: com o cupom SUPER20 você leva com 20% off até hoje à noite.", t0 + 71 * HOUR);
     if (now - lastIn > 72 * HOUR) stage = "perdido";
   }
-  if (ad) { acc.perAd[ad.id].leads++; if (L.opted_out_at) acc.perAd[ad.id].opted++; }
 
   D.leads.push(L);
   D.conversations.push({ id: conv, lead_id: id, stage, cost_brl: Math.round(cost * 10000) / 10000, last_inbound_at: iso(lastIn), last_outbound_at: lastOut ? iso(lastOut) : null, created_at: iso(t0) });

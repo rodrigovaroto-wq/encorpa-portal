@@ -60,3 +60,15 @@ test("armTotals: o pedido do Site lido entra na conversão e no custo, e R$ 75 s
   const z = armTotals([set({ destination: "WEBSITE", spend: 80, impressions: 4000, clicks: 150 })], { site_orders: 0 });
   assert.match(armVerdict("site", z.site)[0], /R\$ 75 sem pedido/);
 });
+
+test("adAttribution: leads e pedidos por anúncio só da janela, como a view eval_attribution", async () => {
+  const { adAttribution } = await import("../lib/build.mjs");
+  const iso = (d) => `2026-11-${String(d).padStart(2, "0")}T12:00:00Z`, ms = (d) => Date.parse(iso(d));
+  const D = {
+    leads: [{ id: "a", ad: "ad1", created_at: iso(5) }, { id: "b", ad: "ad1", created_at: iso(6) }, { id: "c", ad: "ad1", created_at: iso(1) }, { id: "d", created_at: iso(5) }],
+    orders: [{ lead_id: "a" }, { lead_id: "c" }],
+    conversations: [{ lead_id: "a", stage: "entregue_pago" }],
+  };
+  assert.deepEqual(adAttribution(D, ms(4), ms(10)), { ad1: { leads: 2, leads_ordered: 1, leads_delivered: 1 } }, "o lead de antes da janela e o orgânico ficam fora");
+  assert.deepEqual(adAttribution(D, ms(1), ms(10)).ad1, { leads: 3, leads_ordered: 2, leads_delivered: 1 });
+});

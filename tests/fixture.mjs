@@ -46,7 +46,7 @@ export function fixture() {
       { id: "c3", conversation_id: null, cost_brl: 0.05, created_at: at(4) },
       { id: "c4", conversation_id: "55555555-5555-4555-8555-555555555555", cost_brl: 9, created_at: at(2) },
     ],
-    eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [], eval_attribution: [],
+    eval_turn_outcomes: [], eval_gate_blocks: [], eval_conversation_cost: [], eval_version_outcomes: [],
     hermes_runs: [], hermes_proposals: [], hermes_backlog: [], agent_versions: [{ version: 27, published_at: at(100), note: null }],
     meta: null, n8n: null,
   };

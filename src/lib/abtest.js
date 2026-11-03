@@ -19,7 +19,7 @@ export const ARMS = {
     { id: "cpo", label: "Custo por pedido criado", unit: "brl", ideal: 22.22, pause: 27, dir: -1 }] },
 };
 const ZERO = { spend: 0, impressions: 0, clicks: 0, started: 0, leads: 0, orders: 0 };
-// Soma dos conjuntos de cada braço, com as taxas. No WhatsApp o pedido é o do anúncio (eval_attribution); no Site, o de lead sem marca de
+// Soma dos conjuntos de cada braço, com as taxas. No WhatsApp o pedido é o do anúncio (lib/build.mjs › adAttribution); no Site, o de lead sem marca de
 // anúncio desde o início do conjunto Site (`ab.site_orders`, lib/build.mjs › siteOrders); sem essa leitura, null.
 export function armTotals(adsets = [], ab = null) {
   const out = {};

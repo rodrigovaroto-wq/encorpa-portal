@@ -6,8 +6,7 @@ import { fmt, when } from "../lib/format.js";
 import { HBars } from "../components/charts.jsx";
 import { Card, Chip, Note, PageHead, Table } from "../components/ui.jsx";
 
-// Pedidos e leads por anúncio vêm de eval_attribution sem janela (o total do anúncio): o teste A/B lê o gasto da janela inteira (12 meses)
-// para gasto e pedido falarem do mesmo intervalo, seja qual for o período na tela.
+// O teste A/B é o teste inteiro: lê a janela de 12 meses, seja qual for o período na tela.
 const whole = (data) => data.periods["12m"]?.meta;
 const stat = (s) => { const [l, c] = AD_STATUS[s] || [s, ""]; return <Chip tone={c}>{l}</Chip>; };
 const budget = (x) => (x.daily_budget ? `${fmt(x.daily_budget, "brl")}/dia` : x.lifetime_budget ? `${fmt(x.lifetime_budget, "brl")} no total` : "—");
