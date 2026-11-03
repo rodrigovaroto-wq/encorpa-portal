@@ -14,8 +14,7 @@
   R$ 33,06 no mix 70/30 (entrega R$ 32,10, a mesma conta do Ricos-com-AI de 28/10).
 - **Anúncios › Testes de Criativos e Metas:** teste A/B Site × WhatsApp (`src/lib/abtest.js`): braço pelo destino do conjunto na Meta
   (`destination_type`), metas e limites de pausa do grafo §140 do Ricos-com-AI, veredito por conjunto (R$ 50 com limite estourado ou
-  R$ 75 sem pedido = PAUSAR). Lê a janela de 12 meses: pedidos por anúncio vêm sem janela (`eval_attribution`), e o gasto tem de falar
-  do mesmo intervalo. **Premissas** reescritas com a oferta, a economia e o teste atuais. CPC entrou nas tabelas da Meta.
+  R$ 75 sem pedido = PAUSAR). Lê a janela de 12 meses (o teste inteiro), seja qual for o período na tela. **Premissas** reescritas com a oferta, a economia e o teste atuais. CPC entrou nas tabelas da Meta.
 
 ### Pendente desta rodada
 
@@ -23,8 +22,9 @@
   09/10, `tests/fixtures/coinzz-teste-2026-10-09.json` do Ricos-com-AI), então o braço sai do lead do pedido: sem a marca do clique no
   anúncio de WhatsApp (`ctwa_clid`) é Site. Conta desde o início do primeiro conjunto Site. Venda orgânica do site no mesmo intervalo
   também entra; se a Coinzz passar a mandar UTM, gravar no pedido e trocar a leitura.
-- **Anúncios e criativos (aba por período):** a comparação divide o gasto do período pelos pedidos de todo o tempo do anúncio (mesma
-  origem, `eval_attribution`); o custo por pedido ali só vale no período de 12 meses. Não mexido nesta rodada.
+- **Anúncios e criativos (aba por período), corrigido em 03/11 (`adAttribution` em `lib/build.mjs`):** leads e pedidos por anúncio eram os da
+  view `eval_attribution`, sem janela, e o custo por pedido dividia o gasto do período por pedidos de todo o tempo. Agora o portal conta
+  pelos leads que entraram na janela pelo anúncio (`source_id`), com a mesma regra da view; a view deixou de ser lida.
 
 ## Feito (PR rodrigovaroto-wq/encorpa-portal#6, branch `claude/wonderful-davinci-mxhcb8`)
 
