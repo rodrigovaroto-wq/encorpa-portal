@@ -222,7 +222,7 @@ export function TrendLine({ values, labels, unit = "n", color, height = 300 }) {
           </div>
         )}
       </div>
-      <div className="trend-x">{(labels || []).map((l, i, a) => (i % Math.ceil(a.length / 8) === 0 || i === a.length - 1) && <span key={i} style={{ left: `${X(i)}%` }}>{l}</span>)}</div>
+      <div className="trend-x">{(labels || []).map((l, i, a) => { const step = Math.ceil(a.length / 8); return (i === a.length - 1 || (i % step === 0 && a.length - 1 - i >= step / 2)) && <span key={i} style={{ left: `${X(i)}%` }}>{l}</span>; })}</div>
     </div>
   );
 }

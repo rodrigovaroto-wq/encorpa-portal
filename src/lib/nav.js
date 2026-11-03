@@ -19,7 +19,7 @@ export const NAV = [
       ["campaigns", "Campanhas", "Campanhas do Meta Ads com orçamento, estado e resultado, atualizadas a cada 5 minutos."],
       ["adsets", "Conjuntos", "Conjuntos de anúncios: público, posicionamento, orçamento e resultado."],
       ["ads", "Anúncios e criativos", "Cada anúncio com o criativo e as métricas, a comparação entre eles e a conversão por estado."],
-      ["tests", "Testes de Criativos", "Os anúncios reais lado a lado, o vencedor de cada métrica, a região A × B, o piso de amostra e os critérios de pausa."],
+      ["tests", "Testes de Criativos", "O teste A/B Site × WhatsApp: cada conjunto contra as metas, as regras de pausa e os criativos lado a lado."],
       ["goals", "Metas", "Cada meta do teste contra o valor de agora."],
       ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
     { id: "customers", label: "Clientes", icon: "users", subs: [
