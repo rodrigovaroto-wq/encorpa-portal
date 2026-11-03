@@ -1,6 +1,6 @@
 // Gráficos em SVG puro, com leitura ao passar o mouse (inspirados no Glassy CRM: barras com dica, rosca, linhas e medidores).
 import { useId, useState } from "react";
-import { fmt } from "../lib/format.js";
+import { fmt, yScale } from "../lib/format.js";
 
 // Topo da escala arredondado (1, 2, 2,5 ou 5 vezes uma potência de 10 por marca), para as 4 marcas do eixo saírem redondas.
 const niceMax = (max) => { if (!(max > 0)) return 1; const raw = max / 4, p = 10 ** Math.floor(Math.log10(raw)); return 4 * p * [1, 2, 2.5, 5, 10].find((f) => f * p >= raw - 1e-9); };
@@ -17,7 +17,7 @@ export function Bars({ items, unit = "n", height = 220, highlight }) {
       <div className="bars-grid">{[1, 0.75, 0.5, 0.25, 0].map((f) => <span key={f}><em>{fmt(max * f, unit)}</em></span>)}</div>
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="bars-svg">
         <defs>
-          <linearGradient id={`bg${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--accent-2)" /><stop offset="1" stopColor="var(--accent)" stopOpacity=".35" /></linearGradient>
+          <linearGradient id={`bg${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--neon-blue)" /><stop offset="1" stopColor="var(--accent)" stopOpacity=".35" /></linearGradient>
         </defs>
         {items.map((x, i) => {
           const h = ((x.value || 0) / max) * 96;
@@ -120,7 +120,7 @@ export function Donut({ items, unit = "n", size = 170, center }) {
 // Medidor em anel (0 a 100%). tone: ok | warn | bad
 export function Gauge({ value, label, sub, tone, size = 132 }) {
   const v = value == null ? null : Math.max(0, Math.min(100, value)), R = 40, C = 2 * Math.PI * R;
-  const color = tone === "bad" ? "var(--bad)" : tone === "warn" ? "var(--warn)" : tone === "ok" ? "var(--ok)" : "var(--accent-2)";
+  const color = tone === "bad" ? "var(--bad)" : tone === "warn" ? "var(--warn)" : tone === "ok" ? "var(--ok)" : "var(--neon-blue)";
   return (
     <div className="gauge">
       <svg viewBox="0 0 100 100" width={size} height={size}>
@@ -173,3 +173,56 @@ export function HBars({ items, unit = "pct", tone }) {
 }
 
 export const Empty = ({ text = "Sem dados no período." }) => <p className="empty">{text}</p>;
+
+// Minigráfico neon no pé do cartão (referência do operador, 03/11): linha com brilho e área que some para baixo, sem eixo.
+export function NeonSpark({ values, color }) {
+  const id = useId().replace(/:/g, "");
+  const v = (values || []).map((x) => (x == null || !Number.isFinite(x) ? null : x)), pts = v.filter((x) => x != null);
+  if (pts.length < 2) return <div className="spark spark-empty" style={{ "--c": color }} />;
+  const { min, max } = yScale(pts), X = (i) => (i / (v.length - 1)) * 100, Y = (x) => 34 - ((x - min) / (max - min)) * 30;
+  const line = v.reduce((d, x, i) => (x == null ? d : `${d}${d && v[i - 1] != null ? " L" : " M"}${X(i).toFixed(2)},${Y(x).toFixed(2)}`), "").trim();
+  const firstI = v.findIndex((x) => x != null), lastI = v.length - 1 - [...v].reverse().findIndex((x) => x != null);
+  return (
+    <svg className="spark" viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden="true" style={{ "--c": color }}>
+      <defs><linearGradient id={`sp${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={color} stopOpacity=".45" /><stop offset="1" stopColor={color} stopOpacity="0" /></linearGradient></defs>
+      <path d={`${line} L${X(lastI)},36 L${X(firstI)},36 Z`} fill={`url(#sp${id})`} />
+      <path d={line} className="spark-line" stroke={color} />
+    </svg>
+  );
+}
+
+// Gráfico de linha do Painel: escala pelo yScale (topo +10%, piso zero ou −10% do menor), 5 marcas no eixo, dica ao passar o mouse.
+export function TrendLine({ values, labels, unit = "n", color, height = 300 }) {
+  const [hover, setHover] = useState(null);
+  const id = useId().replace(/:/g, "");
+  const v = (values || []).map((x) => (x == null || !Number.isFinite(x) ? null : x)), pts = v.filter((x) => x != null);
+  if (pts.length < 2) return <Empty />;
+  const n = v.length, { min, max } = yScale(pts), span = max - min;
+  const X = (i) => (n > 1 ? (i / (n - 1)) * 100 : 50), Y = (x) => 100 - ((x - min) / span) * 100;
+  const runs = v.reduce((out, x, i) => { if (x == null) return out; const last = out.at(-1); if (last && last.at(-1)[2] === i - 1) last.push([X(i), Y(x), i]); else out.push([[X(i), Y(x), i]]); return out; }, []);
+  const path = (p) => p.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => min + span * f);
+  return (
+    <div className="trend" style={{ height, "--c": color }}>
+      <div className="trend-y">{ticks.slice().reverse().map((t, i) => <span key={i} style={{ top: `${Y(t)}%` }}>{fmt(t, unit)}</span>)}</div>
+      <div className="trend-plot" onMouseLeave={() => setHover(null)}
+        onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setHover(Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width) * (n - 1))))); }}>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><linearGradient id={`tl${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={color} stopOpacity=".3" /><stop offset="1" stopColor={color} stopOpacity="0" /></linearGradient></defs>
+          {ticks.map((t, i) => <line key={i} x1="0" x2="100" y1={Y(t)} y2={Y(t)} className={t === 0 && min < 0 ? "grid zero" : "grid"} />)}
+          {runs.map((p, j) => p.length > 1
+            ? <g key={j}><path d={`${path(p)} L${p.at(-1)[0]},${Y(Math.max(min, 0))} L${p[0][0]},${Y(Math.max(min, 0))} Z`} fill={`url(#tl${id})`} /><path d={path(p)} className="trend-line" stroke={color} /></g>
+            : <circle key={j} cx={p[0][0]} cy={p[0][1]} r="1" fill={color} />)}
+          {hover != null && <line x1={X(hover)} x2={X(hover)} y1="0" y2="100" className="cross" />}
+        </svg>
+        {hover != null && v[hover] != null && <i className="trend-dot" style={{ left: `${X(hover)}%`, top: `${Y(v[hover])}%` }} />}
+        {hover != null && (
+          <div className="chart-tip" style={{ left: `${X(hover)}%`, top: 0 }}>
+            {labels?.[hover] && <span>{labels[hover]}</span>}<b style={{ color }}>{fmt(v[hover], unit)}</b>
+          </div>
+        )}
+      </div>
+      <div className="trend-x">{(labels || []).map((l, i, a) => (i % Math.ceil(a.length / 8) === 0 || i === a.length - 1) && <span key={i} style={{ left: `${X(i)}%` }}>{l}</span>)}</div>
+    </div>
+  );
+}

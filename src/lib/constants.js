@@ -10,8 +10,8 @@ export const GROUPS = [
   { title: "Operação", metrics: [
     { id: "leads", label: "Leads", unit: "n", src: "leads" },
     { id: "orders", label: "Pedidos", unit: "n", src: "pedidos feitos: vendas, recusas na porta e devoluções (sem antecipado não pago e sem cancelado)" },
-    { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "pedidos feitos ÷ leads", goal: "≥ 6% mín · 10% ideal" },
-    { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "≤ R$ 1,75 mín · R$ 1,25 ideal" },
+    { id: "conversion", label: "Taxa de conversão", unit: "pct", src: "pedidos feitos ÷ leads", goal: "≥ 9% das conversas (WhatsApp) · ≥ 3% das visitas (Site)" },
+    { id: "cpl", label: "CPL (custo por conversa)", unit: "brl", src: "Meta Ads", goal: "< R$ 2,00 (pausar acima de R$ 4,00 com R$ 50 gastos)" },
     { id: "api_per_lead", label: "Custo de API por lead", unit: "brl", src: "llm_calls (todas as chamadas de modelo dos leads) ÷ leads", goal: "teto R$ 1,00" },
     { id: "cpl_api", label: "CPL + API", unit: "brl", src: "Meta Ads + eval_conversation_cost" },
     { id: "handoff", label: "Handoff (aviso ao operador)", unit: "pct", src: "não resolvidas ÷ conversas encerradas", goal: "≤ 10%" },
@@ -26,7 +26,7 @@ export const GROUPS = [
     { id: "fixed_cost", label: "Custos fixos (vencidos)", unit: "brl", src: "cobranças que venceram no período: recarga de US$ 10 da PikaPods (R$ 54) e mensalidade de R$ 35 do número, dia 5" },
     { id: "net_profit", label: "Lucro líquido (estimado)", unit: "brl", src: "margem dos pedidos − anúncio (imposto incluído) − IA − WhatsApp − fixos" },
     { id: "op_margin", label: "Margem operacional", unit: "pct", src: "(margem dos pedidos − anúncio − IA − WhatsApp − fixos) ÷ faturamento", goal: "> 0%" },
-    { id: "cost_per_order", label: "Custo por pedido", unit: "brl", src: "(anúncio + IA + WhatsApp) ÷ pedidos feitos", goal: "< R$ 51,70 por pedido" },
+    { id: "cost_per_order", label: "Custo por pedido", unit: "brl", src: "(anúncio + IA + WhatsApp) ÷ pedidos feitos", goal: "≤ R$ 27 (teste A/B)" },
     { id: "ai_per_order", label: "IA por pedido", unit: "brl", src: "toda chamada de modelo dos leads ÷ pedidos feitos" },
     { id: "roi", label: "ROI", unit: "x", src: "margem dos pedidos ÷ (anúncio + IA + WhatsApp), sem os fixos", goal: "≥ 1,5 mín · 2,5 ideal" },
     { id: "prepaid_share", label: "% antecipado × entrega", unit: "pct", src: "antecipados ÷ pedidos feitos" },
@@ -35,7 +35,7 @@ export const GROUPS = [
   { title: "Anúncio", metrics: [
     { id: "spend", label: "Gasto", unit: "brl", src: "Meta Ads" },
     { id: "cpm", label: "CPM", unit: "brl", src: "Meta Ads" },
-    { id: "ctr", label: "CTR do link", unit: "pct", src: "Meta Ads", goal: "≥ 1% mín · 2% ideal" },
+    { id: "ctr", label: "CTR do link", unit: "pct", src: "Meta Ads", goal: "≥ 2% (pausar abaixo de 1% com R$ 50 gastos)" },
   ]},
   { title: "Agente (Malu)", metrics: [
     { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "conversas que compraram ou encerraram sem compra ÷ encerradas", goal: "≥ 90% (handoff ≤ 10%)" },
@@ -64,10 +64,11 @@ export const PAUSE = [
 ];
 
 
+// Teste A/B (operador, 02 e 03/11; Ricos-com-AI grafo §140): Site × WhatsApp, R$ 25/dia cada, 5 dias. Sem data de início ainda.
 export const PHASES = [
-  ["Copy (23 a 29/10)", "conversão ≥ 6% · CPL ≤ R$ 1,75", "conversão > 7,5% · CPL < R$ 1,50"],
-  ["Região (1 a 7/11)", "conversão ≥ 6% · CPL ≤ R$ 1,75", "conversão > 10% · CPL < R$ 1,25"],
-  ["Leitura (8 e 9/11)", "entregas ≥ 70%", "entregas ≥ 83% (recusa ≤ 17%)"],
+  ["Dias 1 e 2 (até R$ 50 por conjunto)", "ler CTR, CPC e custo por conversa", "pausar o conjunto que passar do limite de pausa"],
+  ["Dia 3 (R$ 75 por conjunto)", "zero pedidos criados pausa o conjunto", "com pedido, segue"],
+  ["Dias 4 e 5 (até R$ 125 por conjunto)", "roda até o fim, sem editar", "vence o custo por pedido criado ≤ R$ 27"],
 ];
 
 export const DECISION = [
@@ -76,7 +77,7 @@ export const DECISION = [
   ["Parar", "< 6%", "> R$ 1,75", "< 1,5"],
 ];
 
-export const SAMPLE_FLOOR = { leads: 500, orders: 50, spend: 500 };
+export const SAMPLE_FLOOR = { spend: 125, days: 5 }; // verba e dias de cada conjunto do teste A/B
 
 
 
@@ -107,48 +108,51 @@ export const CHANNEL = [["number", "Número do WhatsApp"], ["cloud_api", "Cloud 
 
 
 
-// Premissas, conferidas no Ricos-com-AI em 17/10: oferta = BUSINESS_CONFIG de 15/10 (docs/operacao/business-config-2026-10-15.md),
-// economia = contas do portal confirmadas pelo operador em 15/10 (lib/build.mjs), teste = R19.1 de 09/10 (05-plano/09 e 13).
+// Premissas, conferidas no Ricos-com-AI em 03/11: oferta = BUSINESS_CONFIG de 29/10 (docs/operacao/business-config-2026-10-29b.min.json) com a
+// turn v49; economia = taxas da Logzz (a OmniCash da Coinzz) e do Mercado Pago (taxas-antecipadas-cod.md) nos preços de 27/10; teste = grafo §140.
 export const REF = [
-  ["Oferta (BUSINESS_CONFIG de 15/10)", [
-    ["Produto", "Colete Cinta Modeladora, tamanhos P a XGG (cintura de 60 a 100 cm); na dúvida entre dois, o maior"],
-    ["Pagamento na entrega", "1 peça R$ 129,90 · 2 peças R$ 233,82 · 3 peças R$ 311,76, frete grátis (R14.3 e R15.3)"],
-    ["Pagamento antecipado", "1 peça R$ 116,91 (10% off) · 2 peças R$ 207,84 (20%) · 3 peças R$ 272,79 (30%); frete por conta da cliente, calculado por região no checkout (R10.5 e R15.3)"],
-    ["Âncora de preço", "de R$ 216,50 por R$ 129,90 na entrega"],
-    ["Garantia", "7 dias após o recebimento; devolução e troca sem custo para a cliente, pelo suporte da Logzz (R16.3 e R21.3)"],
-    ["Atendimento", "06:00 às 00:00; fora disso, recibo automático e a resposta guardada sai às 6h"],
+  ["Oferta (BUSINESS_CONFIG de 29/10, turn v49)", [
+    ["Produto", "Colete Cinta Modeladora, tamanhos P a XGG (o M está sem estoque na Coinzz); na dúvida entre dois, o maior"],
+    ["Preço", "1 peça R$ 109,90 · 2 peças R$ 197,82 (10%) · 3 peças R$ 263,76 (20%), o mesmo na entrega e no antecipado"],
+    ["Âncora", "de R$ 179,90 por R$ 109,90 (selo \"40% OFF\")"],
+    ["Frete", "grátis nos dois caminhos; a operação paga"],
+    ["Checkout", "Coinzz, um por quantidade (encorpa-0, encorpa-site-0, oferta-site2-0), com Pix, cartão e pagar na entrega; o mesmo no site e na Malu"],
+    ["Cupom", "SUPER20 (20%), só depois do lembrete de follow-up: 1 peça R$ 87,92 · 2 peças R$ 158,26 · 3 peças R$ 211,01"],
+    ["Prazo", "na entrega 1 a 3 dias, com dia agendado; antecipado em média 5 dias, varia por região"],
+    ["Garantia", "7 dias após o recebimento; troca e devolução pelo suporte"],
+    ["Teto de custo da Malu", "R$ 0,30 por conversa"],
     ["Mix previsto", "70% na entrega, 30% antecipado, 1 peça por pedido (premissa, não medido)"]]],
-  ["Economia por pedido (confirmada pelo operador em 15/10)", [
-    ["Na entrega, se entregue", "1 peça R$ 67,18 · 2 peças R$ 135,94 · 3 peças R$ 180,53 (produto R$ 30/peça, entrega R$ 19,99, manuseio R$ 5,00, transação de 6,99% da comissão + R$ 2,49)"],
-    ["Antecipado, se entregue", "1 peça R$ 77,92 · 2 peças R$ 136,14 · 3 peças R$ 169,15"],
-    ["Recusa na porta", "− R$ 9,99 por pedido recusado (entrega frustrada R$ 4,99 + manuseio R$ 5,00), só na entrega; premissa de 12% a 17%"],
-    ["Devolução depois de entregue", "− R$ 30 na entrega e − R$ 50 no antecipado; premissa de 5% a 10%"],
-    ["Média esperada por pedido", "R$ 51,74 no mix 70/30 com 1 peça, recusa de 17% e devolução de 10%"],
-    ["Equilíbrio", "conversão mínima de 2,5% com CPL de R$ 1,25 e de 3,0% com CPL de R$ 1,50 ((CPL + R$ 0,05 de IA por lead) ÷ R$ 51,70 por pedido, já sem o WhatsApp; o CPL da Meta já traz o imposto); os fixos pedem mais ~1,1 pedido por mês"],
-    ["Outros custos", "imposto da Meta (13,83%) já incluído no gasto do anúncio (operador, 20/10) · WhatsApp R$ 0,04 por pedido · fixos ~ R$ 55,14/mês, lançados quando vencem (recarga da PikaPods, dia 5 do número)"],
+  ["Economia por pedido (oferta de 27/10)", [
+    ["Na entrega, se entregue", "1 peça R$ 48,58 · 2 peças R$ 102,45 · 3 peças R$ 135,88 (produto R$ 30/peça, entrega R$ 19,99, manuseio R$ 5,00, transação de 6,99% da comissão + R$ 2,49; o frete de R$ 24,98 da OmniCash é a entrega + o manuseio)"],
+    ["Antecipado, se entregue", "1 peça R$ 44,76 · 2 peças R$ 100,06 · 3 peças R$ 134,03 (produto, manuseio R$ 5,00, Mercado Pago metade Pix e metade cartão, frete médio de R$ 26,36 pago pela operação)"],
+    ["Com o cupom de 20%", "1 peça R$ 28,14 na entrega e R$ 23,44 no antecipado"],
+    ["Recusa na porta", "− R$ 9,99 por pedido recusado (entrega frustrada R$ 4,99 + manuseio R$ 5,00), só na entrega; premissa de 17%"],
+    ["Devolução depois de entregue", "− R$ 30 na entrega e − R$ 50 no antecipado; premissa de 10%"],
+    ["Média esperada por pedido", "R$ 33,06 no mix 70/30 com 1 peça (entrega R$ 32,10, antecipado R$ 35,28), recusa de 17% e devolução de 10%; R$ 33,02 depois do WhatsApp"],
+    ["Equilíbrio", "custo de anúncio por pedido até ~R$ 33; o critério do teste é ≤ R$ 27 por pedido criado"],
+    ["Outros custos", "imposto da Meta (13,83%) já incluído no gasto do anúncio · WhatsApp R$ 0,04 por pedido · fixos ~ R$ 55,14/mês, lançados quando vencem (recarga da PikaPods, dia 5 do número)"],
     ["Repasse", "na entrega: 14 dias depois do pagamento na porta; antecipado: na hora"]]],
   ["Custos do projeto (planilha do operador, 20/10)", [
-    ["Fixo: PikaPods (n8n)", "cobra por hora: US$ 3,73 por mês (~ R$ 20,14); saldo de US$ 9,46 em 20/10, recarga automática de US$ 10 quando fica abaixo de US$ 1"],
+    ["Fixo: PikaPods (n8n)", "cobra por hora: US$ 3,73 por mês (~ R$ 20,14); recarga automática de US$ 10 quando fica abaixo de US$ 1"],
     ["Fixo: número do WhatsApp", "R$ 55 no início; depois R$ 35 por mês, vence dia 5"],
     ["Variável: anúncios na Meta", "conforme o uso, imposto incluído no valor cobrado"],
     ["Variável: API do WhatsApp", "R$ 0 dentro das janelas; ~ R$ 0,04 por pedido no template de pós-venda"],
-    ["Variável: modelo de IA", "só as chamadas de modelo dos leads (resposta, reescrita, interpretação, áudio e imagem); personas e Hermes fora"],
-    ["Câmbio", "R$ 5,40 por dólar, o mesmo do Ricos-com-AI"],
-    ["Onde entram", "no resultado do período (fixos só no mês em que vencem e são pagos de novo, fora do ROI) e em Financeiro › Resultado › Investido até agora, ao vivo"]]],
+    ["Variável: modelo de IA", "só as chamadas de modelo dos leads; personas e Hermes fora"],
+    ["Câmbio", "R$ 5,40 por dólar, o mesmo do Ricos-com-AI"]]],
   ["Medido × premissa", [
-    ["Custo de IA por lead", "premissa R$ 0,05 (operador, 20/10) · medido p50 R$ 0,268 e p95 R$ 0,546 por conversa (30/09); personas da v25 ~ R$ 0,02 por conversa (15/10)"],
-    ["Teto do modelo por conversa", "R$ 1,00, sem tolerância (R18.7)"],
-    ["Custo do WhatsApp por lead", "R$ 0 dentro da janela de 24 h ou da gratuita de 72 h; template de pós-venda ~ R$ 0,04 por pedido"]]],
-  ["Teste de tráfego (R19.1, 09/10)", [
-    ["Ensaio", "R$ 100 em 2 dias, 5 criativos (HANDOFF de 15/10)"],
-    ["Fase Copy, 23 a 29/10", "R$ 350 (R$ 50/dia), 5 vídeos, 1 conjunto aberto no Brasil, mulheres de 18 a 55"],
-    ["Pausa, 30 e 31/10", "leitura da fase Copy"],
-    ["Fase Região, 1 a 7/11", "R$ 350 (R$ 50/dia), só as 2 copies vencedoras; A = estados com mais de 5 cidades com pagamento na entrega, B = Sudeste + Centro-Oeste + Sul"],
-    ["Fase Leitura, 8 e 9/11", "R$ 0; os pedidos na entrega chegam à porta"],
-    ["Verba e caixa", "R$ 700 de anúncio, imposto incluído; caixa de R$ 1.325 com R$ 250 de segurança"],
-    ["Piso de amostra", "mais de 500 leads e mais de 50 pedidos (com CPL de R$ 1,50 saem ~467 leads: só passa com CPL abaixo de ~R$ 1,40)"],
-    ["Experimentos por lead", "A = abertura rápida (sem recibo de 60 s), B = link depois da escolha; ~235 leads por braço; Malu congelada de 23/10 a 09/11"],
-    ["Lembretes", "silence_1 em 60 min · silence_2 às 9h do dia seguinte (ou +23 h) · silence_3 com cupom SUPER20 71 h depois da entrada pelo anúncio"]]],
+    ["Custo de IA por lead", "premissa R$ 0,05 · medido em 18 conversas reais (20 a 29/10): p50 R$ 0,018, p95 R$ 0,089, máximo R$ 0,139"],
+    ["Teto do modelo por conversa", "R$ 0,30, sem tolerância"],
+    ["Frete do antecipado", "R$ 17,78 a R$ 44,45 por região nas 22 cidades (média R$ 26,36), medido na Coinzz em 02/11"]]],
+  ["Teste A/B: Site × WhatsApp (operador, 02 e 03/11)", [
+    ["Estrutura", "1 campanha de Vendas, orçamento por conjunto: Site (conversão no site, evento Compra) e WhatsApp (maximizar conversas)"],
+    ["Verba", "R$ 25/dia por conjunto, 5 dias: R$ 250 no total. Sem data de início ainda"],
+    ["Público", "mulheres de 18 a 55, nas 22 cidades com pagamento na entrega; os mesmos 5 vídeos nos dois conjuntos"],
+    ["Metas do Site", "CTR do link ≥ 2% · CPC ≤ R$ 0,60 · 3% das visitas viram pedido → ~R$ 20 por pedido"],
+    ["Metas do WhatsApp", "CTR do link > 2% · CPC < R$ 1,50 · conversa < R$ 2,00 · 9% das conversas viram pedido → ~R$ 22,22 por pedido"],
+    ["Pausa no dia 2 (R$ 50)", "Site: CTR < 1% ou CPC > R$ 1,20 · WhatsApp: CTR < 1%, CPC > R$ 3,00 ou conversa > R$ 4,00"],
+    ["Pausa no dia 3 (R$ 75)", "zero pedidos criados pausa o conjunto; com pedido, roda até o 5º dia"],
+    ["Critério", "custo de anúncio por pedido criado ≤ R$ 27; quem ficar abaixo leva a verba"],
+    ["Onde contar os pedidos", "WhatsApp: leads com a marca do anúncio (ctwa). Site: pedidos da Coinzz com utm_campaign=ab-site"]]],
 ];
 
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };

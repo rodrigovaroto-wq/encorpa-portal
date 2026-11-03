@@ -7,7 +7,7 @@ import { periodDays } from "../lib/data.js";
 import { Card, Chip, DeltaBadge, Kpi, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
 import { MaluTest } from "./MaluTest.jsx";
 
-const COLOR = { bought: "var(--ok)", declined: "var(--accent-2)", unresolved: "var(--bad)", abandoned: "var(--warn)", open: "var(--muted)" };
+const COLOR = { bought: "var(--ok)", declined: "var(--neon-blue)", unresolved: "var(--bad)", abandoned: "var(--warn)", open: "var(--muted)" };
 
 export function Malu({ data, period, route, tabs, role }) {
   const p = data.periods[period] || {}, g = data.global;
@@ -47,7 +47,7 @@ function Results({ p, g, period }) {
           <Donut items={OUTCOMES.map(([id, l]) => ({ label: l, value: o[id], color: COLOR[id] }))} />
         </Card>
       </div>
-      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--accent-2)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" axes /></Card>
+      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--neon-blue)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" axes /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
       <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Venda", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
         rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), r.conversations ? `${fmt(r.conversion, "pct")} (${fmt(r.bought, "n")})` : "—", fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}

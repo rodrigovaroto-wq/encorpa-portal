@@ -70,3 +70,12 @@ export function bucketLabels(period, buckets, n, end) {
 
 // Valor digitado em reais: "1.500,50", "1.500" e "1500" são mil e quinhentos; "1500.50" também. Ponto seguido de 3 dígitos é milhar.
 export const parseBrl = (x) => { const s = String(x).trim().replace(/^R\$\s*/, ""); return Number(/,/.test(s) || /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, "").replace(",", ".") : s); };
+
+// Escala do eixo Y do gráfico do Painel (operador, 03/11): o topo é 10% acima do maior valor; o piso é zero, ou 10% abaixo do menor
+// quando algum valor é negativo (R$ 500 a R$ 1.500 → 0 a 1.650; −500 a 1.500 → −550 a 1.650). Sem valor diferente de zero: 0 a 1.
+export function yScale(values) {
+  const v = values.filter((x) => x != null && Number.isFinite(x));
+  const hi = Math.max(0, ...v), lo = Math.min(0, ...v);
+  const max = hi > 0 ? hi * 1.1 : 0, min = lo < 0 ? lo * 1.1 : 0;
+  return max === min ? { min: 0, max: 1 } : { min, max };
+}

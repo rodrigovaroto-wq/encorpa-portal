@@ -4,8 +4,6 @@ import { PERIODS } from "../lib/constants.js";
 import { ago, store } from "../lib/format.js";
 import { Icon } from "./icons.jsx";
 
-// Cores do portal (Configurações › Aparência): fundo e destaques. A bolinha mostra o tom de destaque de cada uma.
-export const ACCENTS = [["purple", "Roxo", "#8b5cf6"], ["blue", "Azul", "#3b82f6"], ["orange", "Laranja", "#f97316"], ["yellow", "Amarelo", "#eab308"], ["green", "Verde", "#10b981"], ["white", "Branco", "#f4f4f5"], ["black", "Preto", "#111113"]];
 
 export function usePopover() {
   const [open, setOpen] = useState(false), ref = useRef(null);

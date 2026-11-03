@@ -11,7 +11,7 @@ import { Card, Chip, Note, Table } from "../components/ui.jsx";
 
 const BAND = Object.fromEntries(BANDS.map(([k, l, tone]) => [k, { l, tone }]));
 const SENS = Object.fromEntries(SENSITIVITY);
-const BAND_COLOR = { quente: "var(--bad)", morna: "var(--warn)", fria: "var(--accent-2)" };
+const BAND_COLOR = { quente: "var(--bad)", morna: "var(--warn)", fria: "var(--neon-blue)" };
 
 export function Score({ data, period }) {
   const [state, setState] = useState(null), [desc, setDesc] = useState(true);

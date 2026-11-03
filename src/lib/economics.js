@@ -2,11 +2,16 @@
 // Margem se entregue (operador, 15/10). Na entrega (Logzz, ajuda.logzz.com.br "Taxas, prazos e condições"): a comissão é o que
 // sobra do preço depois do produto (R$ 30/peça), da entrega concluída (R$ 19,99; Entrega Garantida desligada) e do manuseio
 // (R$ 5,00), e a transação é 6,99% dessa comissão + R$ 2,49 de antifraude. Antecipado (Mercado Pago pela Coinzz): tabela do
-// Ricos-com-AI, 06-modelo-economico.md (09/10), com a taxa estimada metade Pix, metade cartão.
-export const PRODUCT = 30, DELIVERY = 19.99, HANDLING = 5;
+// Ricos-com-AI, taxas-antecipadas-cod.md §4, com a taxa estimada metade Pix, metade cartão.
+// Oferta de 27/10 (Ricos-com-AI, grafo §133): a venda passa pelos checkouts da Coinzz; a entrega é da OmniCash, que é a Logzz (mesmas
+// taxas), e o frete é grátis para a cliente nos dois caminhos. Na entrega, o "frete" de R$ 24,98 da OmniCash é a entrega concluída
+// (R$ 19,99) + o manuseio (R$ 4,99), que a conta já desconta. No antecipado a operação paga o frete: R$ 26,36 é a média do frete do
+// antecipado de 1 peça nas 22 cidades do teste (varredura da Coinzz de 02/11, cobertura-coinzz-2026-11-02.txt; premissa para os kits).
+export const PRODUCT = 30, DELIVERY = 19.99, HANDLING = 5, PREPAY_FREIGHT = 26.36;
 const commission = (price, units) => price - PRODUCT * units - DELIVERY - HANDLING;
 export const codMargin = (price, units) => { const c = commission(price, units); return c - (c * 0.0699 + 2.49); };
-export const PREPAY_MARGIN = [77.92, 136.14, 169.15];
+// Antecipado: preço − produto − manuseio − Mercado Pago (50% Pix 0,99% + R$ 1,00; 50% cartão 4,98%) − frete. O preço é o pago (com cupom).
+export const prepayMargin = (price, units) => price - PRODUCT * units - HANDLING - (0.5 * (0.0099 * price + 1) + 0.5 * 0.0498 * price) - PREPAY_FREIGHT;
 // Custo adiantado de um pedido na entrega: sai do saldo de expedição ao separar e volta no repasse.
 export const codUpfront = (price, units) => { const c = commission(price, units); return PRODUCT * units + DELIVERY + HANDLING + c * 0.0699 + 2.49; };
 export const RELEASE_DAYS = 14; // repasse padrão da Logzz, depois de "Completo"
@@ -49,8 +54,8 @@ export function waNumber(now) {
 }
 
 // Premissas ideais do teste (operador, 19/10): CPL R$ 1,25 e conversão de 10%; IA R$ 0,05 por lead (operador, 20/10) e mix 70% na entrega com
-// 1 peça de R$ 129,90 (Premissas, 15/10). DELIVERY_DAYS é premissa do portal: dias da criação do pedido até o "Completo".
-export const IDEAL = { cpl: 1.25, conversion: 10, api_per_lead: 0.05, cod_share: 0.7, cod_price: 129.9 };
+// 1 peça de R$ 109,90 (oferta de 27/10). DELIVERY_DAYS é premissa do portal: dias da criação do pedido até o "Completo".
+export const IDEAL = { cpl: 1.25, conversion: 10, api_per_lead: 0.05, cod_share: 0.7, cod_price: 109.9 };
 export const DELIVERY_DAYS = 7;
 
 // Caixa para rodar o anúncio num período (operador, 19/10), a partir do orçamento diário e das premissas ideais.

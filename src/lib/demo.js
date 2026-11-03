@@ -8,7 +8,7 @@ import { build, channel } from "../../lib/build.mjs";
 
 const DAY = 86400000, MIN = 60000, HOUR = 3600000, BRT = 3 * HOUR;
 const DAYS = 365;
-const COD = [129.9, 233.82, 311.76], PRE = [116.91, 207.84, 272.79];
+const COD = [109.9, 197.82, 263.76], PRE = COD; // um preço nos dois caminhos (oferta de 27/10)
 
 function rng(seed) { let s = 2166136261; for (const c of String(seed)) s = Math.imul(s ^ c.charCodeAt(0), 16777619) >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
 const pick = (r, xs) => xs[Math.floor(r() * xs.length)];
@@ -158,7 +158,7 @@ function lead(D, r, n, t0, ad, ver, now, acc) {
   const step = (k) => ok && depth >= k;
   if (ok && fate === "optout") { ok = says(pick(r, OPTOUT), reply()) && malu("Tudo bem, não te mando mais mensagens. Se mudar de ideia é só chamar 💜", "opted_out", "a cliente pediu para sair: texto"); if (ok) { L.opted_out_at = iso(at); stage = "perdido"; } }
   else {
-    if (step(1) && says(pick(r, WAIST(waist)), reply()) && (L.size = size) && malu(`Pra ${waist} cm o ideal é o ${size}. O colete sai por R$ 129,90 com pagamento na entrega e frete grátis. Me passa o seu CEP que eu vejo se chega aí?`)) stage = "tamanho_definido"; else if (depth >= 1) ok = false;
+    if (step(1) && says(pick(r, WAIST(waist)), reply()) && (L.size = size) && malu(`Pra ${waist} cm o ideal é o ${size}. O colete sai por R$ 109,90 com frete grátis. Me passa o seu CEP que eu vejo se chega aí?`)) stage = "tamanho_definido"; else if (depth >= 1) ok = false;
     if (step(2) && says(`${Math.floor(10000 + r() * 89999)}-${String(Math.floor(r() * 999)).padStart(3, "0")}`, reply()) && (L.state = uf) && malu(`Chega sim! Em ${city} a entrega é em até 7 dias úteis e você paga na porta. Prefere pagar na entrega ou antecipado com 10% off?`)) stage = "cobertura_conhecida"; else if (depth >= 2) ok = false;
     if (step(3) && says(units > 1 ? `quero ${units}, ${prepay ? "no pix" : "na entrega"}` : prepay ? "pix com desconto" : "na entrega", reply())
       && malu(`Perfeito! ${units > 1 ? `${units} peças saem por ${(prepay ? PRE : COD)[units - 1].toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}. ` : ""}Segue o link pra confirmar seus dados: https://encorpa.com.br/p/${n.slice(-6)}`)) stage = "link_enviado"; else if (depth >= 3) ok = false;
@@ -264,10 +264,10 @@ function hermes(D, versions, now) {
 
 function metaRaw(daily) {
   return {
-    campaigns: [{ id: "c1", name: "Encorpa — CTWA — Sempre ligado", objective: "OUTCOME_ENGAGEMENT", status: "ACTIVE", daily_budget: null, lifetime_budget: null }],
+    campaigns: [{ id: "c1", name: "Encorpa — Teste A/B — Site × WhatsApp", objective: "OUTCOME_SALES", status: "ACTIVE", daily_budget: null, lifetime_budget: null }],
     adsets: [
-      { id: "s1", name: "Conjunto A — Brasil aberto, mulheres 18–55", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "CONVERSATIONS", audience: { age: "18–55", genders: [2], places: "BR" } },
-      { id: "s2", name: "Conjunto B — Sudeste, Centro-Oeste e Sul", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "CONVERSATIONS", audience: { age: "18–55", genders: [2], places: "SP, RJ, MG, ES, PR, SC, RS, GO, DF, MT, MS" } }],
+      { id: "s1", name: "Conjunto WhatsApp — 22 cidades, mulheres 18–55", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "CONVERSATIONS", destination: "WHATSAPP", audience: { age: "18–55", genders: [2], places: "22 cidades com pagamento na entrega" } },
+      { id: "s2", name: "Conjunto Site — 22 cidades, mulheres 18–55", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "OFFSITE_CONVERSIONS", destination: "WEBSITE", audience: { age: "18–55", genders: [2], places: "22 cidades com pagamento na entrega" } }],
     ads: ADS.map((a) => ({ id: a.id, name: a.name, adset_id: a.adset, campaign_id: "c1", status: a.to > 0 ? "PAUSED" : "ACTIVE", creative: { title: a.name, body: "Cintura marcada na hora, sem apertar. Pagamento na entrega e frete grátis.", thumb: "", type: "VIDEO" } })),
     daily,
   };
