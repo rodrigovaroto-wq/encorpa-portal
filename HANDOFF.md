@@ -19,8 +19,10 @@
 
 ### Pendente desta rodada
 
-- **Pedidos do conjunto Site:** o portal não lê o pedido da Coinzz por `utm_campaign=ab-site`; a conversão e o custo por pedido do Site
-  aparecem como "na Coinzz". Precisa gravar a UTM no pedido (webhook "Venda confirmada" do n8n) para o portal contar.
+- **Pedidos do conjunto Site (feito em 03/11, `siteOrders` em `lib/build.mjs`):** a Coinzz não manda UTM no webhook de venda (exemplo real de
+  09/10, `tests/fixtures/coinzz-teste-2026-10-09.json` do Ricos-com-AI), então o braço sai do lead do pedido: sem a marca do clique no
+  anúncio de WhatsApp (`ctwa_clid`) é Site. Conta desde o início do primeiro conjunto Site. Venda orgânica do site no mesmo intervalo
+  também entra; se a Coinzz passar a mandar UTM, gravar no pedido e trocar a leitura.
 - **Anúncios e criativos (aba por período):** a comparação divide o gasto do período pelos pedidos de todo o tempo do anúncio (mesma
   origem, `eval_attribution`); o custo por pedido ali só vale no período de 12 meses. Não mexido nesta rodada.
 

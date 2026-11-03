@@ -267,7 +267,7 @@ function metaRaw(daily) {
     campaigns: [{ id: "c1", name: "Encorpa — Teste A/B — Site × WhatsApp", objective: "OUTCOME_SALES", status: "ACTIVE", daily_budget: null, lifetime_budget: null }],
     adsets: [
       { id: "s1", name: "Conjunto WhatsApp — 22 cidades, mulheres 18–55", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "CONVERSATIONS", destination: "WHATSAPP", audience: { age: "18–55", genders: [2], places: "22 cidades com pagamento na entrega" } },
-      { id: "s2", name: "Conjunto Site — 22 cidades, mulheres 18–55", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "OFFSITE_CONVERSIONS", destination: "WEBSITE", audience: { age: "18–55", genders: [2], places: "22 cidades com pagamento na entrega" } }],
+      { id: "s2", name: "Conjunto Site — 22 cidades, mulheres 18–55", campaign_id: "c1", status: "ACTIVE", daily_budget: 25, lifetime_budget: null, optimization: "OFFSITE_CONVERSIONS", destination: "WEBSITE", start: new Date(Date.now() - 364 * 86400000).toISOString(), audience: { age: "18–55", genders: [2], places: "22 cidades com pagamento na entrega" } }],
     ads: ADS.map((a) => ({ id: a.id, name: a.name, adset_id: a.adset, campaign_id: "c1", status: a.to > 0 ? "PAUSED" : "ACTIVE", creative: { title: a.name, body: "Cintura marcada na hora, sem apertar. Pagamento na entrega e frete grátis.", thumb: "", type: "VIDEO" } })),
     daily,
   };
