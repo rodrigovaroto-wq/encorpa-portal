@@ -128,7 +128,7 @@ function ArmCard({ k, t }) {
       <HBars unit="n" items={[{ label: "Verba gasta", value: Math.min(100, (t.spend / SAMPLE_FLOOR.spend) * 100), right: `${fmt(t.spend, "brl")} / ${fmt(SAMPLE_FLOOR.spend, "brl")}` }]} />
       <Table head={["Métrica", "Agora", "Meta", "Pausa com R$ 50"]} rows={ARMS[k].goals.map((x) => {
         const v = t[x.id], st = goalStatus(x, v, t.spend);
-        return [x.label, <span key="v" className={st}>{v == null ? (k === "site" && ["conv", "cpo"].includes(x.id) ? "na Coinzz" : "—") : fmt(v, x.unit)}</span>,
+        return [x.label, <span key="v" className={st}>{v == null ? (k === "site" && ["conv", "cpo"].includes(x.id) && arms[k].orders == null ? "sem leitura" : "—") : fmt(v, x.unit)}</span>,
           `${x.dir > 0 ? "≥" : "≤"} ${fmt(x.ideal, x.unit)}`, x.id === "cpo" ? "sem pedido com R$ 75" : x.pause != null ? `${x.dir > 0 ? "<" : ">"} ${fmt(x.pause, x.unit)}` : "—"];
       })} />
     </div>
@@ -136,12 +136,12 @@ function ArmCard({ k, t }) {
 }
 
 function Tests({ m, p, g }) {
-  const arms = armTotals(m?.adsets);
+  const arms = armTotals(m?.adsets, m?.ab);
   return (
     <>
       <h2 className="section-title">Teste A/B: Site × WhatsApp (o teste inteiro, independe do período)</h2>
       {m?.adsets ? <div className="row r-1-1">{Object.keys(ARMS).map((k) => <ArmCard key={k} k={k} t={arms[k]} />)}</div> : <Note>Meta Ads não ligado.</Note>}
-      <Note>Vence o conjunto com custo de anúncio por pedido criado ≤ R$ 27. Pedidos do WhatsApp: leads com a marca do anúncio. Pedidos do Site: na Coinzz, com utm_campaign=ab-site (o portal ainda não lê).</Note>
+      <Note>Vence o conjunto com custo de anúncio por pedido criado ≤ R$ 27. Pedidos do WhatsApp: leads com a marca do anúncio. Pedidos do Site: clientes sem a marca do anúncio de WhatsApp, desde o início do conjunto Site (a Coinzz não manda UTM no pedido; venda orgânica do site no mesmo período também entra).</Note>
       <h2 className="section-title">Regras do teste</h2>
       <Table head={["Quando", "O quê", "Depois"]} rows={PHASES.map(([f, a, b]) => [f, a, b])} />
       <h2 className="section-title">Criativos</h2>
@@ -154,7 +154,7 @@ function Tests({ m, p, g }) {
 
 // Metas × realizado (a "matriz de cápsulas"): cada meta de cada conjunto com a faixa entre o limite de pausa e a meta, e o valor de agora.
 function Goals({ m }) {
-  const arms = armTotals(m?.adsets);
+  const arms = armTotals(m?.adsets, m?.ab);
   return (
     <>
       {Object.keys(ARMS).map((k) => (
@@ -166,7 +166,7 @@ function Goals({ m }) {
               const pos = (val) => `${Math.min(100, Math.max(0, (val / hi) * 100))}%`, st = goalStatus(x, v, arms[k].spend);
               return (
                 <div key={x.id} className="glass goal">
-                  <div className="goal-head"><b>{x.label}</b><span className={st}>{v == null ? (k === "site" && ["conv", "cpo"].includes(x.id) ? "na Coinzz" : "—") : fmt(v, x.unit)}</span></div>
+                  <div className="goal-head"><b>{x.label}</b><span className={st}>{v == null ? (k === "site" && ["conv", "cpo"].includes(x.id) && arms[k].orders == null ? "sem leitura" : "—") : fmt(v, x.unit)}</span></div>
                   <div className="capsule">
                     <i className={`band ${x.dir < 0 ? "rev" : ""}`} style={{ left: pos(lo), width: `calc(${pos(Math.max(x.ideal, x.pause ?? x.ideal))} - ${pos(lo)})` }} />
                     {v != null && <i className={`now ${st}`} style={{ left: pos(v) }} />}

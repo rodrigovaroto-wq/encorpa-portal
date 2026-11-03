@@ -152,7 +152,7 @@ export const REF = [
     ["Pausa no dia 2 (R$ 50)", "Site: CTR < 1% ou CPC > R$ 1,20 · WhatsApp: CTR < 1%, CPC > R$ 3,00 ou conversa > R$ 4,00"],
     ["Pausa no dia 3 (R$ 75)", "zero pedidos criados pausa o conjunto; com pedido, roda até o 5º dia"],
     ["Critério", "custo de anúncio por pedido criado ≤ R$ 27; quem ficar abaixo leva a verba"],
-    ["Onde contar os pedidos", "WhatsApp: leads com a marca do anúncio (ctwa). Site: pedidos da Coinzz com utm_campaign=ab-site"]]],
+    ["Onde contar os pedidos", "WhatsApp: leads com a marca do anúncio (ctwa). Site: pedido de cliente sem essa marca, desde o início do conjunto Site (a Coinzz não manda UTM no webhook de venda)"]]],
 ];
 
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };

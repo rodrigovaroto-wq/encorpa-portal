@@ -36,3 +36,27 @@ test("armVerdict: não começou, pausa do dia 2, pausa do dia 3 sem pedido, roda
   assert.equal(v("whatsapp", { destination: "WHATSAPP", spend: 80, impressions: 4000, clicks: 100, started: 50, orders: 3 }), "Rodando");
   assert.equal(armVerdict("site", armTotals([])["site"])[0], "Conjunto não encontrado na Meta");
 });
+
+test("siteOrders: pedido de lead sem marca de anúncio, desde o início do conjunto Site", async () => {
+  const { siteOrders } = await import("../lib/build.mjs");
+  const iso = (d) => `2026-11-${String(d).padStart(2, "0")}T12:00:00Z`, ms = (d) => Date.parse(iso(d));
+  const D = {
+    leads: [{ id: "zap", ctwa: "Afh2…" }, { id: "site" }, { id: "site2" }],
+    orders: [
+      { lead_id: "site", created_at: iso(6), status: "Agendado", payment_method: "cod", amount_brl: 109.9, units: 1 },
+      { lead_id: "site2", created_at: iso(3), status: "Agendado", payment_method: "cod", amount_brl: 109.9, units: 1 }, // antes do início
+      { lead_id: "zap", created_at: iso(6), status: "Agendado", payment_method: "cod", amount_brl: 109.9, units: 1 },
+      { lead_id: "site", created_at: iso(7), status: "Cancelado", payment_method: "cod", amount_brl: 109.9, units: 1 }, // não é pedido feito
+    ],
+  };
+  const sets = [{ destination: "WEBSITE", start: iso(5) }, { destination: "WHATSAPP", start: iso(1) }];
+  assert.equal(siteOrders(D, ms(1), ms(10), sets), 1);
+  assert.equal(siteOrders(D, ms(1), ms(10), [{ destination: "WHATSAPP", start: iso(1) }]), null, "sem conjunto Site: sem leitura");
+});
+
+test("armTotals: o pedido do Site lido entra na conversão e no custo, e R$ 75 sem pedido pausa", () => {
+  const t = armTotals([set({ destination: "WEBSITE", spend: 60, impressions: 3000, clicks: 100 })], { site_orders: 3 });
+  assert.equal(t.site.orders, 3); assert.equal(t.site.conv, 3); assert.equal(t.site.cpo, 20);
+  const z = armTotals([set({ destination: "WEBSITE", spend: 80, impressions: 4000, clicks: 150 })], { site_orders: 0 });
+  assert.match(armVerdict("site", z.site)[0], /R\$ 75 sem pedido/);
+});

@@ -19,12 +19,13 @@ export const ARMS = {
     { id: "cpo", label: "Custo por pedido criado", unit: "brl", ideal: 22.22, pause: 27, dir: -1 }] },
 };
 const ZERO = { spend: 0, impressions: 0, clicks: 0, started: 0, leads: 0, orders: 0 };
-// Soma dos conjuntos de cada braço, com as taxas. No Site o pedido vem da Coinzz (utm_campaign=ab-site), que o portal ainda não lê.
-export function armTotals(adsets = []) {
+// Soma dos conjuntos de cada braço, com as taxas. No WhatsApp o pedido é o do anúncio (eval_attribution); no Site, o de lead sem marca de
+// anúncio desde o início do conjunto Site (`ab.site_orders`, lib/build.mjs › siteOrders); sem essa leitura, null.
+export function armTotals(adsets = [], ab = null) {
   const out = {};
   for (const k of Object.keys(ARMS)) {
     const t = adsets.filter((s) => armOf(s) === k).reduce((a, s) => Object.fromEntries(Object.keys(ZERO).map((f) => [f, a[f] + (+s[f] || 0)])), { ...ZERO });
-    const orders = k === "site" ? null : t.orders;
+    const orders = k === "site" ? (ab?.site_orders ?? null) : t.orders;
     out[k] = { ...t, sets: adsets.filter((s) => armOf(s) === k).length, orders, ctr: t.impressions ? (t.clicks / t.impressions) * 100 : null, cpc: t.clicks ? t.spend / t.clicks : null,
       cpl: t.started ? t.spend / t.started : null, conv: orders == null ? null : k === "site" ? (t.clicks ? (orders / t.clicks) * 100 : null) : t.started ? (orders / t.started) * 100 : null,
       cpo: orders ? t.spend / orders : null };
@@ -44,7 +45,7 @@ export function armVerdict(k, t) {
   if (!t.sets) return ["Conjunto não encontrado na Meta", ""];
   if (!t.spend) return ["Não começou", ""];
   if (t.spend >= 50 && ARMS[k].goals.some((x) => x.id !== "cpo" && x.pause != null && goalStatus(x, t[x.id], t.spend) === "bad")) return ["PAUSAR: limite do dia 2 estourado", "bad"];
-  if (k !== "site" && t.spend >= 75 && !t.orders) return ["PAUSAR: R$ 75 sem pedido", "bad"];
+  if (t.orders != null && t.spend >= 75 && !t.orders) return ["PAUSAR: R$ 75 sem pedido", "bad"];
   if (t.spend >= SAMPLE_FLOOR.spend) return [t.cpo != null && t.cpo <= 27 ? "Terminou abaixo de R$ 27 por pedido" : "Terminou", t.cpo != null && t.cpo <= 27 ? "ok" : "warn"];
   return ["Rodando", "ok"];
 }
