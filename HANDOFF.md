@@ -1,7 +1,13 @@
 # Handoff — encorpa-portal
 
-> Atualizado em 03/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
+> Atualizado em 04/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
+
+## Feito em 04/11 (branch `claude/keen-mccarthy-ecydee`)
+
+- **Financeiro › Caixa:** campo **Duração dos anúncios (dias)**. Com um número inteiro digitado, o caixa necessário, o título ("por 15 dias")
+  e a conta usam esses dias, e a tabela ganha a linha "15 dias (digitado)" no topo; vale só para esta conta, o período do topo não muda.
+  Vazio volta ao período do topo.
 
 ## Feito em 03/11 (branch `claude/fervent-allen-wwf47s`)
 
