@@ -1,18 +1,1102 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#07030f">
-  <link rel="icon" href="/logo.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-  <title>Encorpa Dashboard</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel — Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060a14;--bg2:#0d1426;--card:rgba(18,26,46,.58);--card-b:rgba(255,255,255,.07);--tx:#e8edf7;--tx2:#9aa6bd;--tx3:#67738c;--acc:#2f7bff;--ok:#2fd27a;--warn:#f5b13d;--bad:#ff5c6c;--violet:#9b7bff;--line:rgba(255,255,255,.08);--hover:rgba(255,255,255,.06);--input:rgba(255,255,255,.04);--shadow:0 10px 40px rgba(0,0,0,.35);--r:20px;--orb:.55;--pad:18px}
+[data-theme=light]{--bg:#edf1f8;--bg2:#fff;--card:rgba(255,255,255,.74);--card-b:rgba(15,23,42,.08);--tx:#0f172a;--tx2:#55627a;--tx3:#8a96ab;--line:rgba(15,23,42,.08);--hover:rgba(15,23,42,.05);--input:rgba(15,23,42,.035);--shadow:0 10px 30px rgba(15,23,42,.07);--orb:.22}
+.compact{--pad:12px;--r:14px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:14px/1.45 Inter,system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;opacity:var(--orb);pointer-events:none;background:
+ radial-gradient(40vw 40vw at 0% 30%,color-mix(in srgb,var(--acc) 70%,transparent),transparent 60%),
+ radial-gradient(30vw 30vw at 85% 5%,rgba(255,170,60,.55),transparent 60%),
+ radial-gradient(35vw 35vw at 70% 60%,rgba(40,200,190,.35),transparent 60%),
+ radial-gradient(25vw 25vw at 40% 45%,rgba(60,200,110,.25),transparent 60%);filter:blur(30px)}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+h1{font-size:24px;margin:0;letter-spacing:-.02em}
+h3{font-size:15px;margin:0;font-weight:600}
+h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:20px 0 8px}
+.skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;z-index:99;background:var(--acc);color:#fff;padding:8px 12px;border-radius:8px}
+.ic{flex:none}
+.sub{color:var(--tx2);font-size:12.5px;margin:2px 0 0}
+.muted{color:var(--tx3)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.base{align-items:baseline}
+.grow{flex:1}
+/* layout */
+.app{display:grid;grid-template-columns:84px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:12px;height:calc(100vh - 24px);margin:12px 0 12px 12px;border-radius:26px;background:var(--card);border:1px solid var(--card-b);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px;z-index:40}
+.side nav{flex:1;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;padding:4px 0}
+.side hr{width:32px;border:0;border-top:1px solid var(--line);margin:6px 0}
+.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--acc),#7fb2ff);box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 50%,transparent)}
+.nv{position:relative;width:50px;height:40px;display:grid;place-items:center;border-radius:14px;color:var(--tx2);transition:.15s}
+.nv:hover{background:var(--hover);color:var(--tx)}
+.nv.on{background:var(--acc);color:#fff;box-shadow:0 6px 20px color-mix(in srgb,var(--acc) 45%,transparent)}
+.nv .dot{position:absolute;top:3px;right:5px;min-width:16px;height:16px;border-radius:8px;background:var(--acc);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+.nv.on .dot{background:#fff;color:var(--acc)}
+.sw{width:46px;height:26px;border-radius:13px;background:var(--input);border:1px solid var(--line);position:relative;transition:.2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--tx2);transition:.2s}
+.sw[aria-checked=true]{background:var(--ok)}.sw[aria-checked=true]::after{left:22px;background:#fff}
+#tip{position:fixed;z-index:90;background:var(--bg2);border:1px solid var(--card-b);padding:5px 10px;border-radius:8px;font-size:12px;pointer-events:none;box-shadow:var(--shadow);display:none;white-space:nowrap}
+.main{padding:18px 24px 40px;min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.top b{font-size:19px;letter-spacing:-.01em}
+.ib.mbtn{display:none}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+.card{background:var(--card);border:1px solid var(--card-b);border-radius:var(--r);padding:var(--pad);backdrop-filter:blur(18px) saturate(140%);box-shadow:var(--shadow);min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.kv{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:4px 0}
+.kpi .spark{margin-top:8px}
+.foot{text-align:center;color:var(--tx3);font-size:12px;margin-top:28px}
+/* controls */
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-weight:600;font-size:13px;background:var(--input);border:1px solid var(--line);white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn.pri{background:var(--acc);color:#fff;border-color:transparent;box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 40%,transparent)}
+.btn.pri:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.sm{height:30px;padding:0 12px;font-size:12px}
+.btn.xs{height:24px;padding:0 9px;font-size:11px}
+.ib{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--input);border:1px solid var(--line);position:relative;flex:none}
+.ib:hover{background:var(--hover)}
+.ib .dot{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:var(--acc);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.seg{display:inline-flex;background:var(--input);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;color:var(--tx2)}
+.seg button.on{background:var(--hover);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs button{padding:10px 14px;font-weight:600;color:var(--tx2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button.on{color:var(--tx);border-color:var(--acc)}
+.cnt{display:inline-grid;place-items:center;min-width:20px;height:18px;border-radius:9px;background:var(--hover);font-size:11px;margin-left:6px;padding:0 5px;color:var(--tx2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--input);font-size:12.5px;font-weight:600;color:var(--tx2)}
+.chip.on{background:color-mix(in srgb,var(--acc) 18%,transparent);border-color:color-mix(in srgb,var(--acc) 50%,transparent);color:var(--tx)}
+.inp,.fld input,.fld select,.fld textarea,select.inp{height:36px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--input);min-width:0}
+.fld textarea{height:auto;padding:10px 12px;resize:vertical}
+select option{background:var(--bg2);color:var(--tx)}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.fld>span{font-size:12px;font-weight:600;color:var(--tx2)}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chk{display:flex;align-items:center;gap:8px;margin:6px 0}
+.chk input{accent-color:var(--acc);width:16px;height:16px}
+/* data */
+.delta{font-weight:600;font-size:12.5px}.delta.up{color:var(--ok)}.delta.down{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;background:var(--hover);color:var(--tx2)}
+.pill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.pill.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.pill.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.pill.info,.pill.acc{color:var(--acc);background:color-mix(in srgb,var(--acc) 16%,transparent)}
+.pill.violet{color:var(--violet);background:color-mix(in srgb,var(--violet) 16%,transparent)}
+.av{--h:210;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;background:hsl(var(--h) 60% 50% / .22);color:hsl(var(--h) 80% 75%)}
+[data-theme=light] .av{color:hsl(var(--h) 60% 35%)}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.click{cursor:pointer}.tbl tr.click:hover td{background:var(--hover)}
+.tbl .r,.r{text-align:right}
+.list{list-style:none;margin:0;padding:0}
+.list>li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list>li:last-child{border-bottom:0}
+.kvl{list-style:none;margin:12px 0;padding:0}
+.kvl li{display:flex;justify-content:space-between;padding:6px 0;color:var(--tx2)}
+.kvl b{color:var(--tx)}
+.pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.pager .ib{width:32px;height:32px}
+.empty{padding:40px;text-align:center;color:var(--tx3)}
+.bar{height:8px;border-radius:4px;background:var(--hover);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:4px}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin:6px 0 14px}
+.stack i{display:block;height:100%}
+.sw-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:8px;box-shadow:0 0 0 0 var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px transparent}}
+.lbars{display:flex;align-items:flex-end;gap:3px;height:64px;margin:10px 0}
+.lbars i{flex:1;background:color-mix(in srgb,var(--acc) 55%,transparent);border-radius:3px 3px 0 0;transition:height .4s}
+.lbars i:last-child{background:var(--acc)}
+.rank{width:22px;color:var(--tx3);font-weight:700}
+/* charts */
+.chart{position:relative}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.gl{stroke:var(--line);stroke-dasharray:3 5}
+.axis{fill:var(--tx3);font-size:11px}
+.ln{fill:none;stroke:var(--acc);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.ln.prev{stroke:var(--tx3);stroke-dasharray:6 6;stroke-width:1.6}
+.ln.net{stroke:var(--warn)}
+.bk{fill:var(--acc);opacity:.85}.bk:hover{opacity:1}
+.bk.s1{fill:var(--bad);opacity:.6}
+.guide{stroke:var(--tx3);stroke-dasharray:3 3;opacity:0}
+.chart:hover .guide{opacity:1}
+.tt{position:absolute;pointer-events:none;background:var(--bg2);border:1px solid var(--card-b);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:var(--shadow);white-space:nowrap;transform:translate(-50%,-105%);display:none;z-index:5}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--tx2)}
+.legend span{display:flex;align-items:center;gap:6px}
+/* products */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.pcard{cursor:pointer;padding:0;overflow:hidden;transition:transform .15s}
+.pcard:hover{transform:translateY(-2px)}
+.thumb{--h:210;aspect-ratio:4/3;display:grid;place-items:center;font-size:30px;font-weight:700;color:hsl(var(--h) 80% 80%);background:radial-gradient(circle at 30% 30%,hsl(var(--h) 70% 55% / .55),hsl(var(--h) 60% 20% / .4));position:relative}
+[data-theme=light] .thumb{color:hsl(var(--h) 60% 30%);background:radial-gradient(circle at 30% 30%,hsl(var(--h) 70% 75%),hsl(var(--h) 60% 88%))}
+.thumb .pill{position:absolute;top:10px;left:10px;backdrop-filter:blur(8px)}
+.pcard .pb{padding:12px 14px}
+/* kanban */
+.kb{display:grid;grid-template-columns:repeat(4,minmax(230px,1fr));gap:12px;overflow-x:auto;padding-bottom:6px}
+.kcol{background:var(--input);border:1px dashed var(--line);border-radius:16px;padding:10px;min-height:300px}
+.kcol.over{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.kh{font-weight:600;margin:4px 4px 10px}
+.kcard{background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:grab;display:flex;flex-direction:column;gap:4px}
+/* chat & mail */
+.split{display:grid;grid-template-columns:320px minmax(0,1fr);height:calc(100vh - 210px);min-height:460px;padding:0;overflow:hidden}
+.split.three{grid-template-columns:170px 320px minmax(0,1fr)}
+.pane{overflow-y:auto;border-right:1px solid var(--line);min-width:0}
+.pane:last-child{border-right:0}
+.it{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;text-align:left}
+.it:hover{background:var(--hover)}.it.on{background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.it .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx2);font-size:12.5px}
+.it.unread b{color:var(--tx)}.it.unread .t{color:var(--tx)}
+.conv{display:flex;flex-direction:column;height:100%}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:72%;padding:9px 13px;border-radius:16px;background:var(--hover)}
+.msg.me{align-self:flex-end;background:var(--acc);color:#fff}
+.msg small{display:block;opacity:.65;font-size:10.5px;margin-top:3px}
+.compose{padding:12px;border-top:1px solid var(--line)}
+.fold{display:flex;justify-content:space-between;width:100%;padding:9px 14px;color:var(--tx2);font-weight:600;border-radius:10px}
+.fold.on,.fold:hover{background:var(--hover);color:var(--tx)}
+.mailbody{white-space:pre-wrap;line-height:1.65}
+/* dialogs */
+dialog{border:0;padding:0;background:transparent;color:var(--tx);max-width:100vw}
+dialog::backdrop{background:rgba(3,6,14,.55);backdrop-filter:blur(4px)}
+.mbox{width:min(520px,calc(100vw - 32px));background:var(--bg2);border:1px solid var(--card-b);border-radius:20px;box-shadow:var(--shadow)}
+.mbox header,.dh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.mbody{padding:18px;max-height:65vh;overflow-y:auto}
+.mbox footer,.df{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+dialog.drawer{margin:0 0 0 auto;height:100vh;max-height:100vh}
+.dbox{width:min(460px,100vw);height:100%;background:var(--bg2);border-left:1px solid var(--card-b);display:flex;flex-direction:column}
+.db{flex:1;overflow-y:auto;padding:18px}
+.big{font-size:22px}
+.tl{list-style:none;padding:0;margin:0}
+.tl li{position:relative;padding:0 0 14px 22px;color:var(--tx3)}
+.tl li::before{content:"";position:absolute;left:4px;top:5px;width:9px;height:9px;border-radius:50%;border:2px solid var(--tx3)}
+.tl li.done{color:var(--tx)}.tl li.done::before{background:var(--ok);border-color:var(--ok)}
+[popover]{inset:auto;top:64px;right:24px;margin:0;width:min(360px,calc(100vw - 32px));background:var(--bg2);color:var(--tx);border:1px solid var(--card-b);border-radius:16px;box-shadow:var(--shadow);padding:6px}
+#createMenu{width:240px}
+.mi{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;text-align:left}
+.mi:hover{background:var(--hover)}
+.mi.unread{background:color-mix(in srgb,var(--acc) 8%,transparent)}
+#pal .mbox{width:min(600px,calc(100vw - 32px))}
+#pal input{width:100%;height:52px;border:0;background:transparent;padding:0 18px;font-size:16px;border-bottom:1px solid var(--line);outline:0}
+#palres{max-height:50vh;overflow-y:auto;padding:6px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,120px);background:var(--bg2);border:1px solid var(--card-b);padding:11px 18px;border-radius:12px;box-shadow:var(--shadow);transition:transform .25s;z-index:100;font-weight:500}
+#toast.show{transform:translate(-50%,0)}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+details summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+details summary::after{content:"+";color:var(--tx3)}details[open] summary::after{content:"–"}
+details p{color:var(--tx2);margin:8px 0 0}
+.hcat{cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.hcat:hover{border-color:color-mix(in srgb,var(--acc) 50%,transparent)}
+.icbox{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc);flex:none}
+.prog{height:6px;border-radius:3px;background:var(--hover);overflow:hidden;margin-top:8px}.prog i{display:block;height:100%;background:var(--acc)}
+.acc-opt{width:30px;height:30px;border-radius:50%;border:3px solid transparent}
+.acc-opt.on{border-color:var(--tx)}
+/* responsive */
+@media(max-width:1150px){.s3,.s4,.s5{grid-column:span 6}.s7,.s8{grid-column:span 12}.split.three{grid-template-columns:150px 260px minmax(0,1fr)}}
+@media(max-width:860px){
+ .app{grid-template-columns:minmax(0,1fr)}
+ .side{position:fixed;left:-110px;top:0;height:100vh;margin:0;border-radius:0 24px 24px 0;transition:left .2s}
+ .side.open{left:0}
+ .ib.mbtn{display:grid}
+ .main{padding:14px 16px 32px}
+ .s3,.s4,.s5,.s6{grid-column:span 12}
+ .split,.split.three{grid-template-columns:1fr;height:auto}
+ .split .pane{max-height:340px;border-right:0;border-bottom:1px solid var(--line)}
+ .r2{grid-template-columns:1fr}
+ .top .hide-sm{display:none}
+}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+<div class="app">
+  <aside class="side" id="side" aria-label="Menu lateral"></aside>
+  <div class="main">
+    <header class="top">
+      <div class="row">
+        <button class="ib mbtn" data-act="menu" aria-label="Abrir menu"></button>
+        <div><b id="greet"></b><div class="sub" id="crumb"></div></div>
+      </div>
+      <div class="row">
+        <button class="ib" data-act="palette" aria-label="Buscar (Ctrl+K)" data-tip="Buscar · Ctrl+K" id="topSearch"></button>
+        <button class="ib" popovertarget="notif" aria-label="Notificações" id="bell"></button>
+        <button class="btn pri" popovertarget="createMenu" id="createBtn"></button>
+      </div>
+    </header>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+<div popover id="notif"></div>
+<div popover id="createMenu"></div>
+<dialog id="modal"></dialog>
+<dialog id="drawer" class="drawer"></dialog>
+<dialog id="pal"><div class="mbox"><input id="palq" placeholder="Buscar páginas, pedidos, clientes, produtos…" autocomplete="off"><div id="palres"></div></div></dialog>
+<div id="tip"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ---------- utils ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DAY = 864e5;
+const sum = a => a.reduce((x, y) => x + y, 0);
+const brl = n => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const brl0 = n => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const kfmt = n => Math.abs(n) >= 1000 ? 'R$ ' + (n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k' : 'R$ ' + Math.round(n);
+const num = n => n.toLocaleString('pt-BR');
+const pctOf = (a, b) => b ? (a - b) / b * 100 : 0;
+const delta = (a, b) => { const p = pctOf(a, b); return `<span class="delta ${p >= 0 ? 'up' : 'down'}">${p >= 0 ? '↑' : '↓'} ${Math.abs(p).toFixed(Math.abs(p) < 10 ? 1 : 0).replace('.', ',')}%</span>`; };
+const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const sod = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
+const hm = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const dm = t => { const d = new Date(t); return d.getDate() + ' ' + MES[d.getMonth()]; };
+const wd = t => new Date(t).toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+const fullDate = t => new Date(t).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' });
+const yrBack = t => { const d = new Date(t); d.setFullYear(d.getFullYear() - 1); return +d; };
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const ago = t => {
+  const m = (Date.now() - t) / 6e4, t0 = sod(Date.now());
+  if (m < 1) return 'agora';
+  if (m < 60) return Math.round(m) + ' min atrás';
+  if (t >= t0) return Math.round(m / 60) + ' h atrás';
+  if (t >= t0 - DAY) return 'Ontem, ' + hm(t);
+  if (t >= t0 - 6 * DAY) return cap(wd(t)) + ', ' + hm(t);
+  return dm(t);
+};
+const hue = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+const initials = n => n.split(/\s+/).filter(w => /^[A-ZÀ-Ú&]/i.test(w) && w.length > 2 || w === n.split(' ')[0]).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+const av = n => `<span class="av" style="--h:${hue(n)}" aria-hidden="true">${esc(initials(n))}</span>`;
+const pill = (t, c = '') => `<span class="pill ${c}">${t}</span>`;
+const fld = (l, inner) => `<label class="fld"><span>${l}</span>${inner}</label>`;
+const opts = (list, cur) => list.map(o => { const [v, l] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(l)}</option>`; }).join('');
+const csv = rows => '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+function download(name, text, type = 'text/csv;charset=utf-8') {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 2600); }
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const noise = n => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+
+/* ---------- icons ---------- */
+const I = {
+  grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', bag: 'M6 7h12l1 13H5L6 7zM9 7a3 3 0 0 1 6 0', box: 'M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9',
+  chart: 'M4 20h16M7 16v-5M12 16V7M17 16v-8', users: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M22 21a7 7 0 0 0-4-6.3',
+  wallet: 'M3 7h18v13H3zM3 7l3-4h12l3 4M16 13.5h2', file: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5', tag: 'M3 12V3h9l9 9-9 9-9-9zM8 8h.01',
+  chat: 'M4 5h16v11H9l-5 4V5z', mail: 'M3 5h18v14H3zM3 6l9 7 9-7', puzzle: 'M4 8h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4V8z',
+  gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1',
+  help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-4.3-4.3',
+  bell: 'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0', plus: 'M12 5v14M5 12h14', edit: 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4',
+  x: 'M6 6l12 12M18 6L6 18', download: 'M12 3v12M7 10l5 5 5-5M5 21h14', star: 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3z',
+  archive: 'M3 4h18v4H3zM5 8v12h14V8M10 12h4', send: 'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z', menu: 'M4 6h16M4 12h16M4 18h16',
+  logo: 'M5 19c0-8 6-14 14-14 0 8-6 14-14 14zM5 19l7-7', reply: 'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 6 6v5', trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  check: 'M5 12l5 5L20 7', arrow: 'M5 12h14M13 6l6 6-6 6',
+};
+const ic = (n, s = 18) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${I[n]}"/></svg>`;
+
+/* ---------- dados de exemplo (trocar pela API do Portal) ---------- */
+const PRODUCTS = [
+  ['Cadeira Ergo Pro', 'Móveis', 'Tela mesh · preta', 1890, 24, 10], ['Mesa Studio 120', 'Móveis', '120 × 60 cm · carvalho', 1290, 8, 10],
+  ['Mesa Elevatória Flex', 'Móveis', 'Motor duplo · 140 cm', 3490, 5, 6], ['Gaveteiro Volante', 'Móveis', '3 gavetas · branco', 590, 31, 10],
+  ['Suporte Monitor Duo', 'Acessórios', 'Braço articulado', 449, 0, 15], ['Luminária Arc LED', 'Acessórios', '3 temperaturas de cor', 329, 44, 20],
+  ['Organizador Slim', 'Acessórios', 'Bambu · 5 divisões', 129, 120, 40], ['Apoio de Pés Ergo', 'Acessórios', 'Inclinação ajustável', 219, 18, 20],
+  ['Teclado Mecânico K2', 'Periféricos', 'Switch brown · ABNT2', 599, 37, 15], ['Mouse Vertical', 'Periféricos', 'Sem fio · recarregável', 249, 12, 20],
+  ['Headset Focus ANC', 'Periféricos', 'Cancelamento de ruído', 899, 26, 10], ['Webcam Full HD', 'Periféricos', '1080p · microfone duplo', 379, 52, 15],
+  ['Hub USB-C 7 em 1', 'Energia', 'HDMI 4K · PD 100 W', 289, 68, 25], ['Carregador GaN 65 W', 'Energia', '3 portas', 269, 9, 20],
+  ['Cabo USB-C 2 m', 'Energia', 'Nylon trançado', 79, 210, 60], ['Caderno A5 Pontilhado', 'Papelaria', '160 páginas', 69, 140, 50],
+  ['Planner Semanal', 'Papelaria', 'Capa dura · sem data', 89, 75, 30], ['Kit Canetas Fine', 'Papelaria', '12 cores', 59, 16, 30],
+  ['Mochila Urban 20 L', 'Acessórios', 'Compartimento 15,6"', 459, 33, 12], ['Garrafa Térmica 750 ml', 'Acessórios', 'Aço inox', 149, 88, 30],
+  ['Mousepad Desk XL', 'Periféricos', '90 × 40 cm', 139, 64, 25], ['Kit Home Office Start', 'Kits', 'Teclado + mouse + mousepad', 849, 14, 8],
+];
+const FIRST = ['Ana', 'Bruno', 'Carla', 'Diego', 'Eduarda', 'Felipe', 'Gabriela', 'Henrique', 'Isabela', 'João', 'Larissa', 'Marcos', 'Natália', 'Otávio', 'Paula', 'Rafael', 'Sabrina', 'Thiago', 'Vanessa', 'Lucas', 'Mariana', 'Pedro', 'Beatriz', 'Gustavo', 'Camila', 'Rodrigo', 'Juliana', 'André', 'Fernanda', 'Caio'];
+const LAST = ['Almeida', 'Barbosa', 'Costa', 'Dias', 'Ferreira', 'Gomes', 'Lima', 'Martins', 'Nunes', 'Oliveira', 'Pereira', 'Ribeiro', 'Santos', 'Souza', 'Teixeira', 'Vieira', 'Moura', 'Carvalho', 'Rocha', 'Mendes'];
+const CITIES = ['São Paulo, SP', 'Campinas, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Curitiba, PR', 'Porto Alegre, RS', 'Florianópolis, SC', 'Salvador, BA', 'Recife, PE', 'Brasília, DF', 'Goiânia, GO', 'Fortaleza, CE'];
+const WHOLESALE = [['Cowork Vila Nova', 'Renata Prado'], ['Escritório Prisma', 'Marcelo Tavares'], ['Agência Faro', 'Lívia Moraes'], ['Studio Norte Arquitetura', 'Caio Bastos']];
+const CHANNELS = ['Loja virtual', 'Instagram', 'Marketplace', 'Atacado'];
+const CH_COLOR = { 'Loja virtual': 'var(--acc)', Instagram: 'var(--violet)', Marketplace: 'var(--warn)', Atacado: 'var(--ok)' };
+const ST = { aguardando: ['Aguardando pagamento', 'warn'], separar: ['A separar', 'info'], embalado: ['Embalado', 'violet'], enviado: ['Enviado', ''], entregue: ['Entregue', 'ok'], devolvido: ['Devolvido', 'bad'], cancelado: ['Cancelado', ''] };
+const FLOW = ['aguardando', 'separar', 'embalado', 'enviado', 'entregue'];
+const NEXT = { aguardando: 'separar', separar: 'embalado', embalado: 'enviado', enviado: 'entregue' };
+const counted = o => !['aguardando', 'devolvido', 'cancelado'].includes(o.st);
+const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+function seed() {
+  const r = mulberry32(7), pick = a => a[Math.floor(r() * a.length)], now = Date.now(), t0 = sod(now);
+  const products = PRODUCTS.map(([name, cat, variant, price, stock, reorder]) => ({ name, cat, variant, price, stock, reorder, status: 'ativo' }));
+  products[17].status = 'rascunho';
+  const weights = products.map(p => 1 / Math.sqrt(p.price)), wsum = sum(weights);
+  const pickP = () => { let x = r() * wsum; for (let i = 0; i < weights.length; i++) { x -= weights[i]; if (x <= 0) return i; } return 0; };
+  const customers = [];
+  for (let i = 0; i < 220; i++) {
+    const name = pick(FIRST) + ' ' + pick(LAST);
+    customers.push({ id: 'c' + i, name, email: slug(name.split(' ')[0]) + '.' + slug(name.split(' ')[1]) + '@' + pick(['gmail.com', 'outlook.com', 'icloud.com', 'uol.com.br']), city: pick(CITIES), join: i < 40 ? 0 : Math.floor(r() * 720) });
+  }
+  customers.sort((a, b) => a.join - b.join);
+  const ws = WHOLESALE.map(([n, contact], j) => ({ id: 'w' + j, name: n, contact, email: 'compras@' + slug(n) + '.com.br', city: CITIES[j], wholesale: true, join: 0 }));
+  const orders = [];
+  const START = t0 - 730 * DAY;
+  for (let d = 0; d <= 730; d++) {
+    const day = START + d * DAY, mo = new Date(day).getMonth();
+    const season = 1 + 0.15 * Math.sin(2 * Math.PI * mo / 12) + (mo >= 10 ? 0.3 : 0);
+    const rate = (2.5 + 4.5 * d / 730) * season;
+    const n = Math.max(0, Math.round((rate + (r() - 0.5) * 3) * (d === 730 ? (now - day) / DAY : 1)));
+    const elig = customers.filter(c => c.join <= d);
+    for (let k = 0; k < n; k++) {
+      const ts = d === 730 ? day + r() * (now - day) : day + r() * DAY;
+      const isW = r() < 0.05, c = isW ? pick(ws) : elig[Math.floor(Math.pow(r(), 1.6) * elig.length)];
+      const items = [], nI = 1 + Math.floor(r() * r() * 4), used = new Set();
+      for (let j = 0; j < nI; j++) { const p = pickP(); if (used.has(p)) continue; used.add(p); items.push([p, isW ? 4 + Math.floor(r() * 10) : 1 + (r() < 0.2 ? 1 : 0), products[p].price]); }
+      const subtotal = sum(items.map(([, q, pr]) => q * pr)), ship = subtotal >= 499 ? 0 : 29.9;
+      const ageH = (now - ts) / 36e5;
+      let st = ageH < 0.75 ? (r() < 0.5 ? 'aguardando' : 'separar') : ageH < 6 ? 'separar' : ageH < 26 ? 'embalado' : ageH < 96 ? 'enviado' : 'entregue';
+      if (ageH > 48 && r() < 0.015) st = 'devolvido'; else if (ageH > 24 && r() < 0.01) st = 'cancelado';
+      orders.push({ ts, c: c.id, ch: isW ? 'Atacado' : (r() < 0.6 ? 'Loja virtual' : r() < 0.5 ? 'Instagram' : 'Marketplace'), i: items, ship, total: subtotal + ship, st });
+    }
+  }
+  orders.sort((a, b) => a.ts - b.ts).forEach((o, i) => o.id = '#' + (10000 + i));
+  // faturas de atacado
+  const wo = orders.filter(o => o.ch === 'Atacado').slice(-9);
+  const invoices = wo.map((o, i) => {
+    const due = o.ts + 14 * DAY;
+    const paid = due < now - 2 * DAY && i !== wo.length - 4;
+    return { id: 'FAT-' + (2040 + i), c: o.c, issued: o.ts, due, amount: o.total, status: paid ? 'paga' : 'enviada', paidAt: paid ? o.ts + (5 + Math.floor(r() * 8)) * DAY : null };
+  });
+  invoices.push({ id: 'FAT-' + (2040 + wo.length), c: 'w0', issued: now, due: now + 14 * DAY, amount: 4380, status: 'rascunho', paidAt: null });
+  // despesas: 4 meses fechados + mês atual
+  const expenses = []; let eid = 1;
+  for (let m = 4; m >= 0; m--) {
+    const d = new Date(t0); d.setDate(1); d.setMonth(d.getMonth() - m);
+    const a = +d, b = +new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    const sales = sum(orders.filter(o => o.ts >= a && o.ts < b && counted(o)).map(o => o.total));
+    const e = (cat, desc, v, day = 5) => { const dd = new Date(a); dd.setDate(day); if (+dd <= now) expenses.push({ id: eid++, ts: +dd, cat, desc, amount: Math.round(v * 100) / 100 }); };
+    e('Folha de pagamento', 'Salários e encargos', 38000 + r() * 1500, 5); e('Fornecedores', 'Reposição de estoque', sales * (0.36 + r() * 0.04), 10);
+    e('Aluguel', 'Galpão e showroom', 9500, 8); e('Frete', 'Transportadoras', sales * 0.05, 15); e('Marketing', 'Anúncios e influenciadores', sales * 0.045, 12);
+    e('Embalagens', 'Caixas e etiquetas', sales * 0.012, 18); e('Software', 'Assinaturas', 1180, 3);
+  }
+  const ms = m => now + m * 6e4;
+  return {
+    v: 3, day: t0, products, customers: [...customers, ...ws], orders, invoices, expenses,
+    settings: { name: 'Minha Loja', legal: 'Minha Loja Comércio Ltda.', email: 'contato@minhaloja.com.br', phone: '(11) 4000-0000', address: 'Rua Exemplo, 100 — São Paulo, SP', tz: 'America/Sao_Paulo', freeShip: 499, goal: 120000, accent: '#2f7bff', compact: false, notify: { orders: true, stock: true, invoices: true, chats: true, weekly: false } },
+    user: { name: 'Rodrigo Varoto', role: 'Administrador' },
+    theme: 'dark', notifRead: [],
+    team: [{ name: 'Rodrigo Varoto', email: 'rodrigo@minhaloja.com.br', role: 'Administrador' }, { name: 'Paula Nunes', email: 'paula@minhaloja.com.br', role: 'Operações' }, { name: 'Diego Lima', email: 'diego@minhaloja.com.br', role: 'Atendimento' }, { name: 'Camila Rocha', email: 'camila@contabil.com.br', role: 'Financeiro (leitura)' }],
+    coupons: [
+      { code: 'BEMVINDO10', type: 'pct', val: 10, desc: 'Primeira compra', min: 0, limit: 0, used: 84, sales: 41230, cost: 4123, start: ms(-200 * 1440), end: null, active: true, campaign: false },
+      { code: 'NEWS5', type: 'pct', val: 5, desc: 'Inscrição na newsletter', min: 0, limit: 0, used: 121, sales: 38410, cost: 1920, start: ms(-300 * 1440), end: null, active: true, campaign: false },
+      { code: 'VOLTA50', type: 'brl', val: 50, desc: 'Recompra · pedidos acima de R$ 250', min: 250, limit: 200, used: 37, sales: 15840, cost: 1850, start: ms(-40 * 1440), end: ms(30 * 1440), active: true, campaign: false },
+      { code: 'FRETEGRATIS', type: 'frete', val: 0, desc: 'Semana do frete grátis · acima de R$ 300', min: 300, limit: 300, used: 0, sales: 0, cost: 0, start: ms(4 * 1440), end: ms(18 * 1440), active: true, campaign: true },
+      { code: 'BLACK20', type: 'pct', val: 20, desc: 'Black Friday · acima de R$ 500', min: 500, limit: 500, used: 0, sales: 0, cost: 0, start: ms(20 * 1440), end: ms(25 * 1440), active: true, campaign: true },
+      { code: 'SHOWROOM15', type: 'pct', val: 15, desc: 'Inauguração do showroom', min: 0, limit: 150, used: 62, sales: 21870, cost: 3280, start: ms(-60 * 1440), end: ms(-30 * 1440), active: false, campaign: false },
+    ],
+    chats: [
+      { id: 'k1', name: 'Larissa Costa', ch: 'Chat do site', open: true, unread: 1, msgs: [[0, 'Oi! A Cadeira Ergo Pro tem regulagem de braço?', ms(-125)], [1, 'Oi Larissa! Tem sim, braço 4D com altura e profundidade.', ms(-118)], [0, 'Perfeito. Consigo receber até sexta em Campinas?', ms(-14)]] },
+      { id: 'k2', name: 'Cowork Vila Nova', ch: 'WhatsApp', open: true, unread: 2, msgs: [[0, 'Bom dia! Vamos precisar de mais 6 Mesas Studio 120 este mês.', ms(-190)], [0, 'Conseguem faturar em 28 dias como da última vez?', ms(-185)]] },
+      { id: 'k3', name: 'Thiago Ribeiro', ch: 'Instagram', open: true, unread: 0, msgs: [[0, 'O Suporte Monitor Duo aguenta monitor de 32"?', ms(-1500)], [1, 'Aguenta até 9 kg por braço — 32" tranquilo.', ms(-1490)], [0, 'Show, vou fechar!', ms(-1480)]] },
+      { id: 'k4', name: 'Mariana Souza', ch: 'Chat do site', open: true, unread: 0, msgs: [[0, 'Meu pedido ainda não chegou 😕', ms(-3000)], [1, 'Oi Mariana, já acionei a transportadora — sai para entrega hoje.', ms(-2950)]] },
+      { id: 'k5', name: 'Pedro Almeida', ch: 'E-mail', open: false, unread: 0, msgs: [[0, 'Obrigado pela troca rápida!', ms(-6000)], [1, 'Nós que agradecemos, Pedro!', ms(-5990)]] },
+    ],
+    mails: [
+      { id: 1, f: 'inbox', from: 'Cowork Vila Nova', email: 'compras@coworkvilanova.com.br', tag: 'Atacado', sub: 'Pedido de dezembro — dá para dobrar?', body: 'Olá!\n\nVamos abrir mais uma sala em dezembro e queremos dobrar o pedido de Mesas Studio 120 e Cadeiras Ergo Pro. Conseguem manter o preço de atacado?\n\nAbraços,\nRenata', ts: ms(-60), read: false, star: false },
+      { id: 2, f: 'inbox', from: 'Distribuidora Atlas', email: 'comercial@atlasdist.com.br', tag: 'Fornecedor', sub: 'Reajuste de tabela 2027', body: 'Prezados,\n\nInformamos reajuste médio de 4% na linha de periféricos a partir de janeiro. Pedidos fechados até 15/12 mantêm a tabela atual.\n\nAtenciosamente,\nEquipe Atlas', ts: ms(-200), read: true, star: true },
+      { id: 3, f: 'inbox', from: 'Revista Casa & Escritório', email: 'pauta@casaescritorio.com.br', tag: 'Imprensa', sub: 'Guia de presentes de fim de ano', body: 'Oi!\n\nGostaríamos de incluir o Kit Home Office Start no nosso guia de presentes. Vocês podem enviar fotos em alta e o preço final?\n\nObrigada!', ts: ms(-1500), read: true, star: false },
+      { id: 4, f: 'inbox', from: 'Bruno Lima', email: 'bruno.lima@gmail.com', tag: 'Cliente', sub: 'Re: troca do mouse', body: 'Recebi o mouse novo, funcionando perfeitamente. Obrigado pela agilidade!', ts: ms(-2600), read: true, star: false },
+      { id: 5, f: 'inbox', from: 'Transportadora Rota Sul', email: 'operacao@rotasul.com.br', tag: 'Logística', sub: 'Coletas no feriado', body: 'Comunicamos que não haverá coleta no feriado. As coletas serão retomadas no próximo dia útil.', ts: ms(-4400), read: true, star: false },
+      { id: 6, f: 'sent', from: 'Escritório Prisma', email: 'compras@escritorioprisma.com.br', tag: 'Atacado', sub: 'Fatura FAT-2046', body: 'Olá Marcelo,\n\nSegue a fatura referente ao último pedido, vencimento em 14 dias.\n\nAbraço!', ts: ms(-5200), read: true, star: false },
+      { id: 7, f: 'drafts', from: 'Agência Faro', email: 'compras@agenciafaro.com.br', tag: 'Atacado', sub: 'Proposta de mobiliário', body: 'Oi Lívia,\n\nConforme conversamos, segue a proposta para 12 estações…', ts: ms(-900), read: true, star: false },
+    ],
+    apps: [
+      ['Frete Rápido', 'Etiquetas e cotação com várias transportadoras em um clique.', 4.8, '12 mil', 'Grátis', 'Frete', true], ['Mailo', 'Newsletters e recuperação de carrinho abandonado.', 4.7, '9,8 mil', 'R$ 89/mês', 'Marketing', true],
+      ['Conta Certa', 'Sincroniza pedidos, repasses e taxas com a contabilidade.', 4.6, '7 mil', 'R$ 59/mês', 'Contabilidade', true], ['Avalia Já', 'Pede avaliações após a entrega e mostra nos produtos.', 4.5, '15 mil', 'Grátis', 'Marketing', false],
+      ['Estoque Scan', 'Inventário pelo celular lendo código de barras.', 4.4, '3 mil', 'R$ 39/mês', 'Análises', false], ['Pontua', 'Programa de pontos para clientes recorrentes.', 4.6, '6 mil', 'R$ 69/mês', 'Marketing', false],
+      ['Atende+', 'Instagram, WhatsApp e chat do site numa só caixa.', 4.7, '11 mil', 'Grátis', 'Atendimento', true], ['NF Fácil', 'Emissão automática de NF-e a cada venda.', 4.5, '14 mil', 'R$ 49/mês', 'Contabilidade', false],
+      ['Maquininha Pop', 'Pagamentos presenciais em feiras e eventos.', 4.8, '8 mil', '1,9% por venda', 'Pagamentos', true], ['Pix Auto', 'Conciliação automática de Pix.', 4.3, '5 mil', 'Grátis', 'Pagamentos', false],
+      ['Coortes', 'Recompra, LTV e coortes sem planilha.', 4.5, '4 mil', 'R$ 59/mês', 'Análises', false], ['Base de Ajuda', 'Central de ajuda pesquisável para clientes.', 4.4, '3,9 mil', 'Grátis', 'Atendimento', false],
+    ].map(([name, desc, rating, shops, price, cat, inst]) => ({ name, desc, rating, shops, price, cat, inst })),
+    reviews: [
+      { c: 'Larissa Costa', p: 0, stars: 5, text: 'Melhor cadeira que já tive, a lombar faz diferença.', ts: ms(-300), status: 'pendente' },
+      { c: 'Gustavo Martins', p: 8, stars: 4, text: 'Teclado ótimo, só achei o cabo curto.', ts: ms(-1700), status: 'pendente' },
+      { c: 'Beatriz Gomes', p: 5, stars: 5, text: 'Luz linda e não esquenta.', ts: ms(-5000), status: 'publicada' },
+      { c: 'André Teixeira', p: 12, stars: 5, text: 'Resolveu meu notebook com uma porta só.', ts: ms(-9000), status: 'publicada' },
+      { c: 'Fernanda Dias', p: 9, stars: 3, text: 'Confortável, mas demorei a me acostumar.', ts: ms(-12000), status: 'publicada' },
+    ],
+    tickets: [],
+  };
+}
+
+/* ---------- estado ---------- */
+const KEY = 'portal-dashboard-v3';
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)); } catch { S = null; }
+// ponytail: dados de demonstração são regerados a cada dia (mantendo preferências); trocar por API real
+if (!S || S.v !== 3 || S.day !== sod(Date.now())) {
+  const keep = S && S.v === 3 ? { settings: S.settings, theme: S.theme, team: S.team, apps: S.apps, user: S.user } : {};
+  S = Object.assign(seed(), keep);
+}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* armazenamento indisponível: segue em memória */ } };
+save();
+
+const V = {
+  dashboard: { range: '12M', cmp: true },
+  orders: { tab: 'all', ch: '', period: '30', st: '', q: '', page: 1, per: '10', sel: [] },
+  products: { tab: 'catalog', st: '', sort: 'best', cat: '', q: '' },
+  analytics: { tab: 'sales', range: '90' },
+  customers: { tab: 'people', seg: '', sort: 'spent', q: '', page: 1, per: '25' },
+  finances: { tab: 'pl', period: '3' },
+  invoices: { st: '' },
+  discounts: { st: '' },
+  chats: { tab: 'open', cur: 'k1' },
+  email: { folder: 'inbox', cur: 1 },
+  apps: { tab: 'browse', cat: '' },
+  settings: { tab: 'store' },
+  help: { q: '' },
+};
+
+/* ---------- consultas ---------- */
+const cmap = () => Object.fromEntries(S.customers.map(c => [c.id, c]));
+function rev(a, b) { let s = 0; for (const o of S.orders) if (o.ts >= a && o.ts < b && counted(o)) s += o.total; return s; }
+function cnt(a, b) { let s = 0; for (const o of S.orders) if (o.ts >= a && o.ts < b && counted(o)) s++; return s; }
+function units(a, b) { const u = S.products.map(() => 0); for (const o of S.orders) if (o.ts >= a && o.ts < b && counted(o)) for (const [p, q] of o.i) u[p] += q; return u; }
+function prodRevenue() { const u = S.products.map(() => 0); for (const o of S.orders) if (counted(o)) for (const [p, q, pr] of o.i) u[p] += q * pr; return u; }
+function bySource(a, b) { const m = Object.fromEntries(CHANNELS.map(c => [c, 0])); for (const o of S.orders) if (o.ts >= a && o.ts < b && counted(o)) m[o.ch] += o.total; return m; }
+function custStats() {
+  const m = {};
+  for (const o of S.orders) { if (!counted(o)) continue; const s = m[o.c] || (m[o.c] = { n: 0, spent: 0, first: o.ts, last: 0 }); s.n++; s.spent += o.total; s.last = Math.max(s.last, o.ts); s.first = Math.min(s.first, o.ts); }
+  const retail = S.customers.filter(c => !c.wholesale).map(c => m[c.id]?.spent || 0).sort((a, b) => b - a);
+  const vip = retail[Math.floor(retail.length * 0.2)] || Infinity, now = Date.now();
+  for (const c of S.customers) {
+    const s = m[c.id] || (m[c.id] = { n: 0, spent: 0, first: 0, last: 0 });
+    s.seg = c.wholesale ? 'Atacado' : !s.n || s.first > now - 45 * DAY ? 'Novo' : s.last < now - 75 * DAY ? 'Em risco' : s.spent >= vip ? 'VIP' : 'Recorrente';
+  }
+  return m;
+}
+const invStatus = i => i.status === 'enviada' && i.due < Date.now() ? 'vencida' : i.status;
+const lowStock = () => S.products.filter(p => p.status !== 'arquivado' && p.stock <= p.reorder);
+function couponStatus(c) { const now = Date.now(); if (!c.active) return ['Pausado', '']; if (c.start > now) return ['Agendado', 'info']; if (c.end && c.end < now) return ['Encerrado', '']; return ['Ativo', 'ok']; }
+function buckets(range) {
+  const now = new Date(), out = [];
+  if (range.endsWith('M')) {
+    const n = parseInt(range);
+    for (let i = n - 1; i >= 0; i--) { const a = new Date(now.getFullYear(), now.getMonth() - i, 1), b = new Date(now.getFullYear(), now.getMonth() - i + 1, 1); out.push({ l: MES[a.getMonth()], a: +a, b: Math.min(+b, Date.now() + 1) }); }
+  } else {
+    const n = parseInt(range), t0 = sod(Date.now());
+    for (let i = n - 1; i >= 0; i--) { const a = t0 - i * DAY; out.push({ l: n <= 7 ? cap(wd(a)) : dm(a), a, b: a + DAY }); }
+  }
+  return out;
+}
+const visitors = (a, b) => { let v = 0; for (let t = sod(a); t < b; t += DAY) { const o = cnt(t, t + DAY); v += Math.round((o + 1) / (0.02 + 0.008 * noise(t / DAY))); } return v; };
+
+/* ---------- gráficos (SVG puro) ---------- */
+let CH = {}, chSeq = 0;
+function niceMax(v) { if (v <= 0) return 1; const p = 10 ** Math.floor(Math.log10(v)); for (const m of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function lineChart({ labels, series, h = 260, fmt = kfmt, tfmt = brl0 }) {
+  const W = 800, H = h, pl = 56, pr = 14, pt = 12, pb = 30, n = labels.length;
+  const max = niceMax(Math.max(...series.flatMap(s => s.data)));
+  const x = i => pl + (n < 2 ? 0 : i * (W - pl - pr) / (n - 1)), y = v => pt + (1 - v / max) * (H - pt - pb);
+  const id = 'c' + (chSeq++);
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = max * k / 4; g += `<line class="gl" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${pl - 10}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`; }
+  const step = Math.ceil(n / 8);
+  labels.forEach((l, i) => { if (i % step === 0) g += `<text class="axis" x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(l)}</text>`; });
+  const paths = series.map((s, si) => {
+    const d = s.data.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join('');
+    return (si === 0 ? `<path d="${d}L${x(n - 1)} ${y(0)}L${x(0)} ${y(0)}Z" fill="url(#g${id})"/>` : '') + `<path class="ln ${s.cls || ''}" d="${d}"/>`;
+  }).reverse().join('');
+  CH[id] = { labels, series, tfmt, W, pl, pr, n, x, y, H };
+  return `<div class="chart" data-ch="${id}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de linha"><defs><linearGradient id="g${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--acc)" stop-opacity=".35"/><stop offset="1" stop-color="var(--acc)" stop-opacity="0"/></linearGradient></defs>${g}${paths}<line class="guide" y1="${pt}" y2="${H - pb}"/>${series.map((s, si) => `<circle r="4.5" class="pt" data-s="${si}" fill="${si ? 'var(--tx3)' : 'var(--acc)'}" stroke="var(--bg2)" stroke-width="2" style="display:none"/>`).join('')}</svg><div class="tt"></div></div>`;
+}
+function barChart({ labels, series, line, h = 240, fmt = kfmt, tfmt = brl0 }) {
+  const W = 800, H = h, pl = 56, pr = 14, pt = 12, pb = 30, n = labels.length;
+  const all = series.flatMap(s => s.data).concat(line ? line.data : []);
+  const max = niceMax(Math.max(0, ...all)), min = Math.min(0, ...all) < 0 ? -niceMax(-Math.min(...all)) : 0;
+  const y = v => pt + (max - v) / (max - min) * (H - pt - pb), bw = (W - pl - pr) / n, gw = bw * 0.62 / series.length;
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = min + (max - min) * k / 4; g += `<line class="gl" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${pl - 10}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`; }
+  const step = Math.ceil(n / 10);
+  labels.forEach((l, i) => { if (i % step === 0) g += `<text class="axis" x="${pl + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle">${esc(l)}</text>`; });
+  series.forEach((s, si) => s.data.forEach((v, i) => {
+    const x0 = pl + i * bw + bw * 0.19 + si * gw;
+    g += `<rect class="bk s${si}" x="${x0.toFixed(1)}" y="${Math.min(y(v), y(0)).toFixed(1)}" width="${(gw - 2).toFixed(1)}" height="${Math.max(1, Math.abs(y(v) - y(0))).toFixed(1)}" rx="3"><title>${esc(labels[i])} · ${s.name}: ${tfmt(v)}</title></rect>`;
+  }));
+  if (line) g += `<path class="ln net" d="${line.data.map((v, i) => (i ? 'L' : 'M') + (pl + i * bw + bw / 2).toFixed(1) + ' ' + y(v).toFixed(1)).join('')}"/>` + line.data.map((v, i) => `<circle cx="${pl + i * bw + bw / 2}" cy="${y(v)}" r="4" fill="var(--warn)"><title>${esc(labels[i])} · ${line.name}: ${tfmt(v)}</title></circle>`).join('');
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de barras">${g}</svg></div>`;
+}
+function spark(data, color = 'var(--acc)') {
+  const W = 200, H = 36, max = Math.max(1, ...data), x = i => i * W / (data.length - 1), y = v => H - 2 - v / max * (H - 4);
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${data.map((v, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(v)).join('')}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function ring(p, size = 120, label = '') {
+  const r = size / 2 - 9, c = 2 * Math.PI * r;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${Math.round(p)}%"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--hover)" stroke-width="10"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c * Math.min(p, 100) / 100} ${c}" transform="rotate(-90 ${size / 2} ${size / 2})"/><text x="50%" y="48%" text-anchor="middle" font-size="22" font-weight="700" fill="var(--tx)">${Math.round(p)}%</text><text x="50%" y="64%" text-anchor="middle" font-size="11" fill="var(--tx2)">${esc(label)}</text></svg>`;
+}
+document.addEventListener('mousemove', e => {
+  const el = e.target.closest?.('.chart[data-ch]'); if (!el) return;
+  const c = CH[el.dataset.ch]; if (!c) return;
+  const svg = el.querySelector('svg'), R = svg.getBoundingClientRect(), k = R.width / c.W;
+  const sx = (e.clientX - R.left) / k, i = Math.max(0, Math.min(c.n - 1, Math.round((sx - c.pl) / (c.W - c.pl - c.pr) * (c.n - 1))));
+  const gx = c.x(i); svg.querySelector('.guide').setAttribute('x1', gx); svg.querySelector('.guide').setAttribute('x2', gx);
+  $$('.pt', svg).forEach(p => { const s = c.series[p.dataset.s]; p.style.display = ''; p.setAttribute('cx', gx); p.setAttribute('cy', c.y(s.data[i])); });
+  const tt = el.querySelector('.tt'); tt.style.display = 'block'; tt.style.left = gx * k + 'px'; tt.style.top = Math.min(...c.series.map(s => c.y(s.data[i]))) * k - 8 + 'px';
+  tt.innerHTML = `<b>${esc(c.labels[i])}</b>` + c.series.map(s => `<div class="row between"><span class="muted">${esc(s.name)}</span>&nbsp;<b>${c.tfmt(s.data[i])}</b></div>`).join('');
+});
+document.addEventListener('mouseout', e => { const el = e.target.closest?.('.chart[data-ch]'); if (el && !el.contains(e.relatedTarget)) { const tt = el.querySelector('.tt'); if (tt) tt.style.display = 'none'; $$('.pt', el).forEach(p => p.style.display = 'none'); } });
+
+/* ---------- componentes ---------- */
+const head = (t, sub, actions = '') => `<div class="ph"><div><h1>${t}</h1><p class="sub">${sub}</p></div><div class="row">${actions}</div></div>`;
+const ctl = (cls, key, list, cur) => `<div class="${cls}" role="tablist">${list.map(([v, l, n]) => `<button role="tab" aria-selected="${String(v) === String(cur)}" class="${cls === 'chips' ? 'chip ' : ''}${String(v) === String(cur) ? 'on' : ''}" data-act="set" data-k="${key}" data-v="${esc(v)}">${l}${n != null ? `<span class="cnt">${n}</span>` : ''}</button>`).join('')}</div>`;
+const tabs = (k, l, c) => ctl('tabs', k, l, c), chips = (k, l, c) => ctl('chips', k, l, c), seg = (k, l, c) => ctl('seg', k, l, c);
+function pager(key, total) {
+  const v = V[key], per = +v.per, pages = Math.max(1, Math.ceil(total / per)); v.page = Math.min(v.page, pages);
+  return `<div class="pager"><span class="sub">Mostrar</span>${seg(key + '.per', [['10', '10'], ['25', '25'], ['50', '50']], v.per)}<span class="sub">${total ? (v.page - 1) * per + 1 : 0}–${Math.min(total, v.page * per)} de ${num(total)}</span><button class="ib" ${v.page <= 1 ? 'disabled' : ''} data-act="page" data-k="${key}" data-v="${v.page - 1}" aria-label="Página anterior">‹</button><button class="ib" ${v.page >= pages ? 'disabled' : ''} data-act="page" data-k="${key}" data-v="${v.page + 1}" aria-label="Próxima página">›</button></div>`;
+}
+const stPill = s => pill(ST[s][0], ST[s][1]);
+const nItems = o => sum(o.i.map(x => x[1]));
+const search = (bind, ph) => `<input class="inp" type="search" placeholder="${ph}" data-bind="${bind}" value="${esc(V[bind.split('.')[0]][bind.split('.')[1]])}" aria-label="${ph}">`;
+const selectBind = (bind, list) => `<select class="inp" data-bind="${bind}">${opts(list, V[bind.split('.')[0]][bind.split('.')[1]])}</select>`;
+function ordersTable(list, cm, selectable) {
+  if (!list.length) return '<div class="empty">Nenhum pedido encontrado.</div>';
+  const sel = new Set(V.orders.sel);
+  return `<div class="tw"><table class="tbl"><thead><tr>${selectable ? '<th></th>' : ''}<th>Pedido</th><th>Cliente</th><th>Itens</th><th>Data</th>${selectable ? '<th>Canal</th>' : ''}<th class="r">Total</th><th>Status</th></tr></thead><tbody>${list.map(o => {
+    const c = cm[o.c]; return `<tr class="click" data-act="order" data-id="${o.id}">${selectable ? `<td><input type="checkbox" data-selo="${o.id}" ${sel.has(o.id) ? 'checked' : ''} aria-label="Selecionar ${o.id}"></td>` : ''}<td><b>${o.id}</b></td><td><div class="who">${av(c.name)}<div><b>${esc(c.name)}</b><div class="sub">${esc(c.city)}</div></div></div></td><td>${nItems(o)} ${nItems(o) > 1 ? 'itens' : 'item'}</td><td>${ago(o.ts)}</td>${selectable ? `<td>${o.ch}</td>` : ''}<td class="r"><b>${brl(o.total)}</b></td><td>${stPill(o.st)}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+/* ---------- telas ---------- */
+const VIEWS = {};
+const TITLES = { dashboard: 'Painel', orders: 'Pedidos', products: 'Produtos', analytics: 'Análises', customers: 'Clientes', finances: 'Financeiro', invoices: 'Faturas', discounts: 'Cupons', chats: 'Conversas', email: 'E-mail', apps: 'Apps', settings: 'Configurações', help: 'Central de ajuda' };
+const NAV = [['Loja', [['dashboard', 'grid'], ['orders', 'bag'], ['products', 'box'], ['analytics', 'chart'], ['customers', 'users']]], ['Dinheiro', [['finances', 'wallet'], ['invoices', 'file'], ['discounts', 'tag']]], ['Conversa', [['chats', 'chat'], ['email', 'mail'], ['apps', 'puzzle']]], ['', [['settings', 'gear'], ['help', 'help']]]];
+const LIVE = { v: 42, c: 9, bars: Array.from({ length: 28 }, (_, i) => 30 + Math.round(noise(i) * 25)) };
+
+VIEWS.dashboard = () => {
+  const v = V.dashboard, now = Date.now(), t0 = sod(now);
+  const today = rev(t0, now), todayP = rev(t0 - 7 * DAY, now - 7 * DAY);
+  const w = rev(now - 7 * DAY, now), wP = rev(now - 14 * DAY, now - 7 * DAY);
+  const ot = cnt(t0, now), otP = cnt(t0 - 7 * DAY, now - 7 * DAY);
+  const days = [...Array(14)].map((_, i) => t0 - (13 - i) * DAY);
+  const kpi = (lab, val, d, sub, data) => `<div class="card kpi s4"><div class="sub">${lab}</div><div class="kv">${val}</div><div class="row">${d}<span class="sub">${sub}</span></div>${spark(data)}</div>`;
+  const B = buckets(v.range), months = v.range.endsWith('M'), n = B.length;
+  const cur = B.map(b => rev(b.a, b.b)), prev = B.map(b => months ? rev(yrBack(b.a), yrBack(b.b)) : rev(b.a - n * DAY, b.b - n * DAY));
+  const tot = sum(cur), totP = sum(prev), prevName = months ? 'Ano anterior' : 'Período anterior';
+  const d = new Date(now), m0 = +new Date(d.getFullYear(), d.getMonth(), 1), m1 = +new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  const booked = rev(m0, now), goal = S.settings.goal, left = Math.max(1, Math.ceil((m1 - now) / DAY)), lastM = rev(+new Date(d.getFullYear(), d.getMonth() - 1, 1), m0);
+  const cm = cmap(), pack = S.orders.filter(o => o.st === 'separar').reverse();
+  const low = lowStock().sort((a, b) => a.stock / a.reorder - b.stock / b.reorder).slice(0, 5);
+  const src = bySource(now - 30 * DAY, now), srcT = sum(Object.values(src)) || 1;
+  const u30 = units(now - 30 * DAY, now), allRev = prodRevenue();
+  const best = u30.map((u, i) => ({ u, i })).sort((a, b) => b.u - a.u).slice(0, 5);
+  const conv = cnt(now - 30 * DAY, now) / visitors(now - 30 * DAY, now) * 100;
+  return `<div class="grid">
+  ${kpi('Hoje até agora', brl0(today), delta(today, todayP), `vs ${wd(t0 - 7 * DAY)}. passada`, days.map(a => rev(a, a + DAY)))}
+  ${kpi('Últimos 7 dias', brl0(w), delta(w, wP), 'vs semana anterior', days.map(a => rev(a - 6 * DAY, a + DAY)))}
+  ${kpi('Pedidos hoje', num(ot), delta(ot, otP), `vs ${wd(t0 - 7 * DAY)}. passada`, days.map(a => cnt(a, a + DAY)))}
+  <section class="card s12"><div class="ch"><div><h3>Vendas</h3><p class="sub">${brl0(tot)} no período · ${delta(tot, totP)} sobre o ${months ? 'mesmo período do ano anterior' : 'período anterior'}</p></div>
+   <div class="row"><button class="btn sm ${v.cmp ? 'pri' : ''}" data-act="toggle" data-k="dashboard.cmp" aria-pressed="${v.cmp}">╌ ${prevName}</button>${seg('dashboard.range', [['12M', '12M'], ['6M', '6M'], ['30D', '30D'], ['7D', '7D']], v.range)}</div></div>
+   ${lineChart({ labels: B.map(b => b.l), series: [{ name: 'Atual', data: cur }, ...(v.cmp ? [{ name: prevName, data: prev, cls: 'prev' }] : [])] })}</section>
+  <section class="card s6"><div class="ch"><div><h3>Meta de ${new Date(now).toLocaleDateString('pt-BR', { month: 'long' })}</h3><p class="sub">Faltam ${left} dias</p></div><button class="ib" data-act="new" data-m="goal" aria-label="Editar meta" data-tip="Editar meta">${ic('edit', 16)}</button></div>
+   <div class="row" style="gap:24px;flex-wrap:nowrap">${ring(booked / goal * 100, 130, 'de ' + kfmt(goal))}<ul class="kvl grow"><li><span>Realizado</span><b>${brl0(booked)}</b></li><li><span>Ritmo diário necessário</span><b>${brl0(Math.max(0, (goal - booked) / left))}</b></li><li><span>Mês anterior fechou em</span><b>${brl0(lastM)}</b></li></ul></div></section>
+  <section class="card s6"><div class="ch"><div><h3><span class="live" aria-hidden="true"></span>Loja ao vivo</h3><p class="sub">Visitantes agora</p></div><span class="sub">atualiza a cada 3 s</span></div>
+   <div class="row base"><span class="kv" id="live-v">${LIVE.v}</span><span class="sub">no site</span></div><div class="lbars" id="live-bars">${LIVE.bars.map(b => `<i style="height:${b}%"></i>`).join('')}</div>
+   <ul class="kvl"><li><span>Carrinhos abertos</span><b id="live-c">${LIVE.c}</b></li><li><span>Conversão, 30 dias</span><b>${conv.toFixed(1).replace('.', ',')}%</b></li><li><span>Produto mais visto</span><b>${esc(S.products[best[0].i].name)}</b></li></ul>${pill('● Checkout operando normalmente', 'ok')}</section>
+  <section class="card s4"><div class="ch"><div><h3>Fila de separação</h3><p class="sub">${pack.length} pedidos pagos aguardando</p></div><button class="btn sm" data-act="go" data-to="orders" data-tab="board">Quadro</button></div>
+   <ul class="list">${pack.slice(0, 5).map(o => `<li><div class="who" data-act="order" data-id="${o.id}" style="cursor:pointer">${av(cm[o.c].name)}<div><b>${esc(cm[o.c].name)}</b><div class="sub">${o.id} · ${nItems(o)} itens · ${brl(o.total)}</div></div></div><button class="btn xs" data-act="ost" data-id="${o.id}" data-s="embalado">Embalar</button></li>`).join('') || '<li class="muted">Nada para separar 🎉</li>'}</ul></section>
+  <section class="card s4"><div class="ch"><div><h3>Estoque baixo</h3><p class="sub">No ponto de reposição ou abaixo</p></div><button class="btn sm" data-act="go" data-to="products" data-tab="stock">Estoque</button></div>
+   <ul class="list">${low.map(p => `<li><div><b>${esc(p.name)}</b><div class="sub">${p.stock} un. · repor em ${p.reorder}</div></div><button class="btn xs" data-act="new" data-m="restock" data-i="${S.products.indexOf(p)}">Repor</button></li>`).join('') || '<li class="muted">Estoque em dia.</li>'}</ul></section>
+  <section class="card s4"><div class="ch"><div><h3>Origem das vendas</h3><p class="sub">Últimos 30 dias · ${brl0(srcT)}</p></div></div>
+   <div class="stack">${CHANNELS.map(c => `<i style="width:${src[c] / srcT * 100}%;background:${CH_COLOR[c]}" title="${c}"></i>`).join('')}</div>
+   <ul class="list">${CHANNELS.map(c => `<li><span class="row"><span class="sw-dot" style="background:${CH_COLOR[c]}"></span>${c}</span><span><b>${Math.round(src[c] / srcT * 100)}%</b> <span class="sub">${brl0(src[c])}</span></span></li>`).join('')}</ul></section>
+  <section class="card s8"><div class="ch"><div><h3>Últimos pedidos</h3><p class="sub">Clique em uma linha para abrir</p></div><button class="btn sm" data-act="go" data-to="orders">Ver todos ${ic('arrow', 14)}</button></div>${ordersTable(S.orders.slice(-6).reverse(), cm, false)}</section>
+  <section class="card s4"><div class="ch"><div><h3>Mais vendidos</h3><p class="sub">Unidades, últimos 30 dias</p></div><button class="btn sm" data-act="go" data-to="products">Catálogo</button></div>
+   <ul class="list">${best.map((b, k) => `<li><span class="row"><span class="rank">${k + 1}</span><span><b>${esc(S.products[b.i].name)}</b><div class="sub">${brl0(allRev[b.i])} no total</div></span></span><b>${b.u}</b></li>`).join('')}</ul></section>
+  </div><p class="foot">Os números refletem pedidos pagos, em andamento e entregues; devoluções e cancelamentos não entram · ${new Date().toLocaleDateString('pt-BR')}</p>`;
+};
+
+VIEWS.orders = () => {
+  const v = V.orders, now = Date.now(), cm = cmap();
+  const since = v.period === 'all' ? 0 : now - +v.period * DAY;
+  const base = S.orders.filter(o => o.ts >= since && (!v.ch || o.ch === v.ch));
+  const c = {}; base.forEach(o => c[o.st] = (c[o.st] || 0) + 1);
+  const OPEN = ['aguardando', 'separar', 'embalado'], q = v.q.trim().toLowerCase();
+  const actions = `<button class="btn" data-act="exportOrders">${ic('download', 16)} Exportar</button><button class="btn pri" data-act="new" data-m="order">${ic('plus', 16)} Novo pedido</button>`;
+  let body;
+  if (v.tab === 'board') {
+    body = `<p class="sub" style="margin-bottom:12px">Arraste os cartões entre colunas ou use o botão de avanço.</p><div class="kb">${['aguardando', 'separar', 'embalado', 'enviado'].map(s => {
+      const items = S.orders.filter(o => o.st === s).reverse();
+      return `<div class="kcol" data-drop="${s}"><div class="kh">${ST[s][0]} <span class="cnt">${items.length}</span></div>${items.slice(0, 40).map(o => `<div class="kcard" draggable="true" data-drag="${o.id}" data-act="order" data-id="${o.id}"><div class="row between"><b>${o.id}</b><b>${brl(o.total)}</b></div><div class="sub">${esc(cm[o.c].name)} · ${nItems(o)} itens</div><div class="row between"><span class="sub">${ago(o.ts)}</span>${NEXT[s] ? `<button class="btn xs" data-act="ost" data-id="${o.id}" data-s="${NEXT[s]}">${ST[NEXT[s]][0]} →</button>` : ''}</div></div>`).join('')}</div>`;
+    }).join('')}</div>`;
+  } else if (v.tab === 'returns') {
+    body = `<div class="card">${ordersTable(S.orders.filter(o => o.st === 'devolvido').reverse(), cm, false)}</div>`;
+  } else {
+    const list = base.filter(o => (!v.st || (v.st === 'open' ? OPEN.includes(o.st) : o.st === v.st)) && (!q || o.id.toLowerCase().includes(q) || cm[o.c].name.toLowerCase().includes(q))).reverse();
+    V._ordersList = list;
+    const per = +v.per, page = list.slice((v.page - 1) * per, v.page * per);
+    const pg = pager('orders', list.length);
+    body = `<div class="row" style="margin-bottom:12px">${selectBind('orders.ch', [['', 'Todos os canais'], ...CHANNELS])}${selectBind('orders.period', [['7', 'Últimos 7 dias'], ['30', 'Últimos 30 dias'], ['90', 'Últimos 90 dias'], ['all', 'Todo o período']])}<div class="grow"></div>${search('orders.q', 'Buscar pedido ou cliente')}</div>
+    ${chips('orders.st', [['', 'Todos', base.length], ['open', 'Em aberto', OPEN.reduce((s, k) => s + (c[k] || 0), 0)], ...['aguardando', 'separar', 'enviado', 'entregue', 'devolvido', 'cancelado'].map(s => [s, ST[s][0], c[s] || 0])], v.st)}
+    <div class="card"><div class="row between" style="margin-bottom:8px"><span class="sub">${num(list.length)} pedidos · ${brl0(sum(list.filter(counted).map(o => o.total)))} válidos</span>${v.sel.length ? `<span class="row"><span class="sub">${v.sel.length} selecionados</span><button class="btn xs" data-act="bulk" data-s="embalado">Marcar embalados</button><button class="btn xs" data-act="exportOrders" data-sel="1">Exportar</button><button class="btn xs ghost" data-act="clearSel">Limpar</button></span>` : ''}</div>${ordersTable(page, cm, true)}${pg}</div>`;
+  }
+  return head('Pedidos', 'Todas as vendas: loja virtual, Instagram, marketplace e atacado.', actions) +
+    tabs('orders.tab', [['all', 'Todos os pedidos'], ['board', 'Quadro de separação', S.orders.filter(o => o.st === 'separar').length], ['returns', 'Devoluções', S.orders.filter(o => o.st === 'devolvido').length]], v.tab) + body;
+};
+
+VIEWS.products = () => {
+  const v = V.products, now = Date.now(), sold = units(now - 30 * DAY, now), low = lowStock();
+  const cats = [...new Set(S.products.map(p => p.cat))];
+  const actions = `<button class="btn pri" data-act="new" data-m="product">${ic('plus', 16)} Novo produto</button>`;
+  const stockPill = p => p.stock === 0 ? pill('Esgotado', 'bad') : p.stock <= p.reorder ? pill('Estoque baixo', 'warn') : pill(p.stock + ' em estoque');
+  let body;
+  if (v.tab === 'stock') {
+    const rows = S.products.map((p, i) => ({ p, i, s: sold[i], cover: sold[i] ? p.stock / (sold[i] / 30) : Infinity })).filter(r => r.p.status !== 'arquivado').sort((a, b) => a.cover - b.cover);
+    body = `<div class="card"><div class="tw"><table class="tbl"><thead><tr><th>Produto</th><th class="r">Estoque</th><th class="r">Ponto de reposição</th><th class="r">Vendidos 30 d</th><th class="r">Cobertura</th><th>Situação</th><th></th></tr></thead><tbody>${rows.map(({ p, i, s, cover }) => `<tr><td><b>${esc(p.name)}</b><div class="sub">${esc(p.cat)} · ${esc(p.variant)}</div></td><td class="r">${p.stock}</td><td class="r">${p.reorder}</td><td class="r">${s}</td><td class="r">${cover === Infinity ? '—' : Math.floor(cover) + ' dias'}</td><td>${stockPill(p)}</td><td class="r"><button class="btn xs" data-act="new" data-m="restock" data-i="${i}">Repor</button> <button class="btn xs ghost" data-act="new" data-m="product" data-i="${i}">Editar</button></td></tr>`).join('')}</tbody></table></div></div>`;
+  } else if (v.tab === 'collections') {
+    body = `<div class="grid">${cats.map(c => { const ps = S.products.map((p, i) => ({ p, i })).filter(x => x.p.cat === c); return `<button class="card s4 hcat" data-act="cat" data-v="${esc(c)}" style="text-align:left"><span class="thumb" style="--h:${hue(c)};width:56px;aspect-ratio:1;border-radius:14px;font-size:18px">${esc(c.slice(0, 2))}</span><span><h3>${esc(c)}</h3><span class="sub">${ps.length} produtos · ${sum(ps.map(x => sold[x.i]))} vendidos em 30 dias<br>Estoque avaliado em ${brl0(sum(ps.map(x => x.p.stock * x.p.price)))}</span></span></button>`; }).join('')}</div>`;
+  } else {
+    const q = v.q.trim().toLowerCase();
+    let list = S.products.map((p, i) => ({ p, i })).filter(({ p }) => (v.st ? p.status === v.st : p.status !== 'arquivado') && (!v.cat || p.cat === v.cat) && (!q || p.name.toLowerCase().includes(q)));
+    const sorts = { best: (a, b) => sold[b.i] - sold[a.i], pd: (a, b) => b.p.price - a.p.price, pa: (a, b) => a.p.price - b.p.price, name: (a, b) => a.p.name.localeCompare(b.p.name) };
+    list.sort(sorts[v.sort]);
+    body = `<div class="row" style="margin-bottom:12px">${seg('products.st', [['', 'Ativos e rascunhos'], ['ativo', 'Ativos'], ['rascunho', 'Rascunhos'], ['arquivado', 'Arquivados']], v.st)}<div class="grow"></div>${selectBind('products.sort', [['best', 'Mais vendidos'], ['pd', 'Maior preço'], ['pa', 'Menor preço'], ['name', 'Nome']])}${search('products.q', 'Buscar produto')}</div>
+    ${chips('products.cat', [['', 'Todos'], ...cats.map(c => [c, c])], v.cat)}
+    <div class="pgrid">${list.map(({ p, i }) => `<article class="card pcard" data-act="new" data-m="product" data-i="${i}" tabindex="0"><div class="thumb" style="--h:${hue(p.cat)}">${stockPill(p)}${esc(initials(p.name))}</div><div class="pb"><div class="sub">${esc(p.cat)} · ${esc(p.variant)}</div><b>${esc(p.name)}</b>${p.status !== 'ativo' ? ' ' + pill(cap(p.status)) : ''}<div class="row between" style="margin-top:6px"><b>${brl(p.price)}</b><span class="sub">${sold[i]} vendidos · 30 d</span></div></div></article>`).join('') || '<div class="empty">Nenhum produto.</div>'}</div>`;
+  }
+  return head('Produtos', `${S.products.filter(p => p.status === 'ativo').length} produtos à venda em ${cats.length} categorias.`, actions) +
+    tabs('products.tab', [['catalog', 'Catálogo'], ['stock', 'Estoque', low.length], ['collections', 'Categorias']], v.tab) + body;
+};
+
+VIEWS.analytics = () => {
+  const v = V.analytics, now = Date.now(), t0 = sod(now);
+  const actions = `<button class="btn" data-act="new" data-m="report">${ic('mail', 16)} Enviar relatório</button>`;
+  let body;
+  if (v.tab === 'visitors') {
+    const days = [...Array(30)].map((_, i) => t0 - (29 - i) * DAY);
+    const vis = days.map(a => visitors(a, a + DAY)), visP = days.map(a => visitors(a - 30 * DAY, a - 29 * DAY));
+    const tv = sum(vis), tvP = sum(visP), o = cnt(now - 30 * DAY, now), r30 = rev(now - 30 * DAY, now);
+    const SRC = [['Busca orgânica', 38], ['Instagram', 24], ['Direto', 18], ['Google Ads', 12], ['E-mail', 8]];
+    const u = units(now - 30 * DAY, now).map((x, i) => ({ x, i })).sort((a, b) => b.x - a.x).slice(0, 6);
+    body = `<div class="grid">
+      ${[['Visitantes', num(tv), delta(tv, tvP)], ['Conversão', (o / tv * 100).toFixed(2).replace('.', ',') + '%', ''], ['Pedidos', num(o), ''], ['Receita por visitante', brl(r30 / tv), '']].map(([l, val, d]) => `<div class="card s3"><div class="sub">${l}</div><div class="kv">${val}</div><div class="row">${d}<span class="sub">últimos 30 dias</span></div></div>`).join('')}
+      <section class="card s12"><div class="ch"><div><h3>Visitantes por dia</h3><p class="sub">Últimos 30 dias vs 30 dias anteriores</p></div></div>${lineChart({ labels: days.map(dm), series: [{ name: 'Atual', data: vis }, { name: 'Anterior', data: visP, cls: 'prev' }], fmt: x => num(Math.round(x)), tfmt: x => num(x) })}</section>
+      <section class="card s6"><h3>Origem do tráfego</h3><ul class="list" style="margin-top:10px">${SRC.map(([n, p]) => `<li><span style="width:130px">${n}</span><div class="bar grow"><i style="width:${p / .4}%"></i></div><b style="width:90px;text-align:right">${num(Math.round(tv * p / 100))}</b></li>`).join('')}</ul></section>
+      <section class="card s6"><h3>Produtos mais vistos</h3><ul class="list" style="margin-top:10px">${u.map(({ x, i }) => `<li><span>${esc(S.products[i].name)}</span><b>${num(x * 37)} visitas</b></li>`).join('')}</ul></section></div>`;
+  } else if (v.tab === 'funnel') {
+    const tv = visitors(now - 30 * DAY, now), o = cnt(now - 30 * DAY, now);
+    const steps = [['Visitaram a loja', tv], ['Viram um produto', Math.round(tv * .52)], ['Adicionaram ao carrinho', Math.round(tv * .11)], ['Iniciaram o checkout', Math.round(tv * .046)], ['Compraram', o]];
+    body = `<section class="card"><div class="ch"><div><h3>Funil de checkout</h3><p class="sub">Últimos 30 dias · onde as pessoas desistem</p></div></div>
+      ${steps.map(([l, n], i) => `<div style="margin:14px 0"><div class="row between"><b>${l}</b><span>${num(n)} <span class="sub">${(n / tv * 100).toFixed(1).replace('.', ',')}%</span>${i ? ` <span class="delta down">−${(100 - n / steps[i - 1][1] * 100).toFixed(0)}% da etapa anterior</span>` : ''}</span></div><div class="bar" style="height:14px;margin-top:6px"><i style="width:${Math.max(1, n / tv * 100)}%"></i></div></div>`).join('')}</section>`;
+  } else {
+    const p60 = [now - 60 * DAY, now], p120 = [now - 120 * DAY, now - 60 * DAY];
+    const R = rev(...p60), Rp = rev(...p120), O = cnt(...p60), Op = cnt(...p120), U = sum(units(...p60)), Up = sum(units(...p120));
+    let labels, data;
+    if (v.range === '30') { const d = [...Array(30)].map((_, i) => t0 - (29 - i) * DAY); labels = d.map(dm); data = d.map(a => rev(a, a + DAY)); }
+    else if (v.range === '90') { const d = [...Array(13)].map((_, i) => t0 - (12 - i) * 7 * DAY - 6 * DAY); labels = d.map(dm); data = d.map(a => rev(a, a + 7 * DAY)); }
+    else { const B = buckets('12M'); labels = B.map(b => b.l); data = B.map(b => rev(b.a, b.b)); }
+    const B13 = buckets('13M').reverse();
+    body = `<div class="grid">
+      ${[['Receita', brl0(R), delta(R, Rp)], ['Pedidos', num(O), delta(O, Op)], ['Ticket médio', brl(R / O || 0), delta(R / O, Rp / Op)], ['Unidades', num(U), delta(U, Up)]].map(([l, val, d]) => `<div class="card s3"><div class="sub">${l}</div><div class="kv">${val}</div><div class="row">${d}<span class="sub">últimos 60 dias</span></div></div>`).join('')}
+      <section class="card s12"><div class="ch"><div><h3>Receita</h3><p class="sub">${{ 30: 'Por dia, últimos 30 dias', 90: 'Por semana, últimas 13 semanas', 365: 'Por mês, últimos 12 meses' }[v.range]}</p></div>${seg('analytics.range', [['30', '30 dias'], ['90', '90 dias'], ['365', '12 meses']], v.range)}</div>${barChart({ labels, series: [{ name: 'Receita', data }] })}</section>
+      <section class="card s12"><div class="ch"><div><h3>Mês a mês</h3><p class="sub">Receita válida, sem devoluções e cancelamentos</p></div></div><div class="tw"><table class="tbl"><thead><tr><th>Mês</th><th class="r">Receita</th><th class="r">Pedidos</th><th class="r">Ticket médio</th><th class="r">vs ano anterior</th></tr></thead><tbody>
+      ${B13.map((b, i) => { const r = rev(b.a, b.b), o = cnt(b.a, b.b), ry = rev(yrBack(b.a), yrBack(b.b)); return `<tr><td><b>${cap(new Date(b.a).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''))}</b>${i === 0 ? ' <span class="sub">· parcial</span>' : ''}</td><td class="r">${brl0(r)}</td><td class="r">${num(o)}</td><td class="r">${brl(o ? r / o : 0)}</td><td class="r">${delta(r, ry)}</td></tr>`; }).join('')}</tbody></table></div></section></div>`;
+  }
+  return head('Análises', 'O que vendeu, quem visitou e onde o checkout perde gente.', actions) + tabs('analytics.tab', [['sales', 'Vendas'], ['visitors', 'Visitantes'], ['funnel', 'Funil de checkout']], v.tab) + body;
+};
+
+VIEWS.customers = () => {
+  const v = V.customers, st = custStats();
+  const SEG = ['VIP', 'Recorrente', 'Novo', 'Em risco', 'Atacado'], SEGC = { VIP: 'violet', Recorrente: 'info', Novo: 'ok', 'Em risco': 'warn', Atacado: '' };
+  const counts = Object.fromEntries(SEG.map(s => [s, 0])); S.customers.forEach(c => counts[st[c.id].seg]++);
+  const pend = S.reviews.filter(r => r.status === 'pendente').length;
+  const actions = `<button class="btn pri" data-act="new" data-m="customer">${ic('plus', 16)} Novo cliente</button>`;
+  let body;
+  if (v.tab === 'segments') {
+    const DESC = { VIP: 'Top 20% em gasto. Merecem atendimento prioritário e lançamentos antecipados.', Recorrente: 'Compram com frequência. Bons alvos para kits e upgrades.', Novo: 'Primeira compra nos últimos 45 dias. Hora do e-mail de boas-vindas.', 'Em risco': 'Sem comprar há mais de 75 dias. Considere o cupom VOLTA50.', Atacado: 'Empresas com faturamento a prazo.' };
+    const tot = sum(Object.values(st).map(s => s.spent)) || 1;
+    body = `<div class="grid">${SEG.map(s => { const sp = sum(S.customers.filter(c => st[c.id].seg === s).map(c => st[c.id].spent)); return `<button class="card s4 hcat" style="text-align:left;display:block" data-act="seg" data-v="${s}"><div class="row between">${pill(s, SEGC[s])}<b class="big">${counts[s]}</b></div><p class="sub" style="margin:10px 0">${DESC[s]}</p><div class="row between"><span class="sub">Receita total</span><b>${brl0(sp)} · ${Math.round(sp / tot * 100)}%</b></div><div class="prog"><i style="width:${sp / tot * 100}%"></i></div></button>`; }).join('')}</div>`;
+  } else if (v.tab === 'reviews') {
+    body = `<div class="card"><ul class="list">${S.reviews.map((r, i) => `<li style="align-items:flex-start"><div class="who" style="align-items:flex-start">${av(r.c)}<div><b>${esc(r.c)}</b> <span style="color:var(--warn)">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span><div class="sub">${esc(S.products[r.p].name)} · ${ago(r.ts)}</div><p style="margin:6px 0 0;white-space:normal">${esc(r.text)}</p></div></div>${r.status === 'pendente' ? `<span class="row" style="flex-wrap:nowrap"><button class="btn xs" data-act="review" data-i="${i}" data-s="publicada">Publicar</button><button class="btn xs ghost" data-act="review" data-i="${i}" data-s="oculta">Ocultar</button></span>` : pill(cap(r.status), r.status === 'publicada' ? 'ok' : '')}</li>`).join('')}</ul></div>`;
+  } else {
+    const q = v.q.trim().toLowerCase();
+    const sorts = { spent: (a, b) => st[b.id].spent - st[a.id].spent, orders: (a, b) => st[b.id].n - st[a.id].n, last: (a, b) => st[b.id].last - st[a.id].last, name: (a, b) => a.name.localeCompare(b.name) };
+    const list = S.customers.filter(c => (!v.seg || st[c.id].seg === v.seg) && (!q || (c.name + c.email + c.city).toLowerCase().includes(q))).sort(sorts[v.sort]);
+    const per = +v.per, page = list.slice((v.page - 1) * per, v.page * per), pg = pager('customers', list.length);
+    body = `<div class="row" style="margin-bottom:12px">${chips('customers.seg', [['', 'Todos', S.customers.length], ...SEG.map(s => [s, s, counts[s]])], v.seg)}<div class="grow"></div>${selectBind('customers.sort', [['spent', 'Maior gasto'], ['orders', 'Mais pedidos'], ['last', 'Pedido mais recente'], ['name', 'Nome']])}${search('customers.q', 'Buscar cliente')}</div>
+      <div class="card"><div class="tw"><table class="tbl"><thead><tr><th>Cliente</th><th>Cidade</th><th>Segmento</th><th class="r">Pedidos</th><th class="r">Total gasto</th><th>Último pedido</th></tr></thead><tbody>${page.map(c => `<tr class="click" data-act="customer" data-id="${c.id}"><td><div class="who">${av(c.name)}<div><b>${esc(c.name)}</b><div class="sub">${esc(c.email)}</div></div></div></td><td>${esc(c.city)}</td><td>${pill(st[c.id].seg, SEGC[st[c.id].seg])}</td><td class="r">${st[c.id].n}</td><td class="r"><b>${brl0(st[c.id].spent)}</b></td><td>${st[c.id].last ? ago(st[c.id].last) : '—'}</td></tr>`).join('')}</tbody></table></div>${pg}</div>`;
+  }
+  return head('Clientes', `${S.customers.length} clientes — pessoas físicas e ${counts.Atacado} empresas.`, actions) + tabs('customers.tab', [['people', 'Pessoas'], ['segments', 'Segmentos'], ['reviews', 'Avaliações', pend]], v.tab) + body;
+};
+
+function monthRange(back) { const d = new Date(); return [+new Date(d.getFullYear(), d.getMonth() - back, 1), +new Date(d.getFullYear(), d.getMonth() - back + 1, 1)]; }
+VIEWS.finances = () => {
+  const v = V.finances, n = +v.period;
+  const months = [...Array(n)].map((_, i) => monthRange(n - i));
+  const [a, b] = [months[0][0], months[n - 1][1]], [pa, pb] = [monthRange(2 * n)[0], a];
+  const fee = (x, y) => rev(x, y) * 0.0349 + cnt(x, y) * 0.39;
+  const exp = (x, y) => S.expenses.filter(e => e.ts >= x && e.ts < y);
+  const sales = rev(a, b), salesP = rev(pa, pb), E = sum(exp(a, b).map(e => e.amount)), F = fee(a, b), net = sales - E - F;
+  const cats = {}; exp(a, b).forEach(e => cats[e.cat] = (cats[e.cat] || 0) + e.amount);
+  const catList = Object.entries(cats).sort((x, y) => y[1] - x[1]);
+  const mlab = r => cap(MES[new Date(r[0]).getMonth()]), plabel = n === 1 ? cap(new Date(a).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })) : `${mlab(months[0])} – ${mlab(months[n - 1])} ${new Date(a).getFullYear()}`;
+  const actions = `${seg('finances.period', [['1', 'Último mês'], ['3', 'Últimos 3 meses']], v.period)}<button class="btn pri" data-act="new" data-m="expense">${ic('plus', 16)} Nova despesa</button>`;
+  let body;
+  if (v.tab === 'payouts') {
+    const t0 = sod(Date.now()), mon = t0 - ((new Date(t0).getDay() + 6) % 7) * DAY;
+    const rows = [...Array(12)].map((_, i) => { const x = mon - i * 7 * DAY, y = x + 7 * DAY, g = rev(x, Math.min(y, Date.now())) * 0.8, f = g * 0.0349 + cnt(x, y) * 0.31; return { x, y, g, f, st: i === 0 ? ['Acumulando', 'info'] : i === 1 ? ['Agendado', 'warn'] : ['Pago', 'ok'] }; });
+    body = `<div class="card"><div class="ch"><div><h3>Repasses do cartão</h3><p class="sub">Toda terça, referente à semana anterior (seg–dom), já descontadas as taxas</p></div></div><div class="tw"><table class="tbl"><thead><tr><th>Semana</th><th class="r">Vendas no cartão</th><th class="r">Taxas</th><th class="r">Líquido</th><th>Depósito</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${dm(r.x)} – ${dm(r.y - DAY)}</td><td class="r">${brl(r.g)}</td><td class="r">−${brl(r.f)}</td><td class="r"><b>${brl(r.g - r.f)}</b></td><td>${dm(r.y + DAY)}</td><td>${pill(...r.st)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  } else if (v.tab === 'expenses') {
+    const list = [...S.expenses].sort((x, y) => y.ts - x.ts);
+    body = `<div class="card"><div class="tw"><table class="tbl"><thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th class="r">Valor</th><th></th></tr></thead><tbody>${list.map(e => `<tr><td>${new Date(e.ts).toLocaleDateString('pt-BR')}</td><td>${pill(esc(e.cat))}</td><td>${esc(e.desc)}</td><td class="r"><b>${brl(e.amount)}</b></td><td class="r"><button class="ib" style="width:30px;height:30px" data-act="delExpense" data-id="${e.id}" aria-label="Excluir despesa">${ic('trash', 14)}</button></td></tr>`).join('')}</tbody></table></div></div>`;
+  } else {
+    const inn = months.map(m => rev(...m)), out = months.map(m => sum(exp(...m).map(e => e.amount)) + fee(...m));
+    const chartMonths = n === 1 ? [...Array(6)].map((_, i) => monthRange(6 - i)) : months;
+    const ci = chartMonths.map(m => rev(...m)), co = chartMonths.map(m => sum(exp(...m).map(e => e.amount)) + fee(...m));
+    body = `<div class="grid">
+      ${[['Vendas', brl0(sales), delta(sales, salesP) + '<span class="sub">vs período anterior</span>'], ['Despesas', brl0(E), `<span class="sub">${exp(a, b).length} lançamentos</span>`], ['Taxas de cartão', brl0(F), '<span class="sub">3,49% + R$ 0,39 por venda</span>'], ['Lucro líquido', brl0(net), `<span class="sub">${(net / sales * 100 || 0).toFixed(0)}% de margem</span>`]].map(([l, val, d]) => `<div class="card s3"><div class="sub">${l}</div><div class="kv">${val}</div><div class="row">${d}</div></div>`).join('')}
+      <section class="card s7"><div class="ch"><div><h3>Entradas e saídas</h3><p class="sub">Por mês · a linha é o que sobrou</p></div><div class="legend"><span><i class="sw-dot" style="background:var(--acc)"></i>Entradas</span><span><i class="sw-dot" style="background:var(--bad)"></i>Saídas</span><span><i class="sw-dot" style="background:var(--warn)"></i>Resultado</span></div></div>
+        ${barChart({ labels: chartMonths.map(mlab), series: [{ name: 'Entradas', data: ci }, { name: 'Saídas', data: co.map(x => -x) }], line: { name: 'Resultado', data: ci.map((x, i) => x - co[i]) } })}</section>
+      <section class="card s5"><div class="ch"><div><h3>Para onde foi</h3><p class="sub">${brl0(E)} em despesas</p></div></div><ul class="list">${catList.map(([c, x]) => `<li><span style="width:150px">${esc(c)}</span><div class="bar grow"><i style="width:${x / catList[0][1] * 100}%"></i></div><span style="width:120px;text-align:right"><b>${Math.round(x / E * 100)}%</b> <span class="sub">${brl0(x)}</span></span></li>`).join('')}</ul></section>
+      <section class="card s12"><div class="ch"><div><h3>Demonstrativo</h3><p class="sub">${plabel}</p></div><button class="btn sm" data-act="new" data-m="report" data-what="Demonstrativo ${plabel}">${ic('send', 14)} Enviar ao contador</button></div>
+        <ul class="list"><li><span>Vendas válidas (após devoluções)</span><b>${brl(sales)}</b></li><li><span>Taxas de cartão</span><span>−${brl(F)}</span></li>${catList.map(([c, x]) => `<li><span>${esc(c)}</span><span>−${brl(x)}</span></li>`).join('')}<li><b>Lucro líquido</b><b style="color:${net >= 0 ? 'var(--ok)' : 'var(--bad)'}">${brl(net)}</b></li></ul></section></div>`;
+  }
+  return head('Financeiro', 'O que entrou, o que saiu e quando o banco recebe.', actions) + tabs('finances.tab', [['pl', 'Resultado'], ['payouts', 'Repasses'], ['expenses', 'Despesas', S.expenses.length]], v.tab) + body;
+};
+
+VIEWS.invoices = () => {
+  const v = V.invoices, cm = cmap(), now = Date.now();
+  const all = [...S.invoices].sort((a, b) => b.issued - a.issued), stOf = invStatus;
+  const c = { rascunho: 0, enviada: 0, vencida: 0, paga: 0 }; all.forEach(i => c[stOf(i)]++);
+  const open = all.filter(i => ['enviada', 'vencida'].includes(stOf(i))), over = all.filter(i => stOf(i) === 'vencida');
+  const paid30 = all.filter(i => i.status === 'paga' && i.paidAt > now - 30 * DAY), paidAll = all.filter(i => i.status === 'paga');
+  const days = paidAll.length ? sum(paidAll.map(i => (i.paidAt - i.issued) / DAY)) / paidAll.length : 0;
+  const STC = { rascunho: ['Rascunho', ''], enviada: ['Enviada', 'info'], vencida: ['Vencida', 'bad'], paga: ['Paga', 'ok'] };
+  const list = all.filter(i => !v.st || stOf(i) === v.st);
+  const accounts = S.customers.filter(x => x.wholesale).map(x => { const inv = all.filter(i => i.c === x.id); return { x, inv, billed: sum(inv.map(i => i.amount)), owed: sum(inv.filter(i => ['enviada', 'vencida'].includes(stOf(i))).map(i => i.amount)) }; });
+  return head('Faturas', 'Clientes de atacado com prazo de 14 dias.', `<button class="btn pri" data-act="new" data-m="invoice">${ic('plus', 16)} Nova fatura</button>`) + `<div class="grid">
+    ${[['Em aberto', brl0(sum(open.map(i => i.amount))), `${open.length} faturas enviadas`], ['Vencidas', brl0(sum(over.map(i => i.amount))), [...new Set(over.map(i => cm[i.c].name))].join(', ') || 'nenhuma'], ['Pagas, 30 dias', brl0(sum(paid30.map(i => i.amount))), `${paid30.length} faturas`], ['Prazo médio de recebimento', days.toFixed(1).replace('.', ',') + ' dias', 'prazo combinado: 14']].map(([l, val, s]) => `<div class="card s3"><div class="sub">${l}</div><div class="kv">${val}</div><div class="sub">${esc(s)}</div></div>`).join('')}
+    <section class="s8">${chips('invoices.st', [['', 'Todas', all.length], ...Object.keys(STC).map(k => [k, STC[k][0], c[k]])], v.st)}<div class="card"><div class="tw"><table class="tbl"><thead><tr><th>Fatura</th><th>Cliente</th><th>Emissão</th><th>Vencimento</th><th class="r">Valor</th><th>Status</th><th></th></tr></thead><tbody>
+    ${list.map(i => { const s = stOf(i); return `<tr><td><b>${i.id}</b></td><td><b>${esc(cm[i.c].name)}</b><div class="sub">${esc(cm[i.c].contact || '')}</div></td><td>${dm(i.issued)}</td><td>${i.status === 'paga' ? 'Paga em ' + dm(i.paidAt) : i.status === 'rascunho' ? '—' : s === 'vencida' ? `<span style="color:var(--bad)">${Math.floor((now - i.due) / DAY)} dias de atraso</span>` : 'Vence ' + dm(i.due)}</td><td class="r"><b>${brl(i.amount)}</b></td><td>${pill(...STC[s])}</td><td class="r">${s === 'rascunho' ? `<button class="btn xs pri" data-act="inv" data-id="${i.id}" data-s="enviada">Enviar</button>` : s === 'enviada' ? `<button class="btn xs" data-act="inv" data-id="${i.id}" data-s="paga">Marcar paga</button>` : s === 'vencida' ? `<button class="btn xs" data-act="inv" data-id="${i.id}" data-s="lembrar">${i.reminded ? 'Lembrado ✓' : 'Lembrar'}</button> <button class="btn xs" data-act="inv" data-id="${i.id}" data-s="paga">Marcar paga</button>` : ''}</td></tr>`; }).join('') || '<tr><td colspan="7" class="empty">Nenhuma fatura.</td></tr>'}</tbody></table></div></div></section>
+    <section class="card s4"><h3>Contas</h3><p class="sub">Quanto cada cliente deve</p><ul class="list" style="margin-top:8px">${accounts.map(a => `<li><div><b>${esc(a.x.name)}</b><div class="sub">${a.inv.length} faturas · ${brl0(a.billed)} faturados</div></div>${a.owed ? `<b>${brl0(a.owed)}</b>` : pill('Em dia', 'ok')}</li>`).join('')}</ul></section></div>`;
+};
+
+VIEWS.discounts = () => {
+  const v = V.discounts, cs = S.coupons, now = Date.now();
+  const used = sum(cs.map(c => c.used)), sales = sum(cs.map(c => c.sales)), cost = sum(cs.map(c => c.cost));
+  const fmtV = c => c.type === 'pct' ? c.val + '% de desconto' : c.type === 'brl' ? brl0(c.val) + ' de desconto' : 'Frete grátis';
+  const list = cs.map((c, i) => ({ c, i, s: couponStatus(c) })).filter(x => !v.st || x.s[0] === v.st);
+  return head('Cupons', 'Códigos digitados no checkout e as campanhas que os distribuem.', `<button class="btn pri" data-act="new" data-m="coupon">${ic('plus', 16)} Novo cupom</button>`) + `<div class="grid">
+   <div class="s12" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px">${[['Cupons', cs.filter(c => !c.campaign).length, 'permanentes'], ['Campanhas', cs.filter(c => c.campaign).length, 'com data'], ['Pedidos com cupom', num(used), 'desde o início'], ['Vendas geradas', brl0(sales), 'após o desconto'], ['Descontos concedidos', brl0(cost), `${(cost / (sales + cost) * 100 || 0).toFixed(0)}% do preço cheio`]].map(([l, val, s]) => `<div class="card"><div class="sub">${l}</div><div class="kv">${val}</div><div class="sub">${s}</div></div>`).join('')}</div>
+   <div class="s12">${chips('discounts.st', [['', 'Todos'], ['Ativo', 'Ativos'], ['Agendado', 'Agendados'], ['Pausado', 'Pausados'], ['Encerrado', 'Encerrados']], v.st)}</div>
+   ${list.map(({ c, i, s }) => `<section class="card s4"><div class="row between"><b style="font-family:ui-monospace,monospace;font-size:16px;letter-spacing:.04em">${esc(c.code)}</b>${pill(...s)}</div><p style="margin:6px 0 2px"><b>${fmtV(c)}</b></p><p class="sub">${esc(c.desc)}${c.min ? ` · acima de ${brl0(c.min)}` : ''}</p>
+     <ul class="kvl"><li><span>Usos</span><b>${num(c.used)}</b></li><li><span>Vendas geradas</span><b>${brl0(c.sales)}</b></li><li><span>Custo</span><b>${brl0(c.cost)}</b></li></ul>
+     ${c.limit ? `<div class="sub">${c.used} de ${c.limit} usos</div><div class="prog"><i style="width:${c.used / c.limit * 100}%"></i></div>` : ''}
+     <div class="row between" style="margin-top:12px"><span class="sub">${c.start > now ? 'Começa ' + dm(c.start) + ' · ' : ''}${c.end ? (c.end < now ? 'Terminou ' : 'Termina ') + dm(c.end) : 'Sem data de término'}</span><span class="row"><button class="btn xs" data-act="copy" data-v="${esc(c.code)}">Copiar</button><button class="btn xs" data-act="coupon" data-i="${i}">${c.active ? 'Pausar' : 'Ativar'}</button></span></div></section>`).join('')}</div>`;
+};
+
+VIEWS.chats = () => {
+  const v = V.chats, list = S.chats.filter(c => c.open === (v.tab === 'open'));
+  const cur = S.chats.find(c => c.id === v.cur) || list[0];
+  if (cur && cur.unread) { cur.unread = 0; save(); queueMicrotask(renderNav); }
+  const QUICK = ['Envio em até 2 dias úteis.', 'Já registrei no seu pedido.', 'Posso te mandar o link de pagamento?', 'Vou verificar e já te retorno.'];
+  return head('Conversas', 'Chat do site, Instagram, WhatsApp e e-mail — tudo em um lugar.') + `<div class="card split"><div class="pane">${tabs('chats.tab', [['open', 'Abertas', S.chats.filter(c => c.open).length], ['closed', 'Encerradas', S.chats.filter(c => !c.open).length]], v.tab)}
+   ${list.map(c => { const last = c.msgs[c.msgs.length - 1]; return `<button class="it ${cur && c.id === cur.id ? 'on' : ''} ${c.unread ? 'unread' : ''}" data-act="set" data-k="chats.cur" data-v="${c.id}">${av(c.name)}<div class="grow" style="min-width:0"><div class="row between"><b>${esc(c.name)}</b><span class="sub">${ago(last[2])}</span></div><div class="t">${last[0] ? 'Você: ' : ''}${esc(last[1])}</div></div>${c.unread ? `<span class="cnt" style="background:var(--acc);color:#fff">${c.unread}</span>` : ''}</button>`; }).join('') || '<div class="empty">Nenhuma conversa.</div>'}</div>
+   <div class="pane">${cur ? `<div class="conv"><div class="dh"><div class="who">${av(cur.name)}<div><b>${esc(cur.name)}</b><div class="sub">${esc(cur.ch)}</div></div></div><button class="btn sm" data-act="chatOpen" data-id="${cur.id}">${cur.open ? 'Encerrar' : 'Reabrir'}</button></div>
+     <div class="msgs" id="msgs">${cur.msgs.map(([me, t, ts]) => `<div class="msg ${me ? 'me' : ''}">${esc(t)}<small>${hm(ts)}</small></div>`).join('')}</div>
+     <form class="compose" data-chat="${cur.id}"><div class="row" style="margin-bottom:8px">${QUICK.map(q => `<button type="button" class="chip" data-act="quick" data-v="${esc(q)}">${esc(q)}</button>`).join('')}</div><div class="row" style="flex-wrap:nowrap"><input class="inp grow" name="t" placeholder="Escreva uma resposta…" autocomplete="off" aria-label="Mensagem"><button class="btn pri">${ic('send', 16)} Enviar</button></div></form></div>` : '<div class="empty">Selecione uma conversa.</div>'}</div></div>`;
+};
+
+VIEWS.email = () => {
+  const v = V.email, F = [['inbox', 'Entrada'], ['star', 'Com estrela'], ['sent', 'Enviados'], ['drafts', 'Rascunhos'], ['archive', 'Arquivo']];
+  const inF = (m, f) => f === 'star' ? m.star && m.f !== 'archive' : m.f === f;
+  const list = S.mails.filter(m => inF(m, v.folder)).sort((a, b) => b.ts - a.ts), cur = list.find(m => m.id === v.cur) || list[0];
+  if (cur && !cur.read) { cur.read = true; save(); queueMicrotask(renderNav); }
+  return head('E-mail', `${esc(S.settings.email)} — fornecedores, empresas, imprensa e clientes.`, `<button class="btn pri" data-act="new" data-m="compose">${ic('edit', 16)} Escrever</button>`) + `<div class="card split three">
+   <div class="pane" style="padding:8px">${F.map(([k, l]) => { const n = k === 'inbox' ? S.mails.filter(m => m.f === 'inbox' && !m.read).length : k === 'drafts' ? S.mails.filter(m => m.f === 'drafts').length : 0; return `<button class="fold ${v.folder === k ? 'on' : ''}" data-act="set" data-k="email.folder" data-v="${k}">${l}${n ? `<span class="cnt">${n}</span>` : ''}</button>`; }).join('')}</div>
+   <div class="pane">${list.map(m => `<button class="it ${cur && m.id === cur.id ? 'on' : ''} ${m.read ? '' : 'unread'}" data-act="set" data-k="email.cur" data-v="${m.id}">${av(m.from)}<div class="grow" style="min-width:0"><div class="row between"><b>${m.f === 'sent' || m.f === 'drafts' ? 'Para: ' : ''}${esc(m.from)}</b><span class="sub">${ago(m.ts)}</span></div><div class="t"><b>${esc(m.sub)}</b></div><div class="t">${esc(m.body.replace(/\n+/g, ' '))}</div></div></button>`).join('') || '<div class="empty">Pasta vazia.</div>'}</div>
+   <div class="pane">${cur ? `<div style="padding:18px"><div class="row between"><h3 style="font-size:18px">${esc(cur.sub)}</h3><span class="row"><button class="ib" data-act="mail" data-id="${cur.id}" data-op="star" aria-label="Estrela" style="color:${cur.star ? 'var(--warn)' : ''}">${ic('star', 16)}</button><button class="ib" data-act="mail" data-id="${cur.id}" data-op="archive" aria-label="Arquivar" data-tip="Arquivar">${ic('archive', 16)}</button></span></div>
+     <div class="who" style="margin:16px 0">${av(cur.from)}<div><b>${esc(cur.from)}</b> ${pill(esc(cur.tag))}<div class="sub">${esc(cur.email)} · ${fullDate(cur.ts)}</div></div></div><div class="mailbody">${esc(cur.body)}</div>
+     <div class="row" style="margin-top:20px"><button class="btn pri" data-act="new" data-m="compose" data-id="${cur.id}" data-op="reply">${ic('reply', 16)} Responder</button><button class="btn" data-act="new" data-m="compose" data-id="${cur.id}" data-op="fwd">Encaminhar</button></div></div>` : '<div class="empty">Nada selecionado.</div>'}</div></div>`;
+};
+
+VIEWS.apps = () => {
+  const v = V.apps, cats = [...new Set(S.apps.map(a => a.cat))], inst = S.apps.filter(a => a.inst).length;
+  const list = S.apps.map((a, i) => ({ a, i })).filter(({ a }) => (v.tab === 'installed' ? a.inst : true) && (!v.cat || a.cat === v.cat));
+  const feat = S.apps.findIndex(a => !a.inst);
+  return head('Apps', 'Conecte frete, e-mail, contabilidade e mais. Remover um app nunca apaga seus dados.') + tabs('apps.tab', [['browse', 'Explorar'], ['installed', 'Instalados', inst]], v.tab) +
+    (v.tab === 'browse' && feat >= 0 ? `<section class="card" style="margin-bottom:16px;background:linear-gradient(120deg,color-mix(in srgb,var(--acc) 25%,var(--card)),var(--card))"><div class="row between"><div><span class="sub">Recomendado para sua loja</span><h3 style="font-size:20px;margin:4px 0">${esc(S.apps[feat].name)}</h3><p class="sub" style="max-width:520px">${esc(S.apps[feat].desc)} Lojas parecidas com a sua recebem até 3× mais avaliações no primeiro mês.</p></div><button class="btn pri" data-act="app" data-i="${feat}">Instalar</button></div></section>` : '') +
+    chips('apps.cat', [['', 'Todos'], ...cats.map(c => [c, c])], v.cat) +
+    `<div class="pgrid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${list.map(({ a, i }) => `<article class="card"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="thumb" style="--h:${hue(a.name)};width:44px;aspect-ratio:1;border-radius:12px;font-size:15px">${esc(initials(a.name))}</span><div class="grow"><b>${esc(a.name)}</b><div class="sub">${esc(a.cat)}</div></div>${a.inst ? pill('Instalado', 'ok') : ''}</div><p class="sub" style="min-height:38px;margin:10px 0">${esc(a.desc)}</p><div class="row between"><span class="sub">★ ${String(a.rating).replace('.', ',')} · ${a.shops} lojas · ${esc(a.price)}</span><button class="btn xs ${a.inst ? 'ghost' : 'pri'}" data-act="app" data-i="${i}">${a.inst ? 'Remover' : 'Instalar'}</button></div></article>`).join('') || '<div class="empty">Nenhum app.</div>'}</div>`;
+};
+
+VIEWS.settings = () => {
+  const v = V.settings, s = S.settings;
+  const T = [['store', 'Loja'], ['team', 'Equipe'], ['appearance', 'Aparência'], ['notifications', 'Notificações'], ['data', 'Dados']];
+  const inp = (name, label, type = 'text', extra = '') => fld(label, `<input name="${name}" type="${type}" value="${esc(s[name])}" ${extra}>`);
+  let body;
+  if (v.tab === 'team') {
+    body = `<section class="card"><div class="ch"><div><h3>Equipe</h3><p class="sub">Quem acessa o portal e o que pode fazer</p></div><button class="btn pri sm" data-act="new" data-m="invite">${ic('plus', 14)} Convidar</button></div><ul class="list">${S.team.map((m, i) => `<li><div class="who">${av(m.name)}<div><b>${esc(m.name)}</b><div class="sub">${esc(m.email)}</div></div></div><span class="row"><select class="inp" data-team="${i}" aria-label="Papel de ${esc(m.name)}" ${i === 0 ? 'disabled' : ''}>${opts(['Administrador', 'Operações', 'Atendimento', 'Financeiro (leitura)'], m.role)}</select>${i ? `<button class="ib" data-act="delMember" data-i="${i}" aria-label="Remover">${ic('trash', 14)}</button>` : ''}</span></li>`).join('')}</ul></section>`;
+  } else if (v.tab === 'appearance') {
+    const ACC = ['#2f7bff', '#7c5cff', '#10b981', '#f97316', '#ec4899'];
+    body = `<section class="card"><h3>Tema</h3><div class="row" style="margin:10px 0 20px">${seg('theme', [['dark', 'Escuro'], ['light', 'Claro'], ['system', 'Sistema']], S.theme)}</div><h3>Cor de destaque</h3><div class="row" style="margin:10px 0 20px">${ACC.map(c => `<button class="acc-opt ${s.accent === c ? 'on' : ''}" style="background:${c}" data-act="accent" data-v="${c}" aria-label="Cor ${c}"></button>`).join('')}</div><h3>Densidade</h3><label class="chk" style="margin-top:10px"><input type="checkbox" data-setting="compact" ${s.compact ? 'checked' : ''}> Modo compacto (menos espaçamento nos cartões)</label></section>`;
+  } else if (v.tab === 'notifications') {
+    const N = [['orders', 'Novo pedido pago'], ['stock', 'Produto atingiu o ponto de reposição'], ['invoices', 'Fatura vencida'], ['chats', 'Nova mensagem de cliente'], ['weekly', 'Resumo semanal por e-mail (segunda, 8h)']];
+    body = `<section class="card"><h3>Avise-me quando…</h3>${N.map(([k, l]) => `<label class="chk" style="margin:12px 0"><input type="checkbox" data-notify="${k}" ${s.notify[k] ? 'checked' : ''}> ${l}</label>`).join('')}</section>`;
+  } else if (v.tab === 'data') {
+    body = `<section class="card"><h3>Seus dados</h3><p class="sub">Exporte tudo a qualquer momento.</p><div class="row" style="margin:14px 0 24px"><button class="btn" data-act="exportOrders" data-all="1">${ic('download', 16)} Pedidos (CSV)</button><button class="btn" data-act="exportCustomers">${ic('download', 16)} Clientes (CSV)</button><button class="btn" data-act="exportJson">${ic('download', 16)} Backup completo (JSON)</button></div><h3>Zona de risco</h3><p class="sub">Restaura os dados de demonstração. Não pode ser desfeito.</p><button class="btn danger" style="margin-top:10px" data-act="reset">Restaurar dados de demonstração</button></section>`;
+  } else {
+    body = `<form class="card" id="storeForm"><div class="grid" style="gap:0 24px"><div class="s6"><h3>Loja</h3><p class="sub" style="margin-bottom:14px">Aparece em recibos, faturas e e-mails</p>${inp('name', 'Nome da loja', 'text', 'required')}${inp('legal', 'Razão social')}<div class="r2">${inp('email', 'E-mail de contato', 'email', 'required')}${inp('phone', 'Telefone', 'tel')}</div>${inp('address', 'Endereço')}${fld('Fuso horário', `<select name="tz">${opts([['America/Sao_Paulo', 'Brasília (GMT-3)'], ['America/Manaus', 'Manaus (GMT-4)'], ['America/Rio_Branco', 'Rio Branco (GMT-5)'], ['America/Noronha', 'Fernando de Noronha (GMT-2)']], s.tz)}</select>`)}</div>
+      <div class="s6"><h3>Vendas</h3><p class="sub" style="margin-bottom:14px">Checkout e meta do painel</p>${inp('freeShip', 'Frete grátis acima de (R$)', 'number', 'min="0" step="1"')}${inp('goal', 'Meta mensal de vendas (R$)', 'number', 'min="1" step="100" required')}<p class="sub">Moeda: Real (BRL). Meta atual: ${brl0(s.goal)} por mês.</p></div></div><div class="row" style="justify-content:flex-end"><button class="btn pri">Salvar alterações</button></div></form>`;
+  }
+  return head('Configurações', `${esc(s.name)} · dados da loja, equipe e preferências.`) + tabs('settings.tab', T, v.tab) + body;
+};
+
+const FAQ = [
+  ['Quando os repasses do cartão caem na conta?', 'Toda terça-feira, referentes à semana anterior (segunda a domingo), já descontadas as taxas de 3,49% + R$ 0,39 por venda. Veja Financeiro › Repasses.', 'Dinheiro'],
+  ['Como mover um pedido para "Embalado"?', 'Abra o pedido e clique em "Marcar como embalado", ou arraste o cartão no Quadro de separação.', 'Pedidos'],
+  ['O que acontece com o estoque quando cancelo ou registro devolução?', 'As unidades voltam automaticamente para o estoque do produto.', 'Produtos'],
+  ['Clientes de atacado podem pagar por fatura?', 'Sim. Crie uma fatura em Faturas; o prazo padrão é de 14 dias e você pode enviar lembretes das vencidas.', 'Dinheiro'],
+  ['Como é definido o "Estoque baixo"?', 'Quando o estoque fica igual ou abaixo do ponto de reposição do produto. Edite o ponto em Produtos › Estoque.', 'Produtos'],
+  ['Um cupom acumula com frete grátis?', 'Não. No checkout vale o benefício maior entre os dois.', 'Cupons'],
+  ['Como mudar para o tema claro?', 'Use o botão no rodapé do menu lateral ou vá em Configurações › Aparência.', 'Geral'],
+];
+VIEWS.help = () => {
+  const v = V.help, q = v.q.trim().toLowerCase();
+  const CATS = [['Pedidos e separação', 'Quadro, devoluções, cancelamentos', 'bag', 'orders'], ['Produtos e estoque', 'Reposição, categorias', 'box', 'products'], ['Dinheiro', 'Repasses, taxas, faturas', 'wallet', 'finances'], ['Cupons', 'Códigos e campanhas', 'tag', 'discounts'], ['Atendimento', 'Conversas, e-mail, avaliações', 'chat', 'chats'], ['Apps', 'Frete, newsletter, NF-e', 'puzzle', 'apps']];
+  const faq = FAQ.filter(f => !q || (f[0] + f[1]).toLowerCase().includes(q));
+  return `<section class="card" style="text-align:center;padding:36px 18px;margin-bottom:16px"><h1>Como podemos ajudar, ${esc(S.user.name.split(' ')[0])}?</h1><p class="sub">Respostas, guias e uma pessoa de verdade quando precisar.</p><div style="max-width:520px;margin:18px auto 10px">${search('help.q', 'Buscar na ajuda').replace('class="inp"', 'class="inp" style="width:100%;height:46px"')}</div>${pill('● Tudo funcionando · checkout, repasses e envio de e-mails', 'ok')}</section>
+  <div class="grid">${CATS.filter(c => !q || (c[0] + c[1]).toLowerCase().includes(q)).map(([t, s, icn, to]) => `<button class="card s4 hcat" data-act="go" data-to="${to}" style="text-align:left"><span class="icbox">${ic(icn)}</span><span><h3>${t}</h3><span class="sub">${s}</span></span></button>`).join('')}
+  <section class="card s7"><h3>Perguntas frequentes</h3><p class="sub">O que mais perguntam</p>${faq.map((f, i) => `<details ${i === 0 && !q ? 'open' : ''}><summary>${esc(f[0])}</summary><p>${esc(f[1])}</p></details>`).join('') || '<p class="empty">Nada encontrado. Escreva para o suporte ao lado.</p>'}</section>
+  <section class="s5"><form class="card" id="supportForm" style="margin-bottom:16px"><h3>Fale com o suporte</h3><p class="sub" style="margin-bottom:12px">Uma pessoa lê cada mensagem</p>${fld('Assunto', '<input name="subject" required>')}${fld('Mensagem', '<textarea name="message" rows="4" required></textarea>')}<button class="btn pri">Enviar</button></form>
+   <div class="card"><h3>Seus chamados</h3>${S.tickets.length ? `<ul class="list">${S.tickets.map(t => `<li><div><b>${esc(t.subject)}</b><div class="sub">${ago(t.ts)}</div></div>${pill('Aberto', 'info')}</li>`).join('')}</ul>` : '<p class="sub">Nenhum chamado aberto. O que você enviar aparece aqui.</p>'}</div></section></div>`;
+};
+
+/* ---------- modais e gaveta ---------- */
+function modal(title, body, onOk, okLabel = 'Salvar') {
+  const d = $('#modal');
+  d.innerHTML = `<form class="mbox"><header><h3>${title}</h3><button type="button" class="ib" data-act="close" aria-label="Fechar">${ic('x', 16)}</button></header><div class="mbody">${body}</div><footer><button type="button" class="btn ghost" data-act="close">Cancelar</button><button class="btn pri">${okLabel}</button></footer></form>`;
+  d.querySelector('form').onsubmit = e => { e.preventDefault(); if (onOk(Object.fromEntries(new FormData(e.target)), e.target) !== false) d.close(); };
+  d.showModal();
+}
+function drawer(html) { const d = $('#drawer'); d.innerHTML = `<div class="dbox">${html}</div>`; if (!d.open) d.showModal(); }
+const M = {
+  goal: () => modal('Meta mensal', fld('Meta de vendas do mês (R$)', `<input name="goal" type="number" min="1" step="100" value="${S.settings.goal}" required autofocus>`), f => { S.settings.goal = +f.goal; commit('Meta atualizada'); }),
+  restock: d => { const p = S.products[+d.i]; modal(`Repor ${esc(p.name)}`, `<p class="sub" style="margin-top:0">Estoque atual: ${p.stock} · ponto de reposição: ${p.reorder}</p>` + fld('Unidades recebidas', `<input name="q" type="number" min="1" value="${Math.max(p.reorder * 2 - p.stock, 1)}" required autofocus>`), f => { p.stock += +f.q; commit(`${p.name}: +${f.q} unidades`); }, 'Adicionar ao estoque'); },
+  product: d => {
+    const i = d.i != null ? +d.i : -1, p = S.products[i] || { name: '', cat: 'Acessórios', variant: '', price: '', stock: 0, reorder: 10, status: 'ativo' };
+    const cats = [...new Set(S.products.map(x => x.cat))];
+    modal(i < 0 ? 'Novo produto' : 'Editar produto', fld('Nome', `<input name="name" value="${esc(p.name)}" required>`) + `<div class="r2">${fld('Categoria', `<input name="cat" list="cats" value="${esc(p.cat)}" required><datalist id="cats">${opts(cats)}</datalist>`)}${fld('Variação', `<input name="variant" value="${esc(p.variant)}">`)}</div><div class="r2">${fld('Preço (R$)', `<input name="price" type="number" step="0.01" min="0" value="${p.price}" required>`)}${fld('Situação', `<select name="status">${opts([['ativo', 'Ativo'], ['rascunho', 'Rascunho'], ['arquivado', 'Arquivado']], p.status)}</select>`)}</div><div class="r2">${fld('Estoque', `<input name="stock" type="number" min="0" value="${p.stock}" required>`)}${fld('Ponto de reposição', `<input name="reorder" type="number" min="0" value="${p.reorder}" required>`)}</div>`,
+      f => { const np = { ...p, ...f, price: +f.price, stock: +f.stock, reorder: +f.reorder }; if (i < 0) S.products.push(np); else S.products[i] = np; commit(i < 0 ? 'Produto criado' : 'Produto salvo'); }, i < 0 ? 'Criar produto' : 'Salvar');
+  },
+  order: () => modal('Novo pedido', fld('Cliente', `<select name="c" required>${opts([...S.customers].sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, c.name]))}</select>`) + `<div class="r2">${fld('Produto', `<select name="p">${opts(S.products.map((p, i) => [i, `${p.name} — ${brl(p.price)}`]).filter((_, i) => S.products[i].status === 'ativo'))}</select>`)}${fld('Quantidade', '<input name="q" type="number" min="1" value="1" required>')}</div>` + fld('Canal', `<select name="ch">${opts(CHANNELS)}</select>`) + '<label class="chk"><input type="checkbox" name="paid" checked> Pagamento confirmado</label>',
+    f => { const p = S.products[+f.p], q = +f.q, sub = p.price * q, ship = sub >= S.settings.freeShip ? 0 : 29.9; const o = { id: '#' + (10000 + S.orders.length), ts: Date.now(), c: f.c, ch: f.ch, i: [[+f.p, q, p.price]], ship, total: sub + ship, st: f.paid ? 'separar' : 'aguardando' }; S.orders.push(o); p.stock = Math.max(0, p.stock - q); commit(`Pedido ${o.id} criado`); }, 'Criar pedido'),
+  customer: () => modal('Novo cliente', fld('Nome', '<input name="name" required>') + `<div class="r2">${fld('E-mail', '<input name="email" type="email" required>')}${fld('Cidade', `<input name="city" list="cities" placeholder="São Paulo, SP"><datalist id="cities">${opts(CITIES)}</datalist>`)}</div><label class="chk"><input type="checkbox" name="wholesale"> Cliente de atacado (empresa)</label>`,
+    f => { S.customers.push({ id: 'n' + Date.now(), name: f.name, email: f.email, city: f.city || '—', wholesale: !!f.wholesale, contact: f.wholesale ? f.name : undefined, join: 730 }); commit('Cliente cadastrado'); }, 'Cadastrar'),
+  invoice: () => modal('Nova fatura', fld('Cliente', `<select name="c">${opts(S.customers.filter(c => c.wholesale).map(c => [c.id, c.name]))}</select>`) + `<div class="r2">${fld('Valor (R$)', '<input name="amount" type="number" step="0.01" min="1" required>')}${fld('Prazo (dias)', '<input name="days" type="number" min="1" value="14" required>')}</div><label class="chk"><input type="checkbox" name="send" checked> Enviar agora por e-mail</label>`,
+    f => { const n = Math.max(...S.invoices.map(i => +i.id.split('-')[1])) + 1; S.invoices.push({ id: 'FAT-' + n, c: f.c, issued: Date.now(), due: Date.now() + f.days * DAY, amount: +f.amount, status: f.send ? 'enviada' : 'rascunho', paidAt: null }); commit(`Fatura FAT-${n} ${f.send ? 'enviada' : 'salva como rascunho'}`); }, 'Criar fatura'),
+  coupon: () => modal('Novo cupom', `<div class="r2">${fld('Código', '<input name="code" required pattern="[A-Za-z0-9]{3,20}" title="3 a 20 letras ou números" style="text-transform:uppercase">')}${fld('Tipo', `<select name="type">${opts([['pct', '% de desconto'], ['brl', 'R$ de desconto'], ['frete', 'Frete grátis']])}</select>`)}</div><div class="r2">${fld('Valor', '<input name="val" type="number" min="0" value="10">')}${fld('Pedido mínimo (R$)', '<input name="min" type="number" min="0" value="0">')}</div>` + fld('Descrição', '<input name="desc" placeholder="Ex.: Campanha de aniversário">') + `<div class="r2">${fld('Limite de usos (0 = sem limite)', '<input name="limit" type="number" min="0" value="0">')}${fld('Termina em', '<input name="end" type="date">')}</div>`,
+    f => { const code = f.code.toUpperCase(); if (S.coupons.some(c => c.code === code)) { toast('Esse código já existe'); return false; } S.coupons.unshift({ code, type: f.type, val: +f.val, desc: f.desc || 'Cupom manual', min: +f.min, limit: +f.limit, used: 0, sales: 0, cost: 0, start: Date.now(), end: f.end ? +new Date(f.end + 'T23:59') : null, active: true, campaign: !!f.end }); commit(`Cupom ${code} criado`); }, 'Criar cupom'),
+  expense: () => modal('Nova despesa', `<div class="r2">${fld('Data', `<input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>`)}${fld('Categoria', `<input name="cat" list="ecats" required><datalist id="ecats">${opts([...new Set(S.expenses.map(e => e.cat))])}</datalist>`)}</div>` + fld('Descrição', '<input name="desc" required>') + fld('Valor (R$)', '<input name="amount" type="number" step="0.01" min="0.01" required>'),
+    f => { S.expenses.push({ id: Date.now(), ts: +new Date(f.date + 'T12:00'), cat: f.cat, desc: f.desc, amount: +f.amount }); commit('Despesa lançada'); }, 'Lançar'),
+  compose: d => {
+    const m = d.id ? S.mails.find(x => x.id === +d.id) : null, re = d.op === 'reply';
+    modal(m ? (re ? 'Responder' : 'Encaminhar') : 'Novo e-mail', fld('Para', `<input name="to" type="email" value="${m && re ? esc(m.email) : ''}" required>`) + fld('Assunto', `<input name="sub" value="${m ? (re ? 'Re: ' : 'Enc: ') + esc(m.sub) : ''}" required>`) + fld('Mensagem', `<textarea name="body" rows="7">${m ? '\n\n— Em ' + fullDate(m.ts) + ', ' + esc(m.from) + ' escreveu:\n' + esc(m.body) : ''}</textarea>`),
+      f => { S.mails.push({ id: Date.now(), f: 'sent', from: f.to, email: f.to, tag: 'Enviado', sub: f.sub, body: f.body, ts: Date.now(), read: true, star: false }); commit('E-mail enviado'); }, 'Enviar');
+  },
+  invite: () => modal('Convidar pessoa', fld('Nome', '<input name="name" required>') + fld('E-mail', '<input name="email" type="email" required>') + fld('Papel', `<select name="role">${opts(['Operações', 'Atendimento', 'Financeiro (leitura)', 'Administrador'])}</select>`), f => { S.team.push(f); commit(`Convite enviado para ${f.email}`); }, 'Enviar convite'),
+  report: d => modal('Enviar relatório', fld('Para', `<input name="to" type="email" value="${esc(S.team.find(t => t.role.startsWith('Financeiro'))?.email || '')}" required>`) + fld('Conteúdo', `<input name="what" value="${esc(d.what || 'Análises de vendas — últimos 60 dias')}">`) + '<label class="chk"><input type="checkbox" name="csv" checked> Anexar CSV</label>', f => { toast(`Relatório enviado para ${f.to}`); }, 'Enviar'),
+};
+function openCustomer(id) {
+  const c = S.customers.find(x => x.id === id), s = custStats()[id], os = S.orders.filter(o => o.c === id).reverse();
+  drawer(`<div class="dh"><div class="who">${av(c.name)}<div><h3>${esc(c.name)}</h3><div class="sub">${esc(c.email)} · ${esc(c.city)}</div></div></div><button class="ib" data-act="close" aria-label="Fechar">${ic('x', 16)}</button></div>
+   <div class="db"><div class="grid" style="gap:10px">${[['Segmento', s.seg], ['Pedidos', s.n], ['Total gasto', brl0(s.spent)], ['Ticket médio', brl0(s.n ? s.spent / s.n : 0)], ['Cliente desde', s.first ? dm(s.first) + ' ' + new Date(s.first).getFullYear() : '—'], ['Último pedido', s.last ? ago(s.last) : '—']].map(([l, v]) => `<div class="card s6" style="padding:12px"><div class="sub">${l}</div><b>${v}</b></div>`).join('')}</div>
+   <h4>Pedidos</h4><ul class="list">${os.slice(0, 20).map(o => `<li data-act="order" data-id="${o.id}" style="cursor:pointer"><div><b>${o.id}</b><div class="sub">${ago(o.ts)} · ${o.ch}</div></div><span class="row">${stPill(o.st)}<b>${brl(o.total)}</b></span></li>`).join('') || '<li class="muted">Sem pedidos ainda.</li>'}</ul></div>
+   <div class="df"><a class="btn" href="mailto:${esc(c.email)}">${ic('mail', 16)} Enviar e-mail</a><button class="btn pri" data-act="new" data-m="order">Novo pedido</button></div>`);
+}
+function openOrder(id) {
+  const o = S.orders.find(x => x.id === id), c = cmap()[o.c], fi = FLOW.indexOf(o.st);
+  drawer(`<div class="dh"><div><h3>Pedido ${o.id}</h3><p class="sub">${fullDate(o.ts)} · ${o.ch}</p></div><button class="ib" data-act="close" aria-label="Fechar">${ic('x', 16)}</button></div>
+   <div class="db"><div class="row between">${stPill(o.st)}<b class="big">${brl(o.total)}</b></div>
+   <h4>Cliente</h4><div class="who" data-act="customer" data-id="${c.id}" style="cursor:pointer">${av(c.name)}<div><b>${esc(c.name)}</b><div class="sub">${esc(c.email)} · ${esc(c.city)}</div></div></div>
+   <h4>Itens</h4><ul class="list">${o.i.map(([p, q, pr]) => `<li><span>${q} × ${esc(S.products[p].name)}</span><span>${brl(q * pr)}</span></li>`).join('')}<li><span class="sub">Frete</span><span>${o.ship ? brl(o.ship) : 'Grátis'}</span></li><li><b>Total</b><b>${brl(o.total)}</b></li></ul>
+   <h4>Andamento</h4><ol class="tl">${FLOW.map((s, i) => `<li class="${fi >= i ? 'done' : ''}">${ST[s][0]}</li>`).join('')}${fi < 0 ? `<li class="done">${ST[o.st][0]}</li>` : ''}</ol></div>
+   <div class="df">${['enviado', 'entregue'].includes(o.st) ? `<button class="btn" data-act="ost" data-id="${o.id}" data-s="devolvido">Registrar devolução</button>` : ''}${['aguardando', 'separar'].includes(o.st) ? `<button class="btn danger" data-act="ost" data-id="${o.id}" data-s="cancelado">Cancelar pedido</button>` : ''}${NEXT[o.st] ? `<button class="btn pri" data-act="ost" data-id="${o.id}" data-s="${NEXT[o.st]}">Marcar como ${ST[NEXT[o.st]][0].toLowerCase()}</button>` : ''}</div>`);
+}
+function setStatus(id, st) {
+  const o = S.orders.find(x => x.id === id); if (!o || o.st === st) return;
+  const back = ['devolvido', 'cancelado'];
+  if (back.includes(st) && !back.includes(o.st)) o.i.forEach(([p, q]) => S.products[p].stock += q);
+  o.st = st;
+}
+
+/* ---------- ações ---------- */
+function commit(msg) { save(); render(); if (msg) toast(msg); }
+const ACT = {
+  set: d => { const [k, p] = d.k.split('.'); if (k === 'theme') { S.theme = d.v; applyTheme(); return commit(); } V[k][p] = /^\d+$/.test(d.v) && p === 'cur' && k === 'email' ? +d.v : d.v; if (p !== 'page') V[k].page = 1; if (p !== 'sel' && k === 'orders') V.orders.sel = []; render(); },
+  toggle: d => { const [k, p] = d.k.split('.'); V[k][p] = !V[k][p]; render(); },
+  page: d => { V[d.k].page = +d.v; render(); },
+  go: d => { if (d.tab) V[d.to].tab = d.tab; $('#notif').hidePopover?.(); location.hash = '#/' + d.to; if (location.hash === '#/' + d.to) render(); },
+  new: d => { $('#createMenu').hidePopover?.(); M[d.m](d); },
+  order: d => openOrder(d.id),
+  customer: d => openCustomer(d.id),
+  ost: d => { setStatus(d.id, d.s); commit(`${d.id}: ${ST[d.s][0].toLowerCase()}`); if ($('#drawer').open && $('#drawer h3')?.textContent.includes(d.id)) openOrder(d.id); },
+  bulk: d => { V.orders.sel.forEach(id => setStatus(id, d.s)); const n = V.orders.sel.length; V.orders.sel = []; commit(`${n} pedidos atualizados`); },
+  clearSel: () => { V.orders.sel = []; render(); },
+  close: () => { $('#modal').open && $('#modal').close(); $('#drawer').open && $('#drawer').close(); },
+  menu: () => $('#side').classList.toggle('open'),
+  theme: () => { S.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(); commit(); },
+  accent: d => { S.settings.accent = d.v; applyTheme(); commit('Cor atualizada'); },
+  palette: () => openPalette(),
+  cat: d => { V.products.tab = 'catalog'; V.products.cat = d.v; render(); },
+  seg: d => { V.customers.tab = 'people'; V.customers.seg = d.v; render(); },
+  review: d => { S.reviews[+d.i].status = d.s; commit(d.s === 'publicada' ? 'Avaliação publicada' : 'Avaliação ocultada'); },
+  inv: d => { const i = S.invoices.find(x => x.id === d.id); if (d.s === 'lembrar') { i.reminded = true; return commit(`Lembrete enviado para ${cmap()[i.c].name}`); } if (d.s === 'paga') i.paidAt = Date.now(); if (d.s === 'enviada') { i.issued = Date.now(); i.due = Date.now() + 14 * DAY; } i.status = d.s; commit(`${i.id} ${d.s === 'paga' ? 'marcada como paga' : 'enviada'}`); },
+  coupon: d => { const c = S.coupons[+d.i]; c.active = !c.active; commit(`${c.code} ${c.active ? 'ativado' : 'pausado'}`); },
+  copy: d => { navigator.clipboard?.writeText(d.v).then(() => toast(`${d.v} copiado`), () => toast(d.v)); },
+  delExpense: d => { if (!confirm('Excluir esta despesa?')) return; S.expenses = S.expenses.filter(e => e.id !== +d.id); commit('Despesa excluída'); },
+  delMember: d => { if (!confirm(`Remover ${S.team[+d.i].name} da equipe?`)) return; S.team.splice(+d.i, 1); commit('Acesso removido'); },
+  app: d => { const a = S.apps[+d.i]; if (a.inst && !confirm(`Remover ${a.name}? Seus dados continuam salvos.`)) return; a.inst = !a.inst; commit(`${a.name} ${a.inst ? 'instalado' : 'removido'}`); },
+  chatOpen: d => { const c = S.chats.find(x => x.id === d.id); c.open = !c.open; V.chats.tab = c.open ? 'open' : 'closed'; commit(c.open ? 'Conversa reaberta' : 'Conversa encerrada'); },
+  quick: d => { const i = $('.compose input'); i.value = d.v; i.focus(); },
+  mail: d => { const m = S.mails.find(x => x.id === +d.id); if (d.op === 'star') m.star = !m.star; else { m.f = 'archive'; V.email.cur = null; } commit(d.op === 'archive' ? 'Arquivado' : ''); },
+  readAll: () => { S.notifRead = notifs().map(n => n.id); save(); renderNav(); },
+  notif: d => { S.notifRead.push(d.id); save(); $('#notif').hidePopover?.(); ACT.go(d); },
+  exportOrders: d => {
+    const cm = cmap(), list = d.sel ? S.orders.filter(o => V.orders.sel.includes(o.id)) : d.all ? S.orders : (V._ordersList || S.orders);
+    download('pedidos.csv', csv([['Pedido', 'Data', 'Cliente', 'E-mail', 'Canal', 'Itens', 'Frete', 'Total', 'Status'], ...list.map(o => [o.id, new Date(o.ts).toLocaleString('pt-BR'), cm[o.c].name, cm[o.c].email, o.ch, nItems(o), o.ship.toFixed(2).replace('.', ','), o.total.toFixed(2).replace('.', ','), ST[o.st][0]])]));
+    toast(`${num(list.length)} pedidos exportados`);
+  },
+  exportCustomers: () => { const st = custStats(); download('clientes.csv', csv([['Nome', 'E-mail', 'Cidade', 'Segmento', 'Pedidos', 'Total gasto'], ...S.customers.map(c => [c.name, c.email, c.city, st[c.id].seg, st[c.id].n, st[c.id].spent.toFixed(2).replace('.', ',')])])); },
+  exportJson: () => download('backup-portal.json', JSON.stringify(S), 'application/json'),
+  reset: () => { if (!confirm('Restaurar todos os dados de demonstração? Suas alterações serão perdidas.')) return; S = seed(); applyTheme(); commit('Dados restaurados'); },
+};
+
+/* ---------- notificações, menu criar, paleta ---------- */
+function notifs() {
+  const n = [], cm = cmap();
+  S.products.filter(p => p.stock === 0 && p.status === 'ativo').forEach(p => n.push({ id: 'st-' + p.name, icon: 'box', t: `${p.name} esgotado`, s: 'Repor estoque', to: 'products', tab: 'stock' }));
+  S.invoices.filter(i => invStatus(i) === 'vencida').forEach(i => n.push({ id: 'inv-' + i.id, icon: 'file', t: `${i.id} vencida`, s: `${cm[i.c].name} · ${brl0(i.amount)}`, to: 'invoices' }));
+  S.chats.filter(c => c.unread).forEach(c => n.push({ id: 'chat-' + c.id + c.msgs.length, icon: 'chat', t: `Nova mensagem de ${c.name}`, s: c.msgs[c.msgs.length - 1][1], to: 'chats' }));
+  S.orders.filter(o => o.st === 'separar').slice(-3).forEach(o => n.push({ id: 'ord-' + o.id, icon: 'bag', t: `Pedido ${o.id} pago`, s: `${cm[o.c].name} · ${brl(o.total)}`, to: 'orders', tab: 'board' }));
+  return n;
+}
+function renderNav() {
+  const r = route(), unread = notifs().filter(n => !S.notifRead.includes(n.id));
+  const badge = { orders: S.orders.filter(o => o.st === 'separar').length, products: lowStock().length, chats: sum(S.chats.map(c => c.unread)), email: S.mails.filter(m => m.f === 'inbox' && !m.read).length };
+  $('#side').innerHTML = `<a class="logo" href="#/dashboard" aria-label="Início" data-tip="${esc(S.settings.name)}">${ic('logo', 22)}</a><button class="nv" data-act="palette" data-tip="Buscar · Ctrl+K" aria-label="Buscar">${ic('search')}</button><hr>
+   <nav aria-label="Principal">${NAV.map(([g, items], gi) => (gi ? '<hr>' : '') + items.map(([k, icn]) => `<a class="nv ${r === k ? 'on' : ''}" href="#/${k}" data-tip="${g ? g + ' · ' : ''}${TITLES[k]}" aria-label="${TITLES[k]}" ${r === k ? 'aria-current="page"' : ''}>${ic(icn, 19)}${badge[k] ? `<span class="dot">${badge[k]}</span>` : ''}</a>`).join('')).join('')}</nav>
+   <button class="sw" role="switch" aria-checked="${document.documentElement.dataset.theme === 'dark'}" aria-label="Modo escuro" data-act="theme" data-tip="Modo escuro"></button>
+   <a class="nv" href="#/settings" data-tip="${esc(S.user.name)} · ${esc(S.user.role)}" aria-label="Conta">${av(S.user.name)}</a>`;
+  $('#bell').innerHTML = ic('bell') + (unread.length ? `<span class="dot">${unread.length}</span>` : '');
+  $('#notif').innerHTML = `<div class="row between" style="padding:8px 10px"><b>Notificações</b>${unread.length ? '<button class="btn xs" data-act="readAll">Marcar todas como lidas</button>' : ''}</div>${notifs().map(n => `<button class="mi ${S.notifRead.includes(n.id) ? '' : 'unread'}" data-act="notif" data-id="${esc(n.id)}" data-to="${n.to}" ${n.tab ? `data-tab="${n.tab}"` : ''}><span class="icbox">${ic(n.icon, 16)}</span><span style="min-width:0"><b>${esc(n.t)}</b><div class="sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${esc(n.s)}</div></span></button>`).join('') || '<p class="empty">Tudo em dia.</p>'}`;
+}
+function openPalette() {
+  const d = $('#pal'), inp = $('#palq'); inp.value = ''; palRender(''); d.showModal(); inp.focus();
+}
+function palItems(q) {
+  q = q.trim().toLowerCase(); const out = [];
+  Object.entries(TITLES).forEach(([k, t]) => { if (!q || t.toLowerCase().includes(q)) out.push({ ic: 'arrow', t, s: 'Página', act: `data-act="go" data-to="${k}"` }); });
+  if (q) {
+    const cm = cmap();
+    S.orders.filter(o => o.id.toLowerCase().includes(q)).slice(-5).reverse().forEach(o => out.push({ ic: 'bag', t: `Pedido ${o.id}`, s: `${cm[o.c].name} · ${brl(o.total)}`, act: `data-act="order" data-id="${o.id}"` }));
+    S.customers.filter(c => c.name.toLowerCase().includes(q)).slice(0, 5).forEach(c => out.push({ ic: 'users', t: c.name, s: 'Cliente · ' + c.city, act: `data-act="customer" data-id="${c.id}"` }));
+    S.products.map((p, i) => ({ p, i })).filter(({ p }) => p.name.toLowerCase().includes(q)).slice(0, 5).forEach(({ p, i }) => out.push({ ic: 'box', t: p.name, s: 'Produto · ' + brl(p.price), act: `data-act="new" data-m="product" data-i="${i}"` }));
+  }
+  return out;
+}
+function palRender(q) { const it = palItems(q); $('#palres').innerHTML = it.map((x, i) => `<button class="mi ${i === 0 ? 'unread' : ''}" ${x.act}>${ic(x.ic, 16)}<span><b>${esc(x.t)}</b> <span class="sub">${esc(x.s)}</span></span></button>`).join('') || '<p class="empty">Nada encontrado.</p>'; }
+$('#palq').addEventListener('input', e => palRender(e.target.value));
+$('#palq').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#palres .mi')?.click(); } });
+$('#pal').addEventListener('click', e => { if (e.target === $('#pal') || e.target.closest('.mi')) $('#pal').close(); });
+
+/* ---------- roteador e eventos ---------- */
+const route = () => { const r = (location.hash.match(/^#\/(\w+)/) || [])[1]; return VIEWS[r] ? r : 'dashboard'; };
+function greet() { const h = new Date().getHours(); return (h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite') + ', ' + S.user.name.split(' ')[0]; }
+function render() {
+  const r = route(), a = document.activeElement, fid = a?.dataset?.bind, pos = a?.selectionStart;
+  CH = {};
+  $('#main').innerHTML = VIEWS[r]();
+  document.title = `${TITLES[r]} — ${S.settings.name}`;
+  $('#greet').textContent = greet();
+  $('#crumb').textContent = cap(new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })) + ' · ' + TITLES[r];
+  renderNav();
+  if (fid) { const el = $(`[data-bind="${fid}"]`); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch { /* select */ } } }
+  const msgs = $('#msgs'); if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+function applyTheme() {
+  const t = S.theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : S.theme;
+  document.documentElement.dataset.theme = t;
+  document.documentElement.style.setProperty('--acc', S.settings.accent);
+  document.body.classList.toggle('compact', !!S.settings.compact);
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]');
+  if (!a) { if ($('#side').classList.contains('open') && !e.target.closest('#side, .mbtn')) $('#side').classList.remove('open'); return; }
+  if (e.target.closest('input[type=checkbox]')) return;
+  if (a.tagName === 'A' && !a.dataset.act) return;
+  e.preventDefault(); ACT[a.dataset.act]?.(a.dataset, a, e);
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
+  if (e.key === 'Enter' && e.target.matches('.pcard')) e.target.click();
+});
+document.addEventListener('input', e => {
+  const t = e.target, b = t.dataset.bind;
+  if (b) { const [k, p] = b.split('.'); V[k][p] = t.value; V[k].page = 1; render(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.selo) { const s = new Set(V.orders.sel); t.checked ? s.add(t.dataset.selo) : s.delete(t.dataset.selo); V.orders.sel = [...s]; render(); }
+  if (t.dataset.team) { S.team[+t.dataset.team].role = t.value; commit('Papel atualizado'); }
+  if (t.dataset.notify) { S.settings.notify[t.dataset.notify] = t.checked; commit('Preferência salva'); }
+  if (t.dataset.setting === 'compact') { S.settings.compact = t.checked; applyTheme(); commit(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target;
+  if (f.id === 'storeForm') { e.preventDefault(); const d = Object.fromEntries(new FormData(f)); Object.assign(S.settings, d, { freeShip: +d.freeShip, goal: +d.goal }); commit('Configurações salvas'); }
+  if (f.id === 'supportForm') { e.preventDefault(); const d = Object.fromEntries(new FormData(f)); S.tickets.unshift({ ...d, ts: Date.now() }); commit('Mensagem enviada ao suporte'); }
+  if (f.dataset.chat) { e.preventDefault(); const t = f.t.value.trim(); if (!t) return; S.chats.find(c => c.id === f.dataset.chat).msgs.push([1, t, Date.now()]); commit(); $('.compose input')?.focus(); }
+});
+// arrastar e soltar no quadro de separação
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-drag]'); if (c) e.dataTransfer.setData('text/plain', c.dataset.drag); });
+document.addEventListener('dragover', e => { const col = e.target.closest?.('[data-drop]'); if (col) { e.preventDefault(); $$('.kcol').forEach(k => k.classList.toggle('over', k === col)); } });
+document.addEventListener('drop', e => { const col = e.target.closest?.('[data-drop]'); if (!col) return; e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); setStatus(id, col.dataset.drop); commit(`${id}: ${ST[col.dataset.drop][0].toLowerCase()}`); });
+// tooltip do menu lateral
+document.addEventListener('mouseover', e => { const t = e.target.closest?.('[data-tip]'), tip = $('#tip'); if (!t) { tip.style.display = 'none'; return; } const r = t.getBoundingClientRect(); tip.textContent = t.dataset.tip; tip.style.display = 'block'; const side = t.closest('.side'); tip.style.left = (side ? r.right + 10 : r.left + r.width / 2 - tip.offsetWidth / 2) + 'px'; tip.style.top = (side ? r.top + r.height / 2 - tip.offsetHeight / 2 : r.bottom + 8) + 'px'; });
+window.addEventListener('hashchange', () => { $('#tip').style.display = 'none'; render(); scrollTo(0, 0); $('#side').classList.remove('open'); $('#main').focus({ preventScroll: true }); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => S.theme === 'system' && (applyTheme(), renderNav()));
+// loja ao vivo — ponytail: valores simulados; ligar ao analytics real (websocket/polling)
+setInterval(() => {
+  LIVE.v = Math.max(8, Math.min(120, LIVE.v + Math.round((Math.random() - 0.5) * 8))); LIVE.c = Math.max(1, Math.round(LIVE.v / 5 + (Math.random() - 0.5) * 3));
+  LIVE.bars.push(Math.min(100, LIVE.v)); LIVE.bars.shift();
+  if ($('#live-v')) { $('#live-v').textContent = LIVE.v; $('#live-c').textContent = LIVE.c; $('#live-bars').innerHTML = LIVE.bars.map(b => `<i style="height:${b}%"></i>`).join(''); }
+}, 3000);
+
+/* ---------- init ---------- */
+$('.mbtn').innerHTML = ic('menu');
+$('#topSearch').innerHTML = ic('search');
+$('#createBtn').innerHTML = ic('plus', 16) + ' Criar';
+$('#createMenu').innerHTML = [['order', 'bag', 'Novo pedido'], ['product', 'box', 'Novo produto'], ['customer', 'users', 'Novo cliente'], ['invoice', 'file', 'Nova fatura'], ['coupon', 'tag', 'Novo cupom'], ['expense', 'wallet', 'Nova despesa'], ['compose', 'mail', 'Novo e-mail']].map(([m, i, l]) => `<button class="mi" data-act="new" data-m="${m}">${ic(i, 16)} ${l}</button>`).join('');
+applyTheme();
+render();
+</script>
 </body>
 </html>
