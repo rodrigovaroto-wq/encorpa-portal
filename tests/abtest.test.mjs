@@ -28,10 +28,10 @@ test("goalStatus: meta batida, entre a meta e o limite, limite estourado só com
   assert.equal(goalStatus(goal("site", "ctr"), null, 55), "");
 });
 
-test("armVerdict: não começou, pausa do dia 2, pausa do dia 3 sem pedido, rodando", () => {
+test("armVerdict: não começou, pausa com R$ 50, pausa com R$ 75 sem pedido, rodando", () => {
   const v = (k, o) => armVerdict(k, armTotals([set(o)])[k])[0];
   assert.equal(v("whatsapp", { destination: "WHATSAPP" }), "Não começou");
-  assert.match(v("whatsapp", { destination: "WHATSAPP", spend: 55, impressions: 1000, clicks: 30, started: 10 }), /dia 2/); // conversa R$ 5,50
+  assert.match(v("whatsapp", { destination: "WHATSAPP", spend: 55, impressions: 1000, clicks: 30, started: 10 }), /R\$ 50/); // conversa R$ 5,50
   assert.match(v("whatsapp", { destination: "WHATSAPP", spend: 80, impressions: 4000, clicks: 100, started: 50 }), /R\$ 75 sem pedido/);
   assert.equal(v("whatsapp", { destination: "WHATSAPP", spend: 80, impressions: 4000, clicks: 100, started: 50, orders: 3 }), "Rodando");
   assert.equal(armVerdict("site", armTotals([])["site"])[0], "Conjunto não encontrado na Meta");

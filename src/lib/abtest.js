@@ -1,6 +1,6 @@
 import { SAMPLE_FLOOR } from "./constants.js";
 
-// Teste A/B (operador, 02 e 03/11; Ricos-com-AI grafo §140): conjunto Site × conjunto WhatsApp, R$ 25/dia cada por 5 dias.
+// Teste A/B (operador, 02 e 03/11; Ricos-com-AI grafo §140): conjunto Site × conjunto WhatsApp, R$ 125 cada em 7 dias (R$ 17,86/dia; 04/11).
 // O braço sai do destino do conjunto na Meta (WEBSITE ou WhatsApp); sem destino, do nome ("site" ou "whats").
 export const armOf = (s) => (/WEBSITE/.test(s.destination || "") ? "site" : /WHATSAPP|MESSENGER|MESSAGING/.test(s.destination || "") ? "whatsapp"
   : /\bsite\b/i.test(s.name || "") ? "site" : /whats|zap/i.test(s.name || "") ? "whatsapp" : null);
@@ -44,7 +44,7 @@ export function goalStatus(x, v, spend) {
 export function armVerdict(k, t) {
   if (!t.sets) return ["Conjunto não encontrado na Meta", ""];
   if (!t.spend) return ["Não começou", ""];
-  if (t.spend >= 50 && ARMS[k].goals.some((x) => x.id !== "cpo" && x.pause != null && goalStatus(x, t[x.id], t.spend) === "bad")) return ["PAUSAR: limite do dia 2 estourado", "bad"];
+  if (t.spend >= 50 && ARMS[k].goals.some((x) => x.id !== "cpo" && x.pause != null && goalStatus(x, t[x.id], t.spend) === "bad")) return ["PAUSAR: limite estourado com R$ 50", "bad"];
   if (t.orders != null && t.spend >= 75 && !t.orders) return ["PAUSAR: R$ 75 sem pedido", "bad"];
   if (t.spend >= SAMPLE_FLOOR.spend) return [t.cpo != null && t.cpo <= 27 ? "Terminou abaixo de R$ 27 por pedido" : "Terminou", t.cpo != null && t.cpo <= 27 ? "ok" : "warn"];
   return ["Rodando", "ok"];

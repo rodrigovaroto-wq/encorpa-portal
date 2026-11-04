@@ -5,6 +5,8 @@
 
 ## Feito em 04/11 (branch `claude/keen-mccarthy-ecydee`)
 
+- **Teste A/B em 7 dias (operador, 04/11, por falta de caixa):** a mesma verba (R$ 125 por conjunto, R$ 250 no total) em 7 dias, R$ 17,86/dia
+  por conjunto (eram R$ 25/dia em 5 dias). As pausas seguem pelo gasto: limite estourado com R$ 50 (dia 3), zero pedidos com R$ 75 (dia 5).
 - **Financeiro › Caixa:** campo **Duração dos anúncios (dias)**. Com um número inteiro digitado, o caixa necessário, o título ("por 15 dias")
   e a conta usam esses dias, e a tabela ganha a linha "15 dias (digitado)" no topo; vale só para esta conta, o período do topo não muda.
   Vazio volta ao período do topo.
