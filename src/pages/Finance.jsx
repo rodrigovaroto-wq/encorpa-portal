@@ -105,16 +105,19 @@ function Api({ p, period, updated }) {
 
 // Caixa necessário (operador, 19/10): o gasto médio por dia com anúncios no período (Meta), ou um gasto por dia digitado para simular
 // (operador, 20/10: gasto, não orçamento), passa pelas premissas ideais do teste. CPL e conversão também podem ser digitados para simular (operador, 20/10); vazio = premissa ideal.
-// Mostra o período escolhido e todos os períodos lado a lado.
+// Mostra o período escolhido e todos os períodos lado a lado. Duração dos anúncios (operador, 04/11): dias digitados valem só para esta conta, não para o período do topo.
 const typedOr = (text, fallback, ok) => { const v = parseBrl(String(text).replace("%", "")); return text.trim() !== "" && ok(v) ? v : fallback; };
 function Cash({ p, period }) {
   const spent = p.metrics?.spend?.value, meta = spent == null ? null : spent / periodDays(period); // média por dia no período
-  const [spendText, setSpend] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState("");
+  const [spendText, setSpend] = useState(""), [cplText, setCpl] = useState(""), [convText, setConv] = useState(""), [daysText, setDays] = useState("");
   const typed = parseBrl(spendText);
   const daily = spendText !== "" && typed > 0 ? typed : meta;
   const sim = { cpl: typedOr(cplText, IDEAL.cpl, (v) => v > 0), conversion: typedOr(convText, IDEAL.conversion, (v) => v >= 0 && v <= 100) };
   const simulated = sim.cpl !== IDEAL.cpl || sim.conversion !== IDEAL.conversion;
-  const plan = cashPlan(daily, periodDays(period), sim), label = PERIODS.find((x) => x.id === period)?.label.toLowerCase();
+  const ownDays = typedOr(daysText, 0, (v) => v > 0 && Number.isInteger(v)), days = ownDays || periodDays(period);
+  const label = ownDays ? `${ownDays} ${ownDays === 1 ? "dia" : "dias"}` : PERIODS.find((x) => x.id === period)?.label.toLowerCase();
+  const plan = cashPlan(daily, days, sim);
+  const rows = [...(ownDays ? [[`${label} (digitado)`, ownDays]] : []), ...PERIODS.map((x) => [x.label, periodDays(x.id)])].map(([l, d]) => [l, cashPlan(daily, d, sim)]);
   return (
     <>
       <div className="row r-1-2">
@@ -127,6 +130,9 @@ function Cash({ p, period }) {
             <label className="cash-input"><span>Gasto com anúncios por dia</span>
               <input inputMode="decimal" value={spendText} onChange={(e) => setSpend(e.target.value)} placeholder={meta ? `${fmt(meta, "brl")} (Meta)` : "ex.: 50"} />
             </label>
+            <label className="cash-input"><span>Duração dos anúncios (dias)</span>
+              <input inputMode="numeric" value={daysText} onChange={(e) => setDays(e.target.value)} placeholder={`${periodDays(period)} (período do topo)`} />
+            </label>
             <label className="cash-input"><span>CPL</span>
               <input inputMode="decimal" value={cplText} onChange={(e) => setCpl(e.target.value)} placeholder={`${fmt(IDEAL.cpl, "brl")} (ideal)`} />
             </label>
@@ -134,7 +140,7 @@ function Cash({ p, period }) {
               <input inputMode="decimal" value={convText} onChange={(e) => setConv(e.target.value)} placeholder={`${fmt(IDEAL.conversion, "pct")} (ideal)`} />
             </label>
           </div>
-          <Note>{spendText !== "" && typed > 0 ? "Simulação: o gasto digitado substitui o gasto real da Meta." : meta ? `Gasto com anúncios na Meta: média de ${fmt(meta, "brl")} por dia no período.` : meta === 0 ? "Nenhum gasto com anúncios no período. Digite um gasto por dia para simular." : "Meta Ads não ligado. Digite um gasto por dia para simular."} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
+          <Note>{spendText !== "" && typed > 0 ? "Simulação: o gasto digitado substitui o gasto real da Meta." : meta ? `Gasto com anúncios na Meta: média de ${fmt(meta, "brl")} por dia no período.` : meta === 0 ? "Nenhum gasto com anúncios no período. Digite um gasto por dia para simular." : "Meta Ads não ligado. Digite um gasto por dia para simular."} {ownDays ? `Anúncios por ${label}, fora do período do topo.` : ""} {simulated ? `CPL de ${fmt(sim.cpl, "brl")} e conversão de ${fmt(sim.conversion, "pct")} digitados.` : "CPL e conversão das premissas ideais."} Apague um campo para voltar ao valor de origem.</Note>
         </Card>
         <Card title="Como a conta é feita" sub={simulated ? "com o CPL e a conversão digitados" : "premissas ideais do teste"}>
           {plan ? <HBars unit="brl" items={[
@@ -148,8 +154,8 @@ function Cash({ p, period }) {
       </div>
       <h2 className="section-title">Caixa necessário por período</h2>
       <Table name="caixa-por-periodo" head={["Período", "Anúncio", "Leads", "Pedidos", "Sai do caixa", "Caixa necessário"]}
-        rows={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id), sim); return [x.label, fmt(pl?.spend, "brl"), fmt(pl?.leads, "n"), fmt(pl?.orders, "n"), fmt(pl?.total, "brl"), fmt(pl?.need, "brl")]; })}
-        csv={PERIODS.map((x) => { const pl = cashPlan(daily, periodDays(x.id), sim); return [x.label, pl?.spend, pl?.leads, pl?.orders, pl?.total, pl?.need]; })} />
+        rows={rows.map(([l, pl]) => [l, fmt(pl?.spend, "brl"), fmt(pl?.leads, "n"), fmt(pl?.orders, "n"), fmt(pl?.total, "brl"), fmt(pl?.need, "brl")])}
+        csv={rows.map(([l, pl]) => [l, pl?.spend, pl?.leads, pl?.orders, pl?.total, pl?.need])} />
     </>
   );
 }

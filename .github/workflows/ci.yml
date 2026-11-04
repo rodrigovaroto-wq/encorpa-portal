@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # shortcut: Playwright 1.56.1 não instala o Chromium no ubuntu-latest (26.04); voltar quando o Playwright suportar
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
