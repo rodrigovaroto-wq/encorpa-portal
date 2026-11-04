@@ -1,6 +1,7 @@
 // Financeiro: demonstrativo de resultado (o "P&L ledger" do Glassy CRM), consumo de API, caixa e comparação entre períodos.
 import { useState } from "react";
-import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
+import { ALL, BUCKETS, COMPARE_LABEL, PERIODS, periodLabel } from "../lib/constants.js";
+import { useChartPeriod } from "../components/Topbar.jsx";
 import { periodDays } from "../lib/data.js";
 import { DELIVERY_DAYS, IDEAL, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
 import { bucketLabels, fmt, metricBy, parseBrl } from "../lib/format.js";
@@ -17,7 +18,7 @@ export function Finance({ data, period, route, tabs }) {
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
       {sub === "sales" && <Sales data={data} />}
       {sub === "result" && <Result p={p} g={g} />}
-      {sub === "api" && <Api p={p} period={period} updated={data.updated} />}
+      {sub === "api" && <Api p={p} period={period} updated={data.updated} data={data} />}
       {sub === "cash" && <Cash p={p} period={period} />}
       {sub === "compare" && <Compare p={p} />}
     </div>
@@ -91,15 +92,15 @@ function Invested({ inv }) {
   );
 }
 
-function Api({ p, period, updated }) {
-  const m = p.money || {}, s = p.metrics?.api_per_lead;
+function Api({ p, period, updated, data }) {
+  const m = p.money || {}, s = p.metrics?.api_per_lead, cp = useChartPeriod(data, period), cs = cp.p?.metrics?.api_per_lead;
   return (
     <>
       <div className="kpis">
         {[["api_cost", "No período"], ["api_per_day", "Média por dia"], ["api_30d", "Projeção para 30 dias"]].map(([id, l]) => <div key={id} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(m[id], "brl")}</div></div>)}
         <Kpi label="Custo de API por lead" id="api_per_lead" metric={s} unit="brl" goal="teto R$ 1,00" />
       </div>
-      <Card title="Custo de API por lead" sub="por intervalo do período"><Lines series={[{ name: "Por lead", values: s?.series || [], color: "var(--neon-blue)" }]} labels={bucketLabels(period, BUCKETS, (s?.series || []).length, updated)} unit="brl" axes /></Card>
+      <Card title="Custo de API por lead" sub={periodLabel(cp.id)} action={cp.picker}><Lines series={[{ name: "Por lead", values: cs?.series || [], color: "var(--neon-blue)" }, ...(cs?.compare ? [{ name: COMPARE_LABEL[cp.p.compare], values: cs.compare, color: "var(--neon-blue)", dashed: true }] : [])]} labels={bucketLabels(cp.id, BUCKETS, (cs?.series || []).length, updated)} unit="brl" axes /></Card>
     </>
   );
 }
@@ -116,7 +117,7 @@ function Cash({ p, period }) {
   const sim = { cpl: typedOr(cplText, IDEAL.cpl, (v) => v > 0), conversion: typedOr(convText, IDEAL.conversion, (v) => v >= 0 && v <= 100) };
   const simulated = sim.cpl !== IDEAL.cpl || sim.conversion !== IDEAL.conversion;
   const ownDays = typedOr(daysText, 0, (v) => v > 0 && Number.isInteger(v)), days = ownDays || periodDays(period);
-  const label = ownDays ? `${ownDays} ${ownDays === 1 ? "dia" : "dias"}` : PERIODS.find((x) => x.id === period)?.label.toLowerCase();
+  const label = ownDays ? `${ownDays} ${ownDays === 1 ? "dia" : "dias"}` : periodLabel(period)?.toLowerCase();
   const plan = cashPlan(daily, days, sim);
   const rows = [...(ownDays ? [[`${label} (digitado)`, ownDays]] : []), ...PERIODS.map((x) => [x.label, periodDays(x.id)])].map(([l, d]) => [l, cashPlan(daily, d, sim)]);
   return (

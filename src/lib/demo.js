@@ -4,6 +4,7 @@
 // A operação segue o que a Encorpa faz de verdade: anúncio de clique para o WhatsApp de R$ 30 a R$ 50 por dia, a Malu respondendo
 // das 06:00 à 00:00, régua de lembretes até 71 h, 70% na entrega, entrega em ~6 dias, recusa na porta perto de 15%.
 // Cada dia sai de uma semente fixa: recarregar a página não muda o passado, só o que aconteceu desde a última leitura.
+import { customPeriod } from "./constants.js";
 import { build, channel } from "../../lib/build.mjs";
 
 const DAY = 86400000, MIN = 60000, HOUR = 3600000, BRT = 3 * HOUR;
@@ -286,10 +287,11 @@ export const DEMO_NUMBER = { ok: true, phone: "+55 11 9XXXX-0000", name: "Encorp
   templates: [{ name: "pos_venda_confirmacao", status: "APPROVED", category: "UTILITY", language: "pt_BR", quality: "GREEN" }, { name: "pedido_a_caminho", status: "APPROVED", category: "UTILITY", language: "pt_BR", quality: "GREEN" }, { name: "lembrete_entrega", status: "APPROVED", category: "UTILITY", language: "pt_BR", quality: "UNKNOWN" }] };
 
 // O retrato do portal com os dados de exemplo. automations: a última leitura do n8n de verdade guardada no navegador, se houver.
-export function demoData(automations, now = Date.now()) {
+export function demoData(automations, now = Date.now(), period = null) {
   const D = demoRaw(now), profiles = D.profiles;
   delete D.profiles;
-  const data = build(D, now);
+  const data = build(D, now, customPeriod(period));
+  data.global.goal = 22000; // no ar, a meta vem da variável PORTAL_MONTH_GOAL do Vercel
   const auto = automations?.workflows ? automations : DEMO_WORKFLOWS(now);
   data.global.automations = auto;
   data.global.number = DEMO_NUMBER;

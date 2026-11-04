@@ -181,22 +181,6 @@ test("resultado do mês em que o número vence: entra a mensalidade de R$ 35 int
 
 // Painel do protótipo (04/11): segmentos de cliente, vendas por mês e meta do mês.
 const DAYMS = 86400000;
-const sale = (lead, daysAgo, amount = 109.9, status = "Completo") => ({ id: `${lead}-${daysAgo}`, lead_id: lead, created_at: new Date(NOW - daysAgo * DAYMS).toISOString(), amount_brl: amount, status, payment_method: "cod", units: 1 });
-
-test("customerList: Novo < 45 dias, Em risco > 75 dias, VIP top 20% em gasto, o resto Recorrente; sem venda não é cliente", async () => {
-  const { customerList } = await import("../lib/build.mjs");
-  const leads = ["n", "r", "v", "a", "b", "x"].map((id) => ({ id, name: id }));
-  const orders = [sale("n", 10), sale("r", 100), sale("r", 200), sale("v", 50, 900), sale("v", 60), sale("a", 50), sale("a", 70), sale("b", 60), sale("b", 70),
-    sale("x", 5, 109.9, "Frustrado")];
-  const seg = Object.fromEntries(customerList({ leads, orders }, NOW).map((c) => [c.id, c.seg]));
-  assert.deepEqual(seg, { n: "new", r: "risk", v: "vip", a: "regular", b: "regular" });
-});
-
-test("customerList: Novo vence VIP (a precedência do protótipo)", async () => {
-  const { customerList } = await import("../lib/build.mjs");
-  const rows = customerList({ leads: [{ id: "n" }, { id: "o" }], orders: [sale("n", 3, 500), sale("o", 60)] }, NOW);
-  assert.equal(rows.find((c) => c.id === "n").seg, "new");
-});
 
 test("salesByMonth: só venda soma faturamento; recusa conta como pedido, cancelado não", async () => {
   const { salesByMonth, monthStart } = await import("../lib/build.mjs");
@@ -204,4 +188,37 @@ test("salesByMonth: só venda soma faturamento; recusa conta como pedido, cancel
   const at = (ts, status) => ({ lead_id: "l", created_at: new Date(ts).toISOString(), amount_brl: 100, status, payment_method: "cod", units: 1 });
   const m = salesByMonth({ orders: [at(mid, "Completo"), at(mid, "Frustrado"), at(mid, "Cancelado"), at(a - DAYMS, "Completo")] }, NOW, 2);
   assert.deepEqual(m.map((x) => [x.revenue, x.orders]), [[100, 1], [100, 2]]);
+});
+
+test("leadOrigins: WhatsApp pelo clique, Site pelo conjunto Site, Orgânico sem anúncio; pedido sem lead é Site", async () => {
+  const { leadOrigins, build } = await import("../lib/build.mjs");
+  const meta = { adsets: [{ id: "s", destination: "WEBSITE" }, { id: "w", destination: "WHATSAPP" }], ads: [{ id: "as", adset_id: "s" }, { id: "aw", adset_id: "w" }] };
+  const leads = [{ id: "a", ctwa: "x", ad: "aw" }, { id: "b", ad: "as" }, { id: "c" }, { id: "d", ad: "aw" }];
+  assert.deepEqual(leadOrigins({ leads, meta }), { a: "whatsapp", b: "site", c: "organic", d: "whatsapp" });
+  const D = dropSynthetic(fixture());
+  const out = build(D, NOW);
+  const m = out.periods["12m"].metrics;
+  assert.equal(m.leads_whatsapp.value + m.leads_site.value + m.leads_organic.value, m.leads.value);
+});
+
+test("build: período livre e a série tracejada (ano anterior de 6 meses para cima)", async () => {
+  const { build } = await import("../lib/build.mjs");
+  const { customPeriod } = await import("../src/lib/constants.js");
+  const d = (ms) => new Date(ms - 3 * 3600000).toISOString().slice(0, 10);
+  const c = customPeriod(`c:${d(NOW - 9 * DAYMS)}:${d(NOW)}`);
+  assert.equal(c.n, 10); assert.equal(c.days, 1);
+  const out = build(dropSynthetic(fixture()), NOW, c);
+  assert.ok(out.periods[c.id], "o período livre vem junto");
+  assert.equal(out.periods[c.id].compare, "previous");
+  assert.equal(out.periods["12m"].compare, "year");
+  assert.equal(out.periods.week.compare, "previous");
+  assert.equal(customPeriod("c:2026-10-20:2026-10-01"), null, "fim antes do começo");
+  assert.equal(customPeriod("c:2020-01-01:2026-01-01"), null, "mais de 3 anos");
+  assert.equal(customPeriod("week"), null);
+});
+
+test("monthGoal: só número positivo vira meta", async () => {
+  const { monthGoal } = await import("../lib/build.mjs");
+  assert.equal(monthGoal("5000"), 5000); assert.equal(monthGoal("5000.5"), 5000.5);
+  for (const x of [undefined, "", "abc", "0", "-3"]) assert.equal(monthGoal(x), null);
 });

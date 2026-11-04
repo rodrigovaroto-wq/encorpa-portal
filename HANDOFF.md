@@ -3,22 +3,21 @@
 > Atualizado em 04/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
 
-## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal, para o operador avaliar
+## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal e os comentários do operador na prévia
 
-- Referência em `dashboard-portal-references/` (protótipo `index.html`, `FUNCIONALIDADES.md` com a coluna Decisão preenchida, capturas).
-  O upload tinha trocado o `index.html` do Portal pelo protótipo; o original voltou à raiz.
-- **Painel:** embaixo do que já existia, Hoje (24 h e 7 dias), Meta do mês (anel, ritmo diário = (meta − realizado) ÷ dias restantes,
-  `goalPace`; a meta fica no navegador até o operador decidir entre tabela no Supabase e variável no Vercel), Origem das vendas
-  (WhatsApp por anúncio × Site ou orgânico, pelo `ctwa_clid` do lead), Últimos pedidos e Mais vendidos (kit e tamanho).
-- **Pedidos:** busca, filtro de canal e de período, paginação de 25 e gaveta do pedido (`OrderDrawer`). Só leitura: status, cancelamento e
-  devolução continuam na Logzz/Coinzz.
-- **Clientes › Lista e segmentos:** `customerList` no servidor (cliente = lead com venda; Novo < 45 dias, Em risco > 75, VIP top 20%, Recorrente),
-  com busca, ordenação, CSV e gaveta com o histórico.
-- **Financeiro › Vendas:** 60 dias contra os 60 anteriores, faturamento por dia/semana/mês e mês a mês contra o mesmo mês do ano anterior
-  (`salesByMonth`).
-- Busca (⌘K) acha clientes e abre o pedido direto.
-- Pendente do operador: o que entra depois de navegar na prévia; onde guardar a meta; comparação de 6M com o ano anterior (hoje é o período
-  imediatamente anterior em todas as telas).
+- Referência em `dashboard-portal-references/` (protótipo, `FUNCIONALIDADES.md` com a Decisão, capturas). O `index.html` do Portal voltou à raiz.
+- **Home** (era Painel): Hoje (24 h e 7 dias), Meta do mês pela variável **`PORTAL_MONTH_GOAL`** do Vercel (operador; ritmo diário `goalPace`),
+  Origem das vendas, Últimos pedidos e Mais vendidos.
+- **Origem em três frentes** (`leadOrigins`): WhatsApp = clique em anúncio de WhatsApp; Site = anúncio de conjunto Site (destino WEBSITE);
+  Orgânico = lead que não veio de anúncio. Pedido sem lead conta como Site. Clientes › **Origem Leads** (era Origem e recompra) mostra
+  Leads → WhatsApp, → Site e → Orgânico; Recompra e a aba Lista e segmentos saíram (operador).
+- **Período livre** (`customPeriod`, `c:AAAA-MM-DD:AAAA-MM-DD`): no topo e em cada gráfico (`useChartPeriod`); o servidor conta o período em
+  `/api/data?period=`. **Linha tracejada** em todo gráfico de linha: de 6 meses para cima, o mesmo período do ano anterior; abaixo, o anterior.
+- **Pedidos:** todos, não só os 200 mais recentes; busca, filtros, paginação e gaveta (só leitura: status muda na Logzz/Coinzz).
+- **Score e Perfil:** filtro por faixa, páginas numeradas, contorno vermelho/amarelo/azul nas faixas. Tema: um botão só no topo.
+- **Teste de interface:** passa com `CHROMIUM_PATH=/opt/pw-browsers/chromium` na nuvem do Claude; sem o navegador, falha em vez de travar.
+- Pendente do operador: a nota de segmentação (fica no navegador dele, o Claude não lê) para conferir a regra de Site; onde guardar cargo e
+  dados pessoais em Configurações › Usuários e acesso.
 
 ## Feito em 04/11 (branch `claude/keen-mccarthy-ecydee`)
 

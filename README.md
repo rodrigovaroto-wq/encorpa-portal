@@ -14,7 +14,8 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
   pausar a Malu ficam desligados no exemplo.
 - `npm run build` gera `dist/`, que é o que o Vercel publica.
 - `npm test` roda os testes das contas (`lib/build.mjs`) e das funções (`api/`) com dados sintéticos (`tests/fixture.mjs`);
-  `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build). `npm run check` faz os três.
+  `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build); fora do CI, aponte
+  `CHROMIUM_PATH` para o Chromium instalado (na nuvem do Claude: `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:ui`). `npm run check` faz os três.
   O GitHub roda o mesmo em todo push e pull request (`.github/workflows/ci.yml`). Mudou uma conta ou uma tela, rode antes de publicar.
 
 ## Estrutura
@@ -55,6 +56,8 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     `whatsapp` do Ricos-com-AI gravar esse id (hoje ela descreve a imagem com o modelo e descarta o id).
   - `INBOUND_SIGNING_SECRET` (desde 23/10, o mesmo do Supabase): selo das mensagens de Malu › Teste. Sem ele, a turn recusa o teste
     se o selo estiver ligado na produção.
+  - `PORTAL_MONTH_GOAL` (opcional, desde 04/11): a meta de faturamento do mês em reais (ex.: `5000`), para a Meta do mês na Home.
+    Sem ela, o cartão mostra "sem meta". Mudou, Redeploy.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1:papel,email2:senha2`. **Sem ela ninguém entra.** Papel (desde 23/10,
     `lib/auth.mjs`): `admin` (tudo, e vê os usuários em Configurações), `operador` (responde, pausa a Malu, usa Malu › Teste) ou
     `leitura` (só vê). Sem papel, admin. Responder (`api/chat.js`) e testar (`api/test.js`) conferem o papel no servidor.

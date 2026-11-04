@@ -1,5 +1,5 @@
 // Formatação em pt-BR e utilidades pequenas usadas em todas as telas.
-import { ALL, LOWER } from "./constants.js";
+import { ALL, LOWER, customPeriod } from "./constants.js";
 
 export const nf = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -61,10 +61,10 @@ export const initials = (name) => (name || "?").trim().split(/\s+/).slice(0, 2).
 // Rótulo de cada intervalo do período (o gráfico mostra a data de início do intervalo). end = hora em que o servidor
 // fechou os intervalos (data.updated), não o relógio do navegador, para o rótulo não andar um intervalo.
 export function bucketLabels(period, buckets, n, end) {
-  const [, days] = buckets[period], step = days * 86400000, start = (Date.parse(end) || Date.now()) - n * step;
+  const c = customPeriod(period), days = c ? c.days : buckets[period][1], step = days * 86400000, start = c ? c.from : (Date.parse(end) || Date.now()) - n * step;
   return Array.from({ length: n }, (_, i) => {
     const d = new Date(start + i * step);
-    return days < 1 ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", timeZone: "America/Sao_Paulo" }) + " h" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
+    return days < 1 ? (c ? `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" })} ` : "") + d.toLocaleTimeString("pt-BR", { hour: "2-digit", timeZone: "America/Sao_Paulo" }) + " h" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
   });
 }
 

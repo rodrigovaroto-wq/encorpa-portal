@@ -690,3 +690,19 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .seg-card { text-align: left; display: flex; flex-direction: column; gap: 8px; }
 .seg-card.on { outline: 2px solid var(--accent-2); }
 .seg-card .kpi-value { font-size: 1.8rem; }
+
+/* Linha tracejada da comparação e o período livre (04/11). */
+.line.dashed, .trend-line.dashed { stroke-dasharray: 6 5; opacity: .65; filter: none; }
+.legend i.dashed { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed; background: none; vertical-align: middle; }
+.trend-legend { position: static; grid-column: 1 / -1; grid-row: 3; justify-content: flex-end; margin-top: 4px; }
+.chart-tip small { display: block; color: var(--dim); }
+.period-pop { min-width: 240px; }
+.period-custom { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); margin-top: 6px; padding: 6px 8px 4px; }
+.period-custom label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .82rem; color: var(--dim); }
+.period-custom input { padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--glass-hi); color: var(--text); font: inherit; color-scheme: inherit; }
+.period-custom .pill:disabled { opacity: .4; cursor: default; }
+.pill.small { padding: 5px 12px; font-size: .82rem; }
+.pager .gap { padding: 2px 4px; color: var(--dim); }
+/* Faixas do score (operador, 04/11): contorno vermelho, amarelo e azul. */
+.kpi.band-quente { border-color: var(--bad); } .kpi.band-morna { border-color: var(--warn); } .kpi.band-fria { border-color: var(--neon-blue); }
+.card:has(.popover), .kpi:has(.popover) { position: relative; z-index: 50; } /* o menu do período não fica atrás do cartão seguinte */

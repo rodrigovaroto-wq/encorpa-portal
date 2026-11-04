@@ -123,13 +123,18 @@ export function Drawer({ title, onClose, children }) {
   );
 }
 
-// Paginação: "1–25 de 180" e as setas.
-export function Pager({ page, per, total, onPage }) {
+// Paginação: "1–25 de 180", as setas e, com numbered, as páginas 1, 2, 3… (as vizinhas da atual, a primeira e a última).
+export function Pager({ page, per, total, onPage, numbered = false }) {
   const pages = Math.max(1, Math.ceil(total / per));
+  const nums = [...new Set([1, page - 1, page, page + 1, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
   return (
     <div className="pager">
       <span>{total ? (page - 1) * per + 1 : 0}–{Math.min(total, page * per)} de {total}</span>
-      <span className="seg small"><button disabled={page <= 1} aria-label="Página anterior" onClick={() => onPage(page - 1)}>‹</button><button disabled={page >= pages} aria-label="Próxima página" onClick={() => onPage(page + 1)}>›</button></span>
+      <span className="seg small">
+        <button disabled={page <= 1} aria-label="Página anterior" onClick={() => onPage(page - 1)}>‹</button>
+        {numbered && nums.flatMap((n, i) => [...(i && n - nums[i - 1] > 1 ? [<span key={`g${n}`} className="gap">…</span>] : []), <button key={n} className={n === page ? "on" : ""} aria-current={n === page ? "page" : undefined} aria-label={`Página ${n}`} onClick={() => onPage(n)}>{n}</button>])}
+        <button disabled={page >= pages} aria-label="Próxima página" onClick={() => onPage(page + 1)}>›</button>
+      </span>
     </div>
   );
 }

@@ -75,7 +75,7 @@ function LinesPlot({ series, labels, unit = "n", height = 220, legend = true }) 
         {series.map((s, k) => (
           <g key={k}>
             {runs(s.values).map((p, j) => p.length > 1 ? (
-              <g key={j}><path d={`${smooth(p)} L${p.at(-1)[0]},100 L${p[0][0]},100 Z`} fill={`url(#lg${id}${k})`} /><path d={smooth(p)} stroke={s.color} className="line" /></g>
+              <g key={j}>{!s.dashed && <path d={`${smooth(p)} L${p.at(-1)[0]},100 L${p[0][0]},100 Z`} fill={`url(#lg${id}${k})`} />}<path d={smooth(p)} stroke={s.color} className={`line ${s.dashed ? "dashed" : ""}`} /></g>
             ) : <circle key={j} cx={p[0][0]} cy={p[0][1]} r="1.2" fill={s.color} />)}
           </g>
         ))}
@@ -91,7 +91,7 @@ function LinesPlot({ series, labels, unit = "n", height = 220, legend = true }) 
     </div>
   );
 }
-const Legend = ({ series }) => <div className="legend">{series.map((s, k) => <span key={k}><i style={{ background: s.color }} />{s.name}</span>)}</div>;
+const Legend = ({ series }) => <div className="legend">{series.map((s, k) => <span key={k}><i className={s.dashed ? "dashed" : ""} style={{ background: s.dashed ? "none" : s.color, borderColor: s.color }} />{s.name}</span>)}</div>;
 
 // Rosca com legenda. items: [{ label, value, color }]
 export function Donut({ items, unit = "n", size = 170, center }) {
@@ -192,15 +192,18 @@ export function NeonSpark({ values, color }) {
 }
 
 // Gráfico de linha do Painel: escala pelo yScale (topo +10%, piso zero ou −10% do menor), 5 marcas no eixo, dica ao passar o mouse.
-export function TrendLine({ values, labels, unit = "n", color, height = 300 }) {
+// compare: a mesma métrica no período de comparação, desenhada tracejada (operador, 04/11); compareLabel diz qual é.
+export function TrendLine({ values, labels, unit = "n", color, height = 300, compare, compareLabel }) {
   const [hover, setHover] = useState(null);
   const id = useId().replace(/:/g, "");
-  const v = (values || []).map((x) => (x == null || !Number.isFinite(x) ? null : x)), pts = v.filter((x) => x != null);
+  const clean = (xs) => (xs || []).map((x) => (x == null || !Number.isFinite(x) ? null : x));
+  const v = clean(values), pts = v.filter((x) => x != null), cv = clean(compare).slice(0, v.length);
   if (pts.length < 2) return <Empty />;
-  const n = v.length, { min, max } = yScale(pts), span = max - min;
+  const n = v.length, { min, max } = yScale([...pts, ...cv.filter((x) => x != null)]), span = max - min;
   const X = (i) => (n > 1 ? (i / (n - 1)) * 100 : 50), Y = (x) => 100 - ((x - min) / span) * 100;
   const runs = v.reduce((out, x, i) => { if (x == null) return out; const last = out.at(-1); if (last && last.at(-1)[2] === i - 1) last.push([X(i), Y(x), i]); else out.push([[X(i), Y(x), i]]); return out; }, []);
   const path = (p) => p.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+  const cpath = path(cv.map((x, i) => (x == null ? null : [X(i), Y(x)])).filter(Boolean));
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => min + span * f);
   return (
     <div className="trend" style={{ height, "--c": color }}>
@@ -213,15 +216,18 @@ export function TrendLine({ values, labels, unit = "n", color, height = 300 }) {
           {runs.map((p, j) => p.length > 1
             ? <g key={j}><path d={`${path(p)} L${p.at(-1)[0]},${Y(Math.max(min, 0))} L${p[0][0]},${Y(Math.max(min, 0))} Z`} fill={`url(#tl${id})`} /><path d={path(p)} className="trend-line" stroke={color} /></g>
             : <circle key={j} cx={p[0][0]} cy={p[0][1]} r="1" fill={color} />)}
+          {cv.filter((x) => x != null).length > 1 && <path d={cpath} className="trend-line dashed" stroke={color} />}
           {hover != null && <line x1={X(hover)} x2={X(hover)} y1="0" y2="100" className="cross" />}
         </svg>
         {hover != null && v[hover] != null && <i className="trend-dot" style={{ left: `${X(hover)}%`, top: `${Y(v[hover])}%` }} />}
         {hover != null && (
           <div className="chart-tip" style={{ left: `${X(hover)}%`, top: 0 }}>
             {labels?.[hover] && <span>{labels[hover]}</span>}<b style={{ color }}>{fmt(v[hover], unit)}</b>
+            {cv[hover] != null && <small>{compareLabel || "Comparação"}: {fmt(cv[hover], unit)}</small>}
           </div>
         )}
       </div>
+      {cv.some((x) => x != null) && <div className="legend trend-legend"><span><i className="dashed" style={{ borderColor: color }} />{compareLabel || "Comparação"}</span></div>}
       <div className="trend-x">{(labels || []).map((l, i, a) => { const step = Math.ceil(a.length / 8); return (i === a.length - 1 || (i % step === 0 && a.length - 1 - i >= step / 2)) && <span key={i} style={{ left: `${X(i)}%` }}>{l}</span>; })}</div>
     </div>
   );

@@ -5,12 +5,12 @@ import { ago } from "../lib/format.js";
 import { Chip } from "./ui.jsx";
 import { Icon } from "./icons.jsx";
 
-const TABS = [["look", "Aparência", "sun"], ["data", "Dados", "live"], ["access", "Usuários e acesso", "users"], ["company", "Empresa", "plug"]];
+const TABS = [["data", "Dados", "live"], ["access", "Usuários e acesso", "users"], ["company", "Empresa", "plug"]];
 export const ROLE_LABEL = { admin: "Administrador", operador: "Operador", leitura: "Só leitura" };
 const ROLE_WHAT = { admin: "vê tudo, responde às clientes, testa a Malu e vê os usuários", operador: "vê tudo, responde às clientes, pausa e devolve a Malu e usa Malu › Teste", leitura: "só vê: não responde, não pausa a Malu e não usa Malu › Teste" };
 
 export function Settings({ open, onClose, prefs, setPrefs, demo, setDemo, data, me }) {
-  const [tab, setTab] = useState("look");
+  const [tab, setTab] = useState("data");
   useEffect(() => { if (!open) return; const esc = (e) => e.key === "Escape" && onClose(); document.addEventListener("keydown", esc); return () => document.removeEventListener("keydown", esc); }, [open, onClose]);
   if (!open) return null;
   return (
@@ -22,13 +22,6 @@ export function Settings({ open, onClose, prefs, setPrefs, demo, setDemo, data, 
         </nav>
         <section className="settings-body">
           <header className="settings-head"><h2>{TABS.find(([k]) => k === tab)[1]}</h2><button className="round" aria-label="Fechar" onClick={onClose}><Icon name="x" size={14} /></button></header>
-          {tab === "look" && (
-            <div className="settings-rows">
-              <Row label="Tema" what="Escuro (fundo preto) ou Claro (fundo branco).">
-                <span className="seg"><button className={prefs.theme === "dark" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "dark" })}><Icon name="moon" size={14} /> Escuro</button><button className={prefs.theme === "light" ? "on" : ""} onClick={() => setPrefs({ ...prefs, theme: "light" })}><Icon name="sun" size={14} /> Claro</button></span>
-              </Row>
-            </div>
-          )}
           {tab === "data" && (
             <div className="settings-rows">
               <Row label="Dados de exemplo" what="Um ano de operação simulada, com todos os números fechando entre as abas. Responder e testar a Malu ficam desligados.">

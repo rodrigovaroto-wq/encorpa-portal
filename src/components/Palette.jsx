@@ -18,7 +18,6 @@ export function Palette({ open, onClose, data, period }) {
     for (const a of p.meta?.ads || []) out.push({ kind: "Anúncio", label: a.name, href: "#/ads/ads", icon: "ads" });
     for (const w of g.automations?.workflows || []) out.push({ kind: "Workflow", label: w.name, href: "#/auto/workflows", icon: "flow" });
     for (const o of g.orders || []) out.push({ kind: "Pedido", label: `${o.id} ${o.name || ""} · ${o.status}`, href: `#/orders?o=${o.id}`, icon: "box" });
-    for (const c of g.customers || []) out.push({ kind: "Cliente", label: `${c.name || "Cliente"} ${c.phone || ""} · ${c.state || ""}`, href: `#/customers/list?c=${c.id}`, icon: "users" });
     return out;
   }, [data, period]);
   const hits = useMemo(() => {

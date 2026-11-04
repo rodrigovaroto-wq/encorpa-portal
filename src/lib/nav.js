@@ -2,7 +2,7 @@
 // desc = a linha que explica a página; badge(data, p) = contador ao lado do item, só quando pede atenção.
 export const NAV = [
   { sec: "Operação", items: [
-    { id: "home", label: "Painel", icon: "home", desc: "Os números que mandam no período, a variação de cada um e para onde estão indo." },
+    { id: "home", label: "Home", icon: "home", desc: "Os números que mandam no período, a variação de cada um e para onde estão indo." },
     { id: "chat", label: "Conversas", icon: "chat", desc: "Todas as conversas da Malu com as clientes, com a ficha de cada uma.", badge: (g) => g.chats?.filter((c) => c.status === "unresolved").length },
     { id: "orders", label: "Pedidos", icon: "box", desc: "Cada pedido na Logzz e na Coinzz, onde está e a agenda de entregas.", badge: (g) => g.orders?.filter((o) => ["created", "en_route"].includes(o.step)).length },
   ] },
@@ -23,8 +23,7 @@ export const NAV = [
       ["goals", "Metas", "Cada meta do teste contra o valor de agora."],
       ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
     { id: "customers", label: "Clientes", icon: "users", subs: [
-      ["origin", "Origem e recompra", "De onde vêm as clientes, em que estado compram mais e quantas voltam."],
-      ["list", "Lista e segmentos", "Cada cliente que já comprou, com o segmento, o gasto e o histórico de pedidos."],
+      ["origin", "Origem Leads", "De onde vêm os leads (WhatsApp, Site ou orgânico) e em que estado compram mais."],
       ["score", "Score e Perfil", "Quão perto de comprar cada lead está, o que ela objeta e onde a conversa para. Sem telefone e sem nome."]] },
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],

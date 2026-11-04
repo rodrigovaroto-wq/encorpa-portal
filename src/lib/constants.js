@@ -41,7 +41,7 @@ export const GROUPS = [
     { id: "resolution", label: "Taxa de resolução", unit: "pct", src: "conversas que compraram ou encerraram sem compra ÷ encerradas", goal: "≥ 90% (handoff ≤ 10%)" },
     { id: "transfers", label: "Não resolvidas (aviso ao operador)", unit: "n", src: "turn_outcomes (handoff ou fallback)" },
     { id: "first_response", label: "Tempo até a 1ª resposta", unit: "min", src: "messages (carimbos)" },
-    { id: "handle_time", label: "Tempo de atendimento por lead", unit: "min", src: "messages: primeiro fluxo de cada lead, até ela ficar mais de 24 h sem responder; média entre os leads" },
+    { id: "handle_time", label: "Tempo de atendimento", unit: "min", src: "messages: primeiro fluxo de cada lead, até ela ficar mais de 24 h sem responder; média entre os leads" },
     { id: "reply_rate", label: "Taxa de resposta", unit: "pct", src: "conversas em que ela respondeu à Malu ÷ conversas", goal: "≥ 60% mín · 75% ideal" },
     { id: "price_reach", label: "% que chega ao preço", unit: "pct", src: "eval_funnel", goal: "≥ 40% mín · 55% ideal" },
     { id: "link_reach", label: "% que recebe o link", unit: "pct", src: "conversas que chegaram ao link ÷ conversas" },
@@ -156,6 +156,19 @@ export const REF = [
     ["Onde contar os pedidos", "WhatsApp: leads com a marca do anúncio (ctwa). Site: pedido de cliente sem essa marca, desde o início do conjunto Site (a Coinzz não manda UTM no webhook de venda)"]]],
 ];
 
+// Período livre (operador, 04/11): "c:AAAA-MM-DD:AAAA-MM-DD", dias de Brasília, do começo do primeiro ao fim do último, até 3 anos.
+// O intervalo do gráfico segue o tamanho: até 2 dias por hora, até 92 dias por dia, até 1 ano por semana, acima disso a cada 30 dias.
+export function customPeriod(id) {
+  const m = /^c:(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})$/.exec(id || "");
+  if (!m) return null;
+  const from = Date.parse(`${m[1]}T00:00:00-03:00`), to = Date.parse(`${m[2]}T00:00:00-03:00`) + 864e5, span = (to - from) / 864e5;
+  if (!(span > 0) || span > 1096) return null;
+  const days = span <= 2 ? 1 / 24 : span <= 92 ? 1 : span <= 366 ? 7 : 30;
+  return { id, from, to, days, n: Math.ceil(span / days) };
+}
+const dm = (ts) => new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "America/Sao_Paulo" });
+export const periodLabel = (id) => { const c = customPeriod(id); return c ? `${dm(c.from)} a ${dm(c.to - 864e5)}` : PERIODS.find((p) => p.id === id)?.label; };
+export const COMPARE_LABEL = { year: "Mesmo período do ano anterior", previous: "Período anterior" }; // a linha tracejada dos gráficos
 export const BUCKETS = { day: [24, 1 / 24], week: [7, 1], month: [30, 1], "3m": [13, 7], "6m": [26, 7], "9m": [39, 7], "12m": [52, 7] };
 
 
