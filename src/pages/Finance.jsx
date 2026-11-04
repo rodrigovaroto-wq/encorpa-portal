@@ -4,7 +4,7 @@ import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
 import { periodDays } from "../lib/data.js";
 import { DELIVERY_DAYS, IDEAL, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
 import { bucketLabels, fmt, metricBy, parseBrl } from "../lib/format.js";
-import { HBars, Lines } from "../components/charts.jsx";
+import { Bars, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
@@ -15,6 +15,7 @@ export function Finance({ data, period, route, tabs }) {
     <div className="page">
       <PageHead crumb="Análise › Financeiro" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/money/${k}`)}
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
+      {sub === "sales" && <Sales data={data} />}
       {sub === "result" && <Result p={p} g={g} />}
       {sub === "api" && <Api p={p} period={period} updated={data.updated} />}
       {sub === "cash" && <Cash p={p} period={period} />}
@@ -166,4 +167,34 @@ function Compare({ p }) {
   return <Table name="comparacao-periodos" head={["Métrica", "Período atual", "Período anterior", "Variação"]}
     rows={rows.map((x) => [x.label, fmt(m[x.id]?.value, x.unit), fmt(m[x.id]?.previous, x.unit), <DeltaBadge key={x.id} metric={m[x.id]} unit={x.unit} id={x.id} label={false} />])}
     csv={rows.map((x) => [x.label, m[x.id]?.value, m[x.id]?.previous])} />;
+}
+
+// Vendas (protótipo do painel, item 22): 60 dias contra os 60 anteriores, faturamento por dia, semana ou mês e a tabela mês a mês
+// contra o mesmo mês do ano anterior. Faturamento só de venda; pedidos = pedidos feitos (lib/build.mjs › salesByMonth).
+const MONTH = (k) => new Date(`${k}-15T12:00:00Z`).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+function Sales({ data }) {
+  const g = data.global, s = g.sales60 || {}, months = g.months || [];
+  const [range, setRange] = useState("30");
+  const series = (id) => data.periods[id]?.metrics?.revenue?.series || [];
+  const bars = range === "365" ? months.slice(-12).map((m) => ({ label: MONTH(m.month), value: m.revenue }))
+    : ((id) => { const v = series(id); return bucketLabels(id, BUCKETS, v.length, data.updated).map((label, i) => ({ label, value: v[i] || 0 })); })(range === "90" ? "3m" : "month");
+  const rows = months.slice(-12).map((m, i) => ({ ...m, ly: months[i]?.revenue ?? null })).reverse();
+  const per = (r, o) => (o ? r / o : null);
+  return (
+    <>
+      <div className="kpis k3">
+        <Kpi id="revenue" label="Faturamento em 60 dias" metric={{ value: s.revenue, previous: s.prev_revenue }} unit="brl" />
+        <Kpi id="orders" label="Pedidos em 60 dias" metric={{ value: s.orders, previous: s.prev_orders }} unit="n" />
+        <Kpi id="revenue" label="Faturamento por pedido" metric={{ value: per(s.revenue, s.orders), previous: per(s.prev_revenue, s.prev_orders) }} unit="brl" />
+      </div>
+      <Card title="Faturamento" sub={{ 30: "por dia, últimos 30 dias", 90: "por semana, últimas 13 semanas", 365: "por mês, últimos 12 meses" }[range]}
+        action={<span className="seg small">{[["30", "30 dias"], ["90", "13 semanas"], ["365", "12 meses"]].map(([k, l]) => <button key={k} className={range === k ? "on" : ""} aria-pressed={range === k} onClick={() => setRange(k)}>{l}</button>)}</span>}>
+        <Bars items={bars} unit="brl" />
+      </Card>
+      <Table name="vendas-mes-a-mes" head={["Mês", "Faturamento", "Pedidos", "Mesmo mês do ano anterior", "Variação"]}
+        rows={rows.map((m, i) => [`${MONTH(m.month)}${i ? "" : " (até hoje)"}`, fmt(m.revenue, "brl"), m.orders, fmt(m.ly, "brl"), m.ly ? <DeltaBadge key={m.month} metric={{ value: m.revenue, previous: m.ly }} unit="brl" id="revenue" label={false} /> : "—"])}
+        csv={rows.map((m) => [m.month, m.revenue, m.orders, m.ly])} />
+      <Note>Os 60 dias comparam com os 60 dias imediatamente anteriores. A tabela compara cada mês com o mesmo mês do ano anterior.</Note>
+    </>
+  );
 }

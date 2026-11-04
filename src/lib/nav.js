@@ -24,9 +24,11 @@ export const NAV = [
       ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
     { id: "customers", label: "Clientes", icon: "users", subs: [
       ["origin", "Origem e recompra", "De onde vêm as clientes, em que estado compram mais e quantas voltam."],
+      ["list", "Lista e segmentos", "Cada cliente que já comprou, com o segmento, o gasto e o histórico de pedidos."],
       ["score", "Score e Perfil", "Quão perto de comprar cada lead está, o que ela objeta e onde a conversa para. Sem telefone e sem nome."]] },
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],
+      ["sales", "Vendas", "Faturamento e pedidos por dia, semana e mês, e cada mês contra o mesmo mês do ano anterior."],
       ["api", "Consumo de API", "Custo do modelo (chamadas dos leads) e do WhatsApp no período, por dia, por lead e a projeção do mês."],
       ["cash", "Caixa", "Quanto caixa o gasto com anúncios pede para rodar a operação no período, com CPL e conversão ideais ou digitados."],
       ["compare", "Comparação", "Todas as métricas contra o período anterior."]] },

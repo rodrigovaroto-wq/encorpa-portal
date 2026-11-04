@@ -667,3 +667,26 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 .home-donuts .donut-block { min-height: 200px; }
 @media (max-width: 760px) { .home-donuts { grid-template-columns: 1fr; } .trend { grid-template-columns: 60px minmax(0, 1fr); } }
 .trend-x span:first-child { transform: none; } .trend-x span:last-child { transform: translateX(-100%); } /* as pontas não saem do cartão */
+
+/* Protótipo do painel (04/11, dashboard-portal-references/): gaveta, paginação, filtros e meta do mês. */
+.drawer-overlay { place-items: stretch end; padding: 0; }
+.drawer { width: min(440px, 100%); height: 100dvh; border-radius: 0; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; animation: pop .15s; }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.drawer-head h2 { margin: 0; font-size: 1.15rem; }
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 12px; color: var(--dim); font-size: .85rem; }
+.pager button:disabled { opacity: .35; cursor: default; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.filters .chat-search { flex: 1 1 220px; }
+.filters select { padding: 8px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--glass-hi); color: var(--text); font: inherit; }
+.kv { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.kv li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.kv span { color: var(--dim); }
+.goal-card { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.goal-card .kv { flex: 1 1 220px; }
+.list-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); width: 100%; text-align: left; color: inherit; }
+.list-row small { display: block; color: var(--dim); }
+.list-row:focus-visible, .order:focus-visible, .seg-card:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.order { cursor: pointer; }
+.seg-card { text-align: left; display: flex; flex-direction: column; gap: 8px; }
+.seg-card.on { outline: 2px solid var(--accent-2); }
+.seg-card .kpi-value { font-size: 1.8rem; }

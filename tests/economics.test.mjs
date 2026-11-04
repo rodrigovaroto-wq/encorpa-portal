@@ -69,3 +69,10 @@ test("caixa com CPL e conversão digitados: R$ 100 com CPL de R$ 2 e 5% = 50 lea
   assert.equal(cashPlan(100 / 7, 7, { cpl: 0 }), null, "CPL zero não tem conta");
   near(cashPlan(100 / 7, 7, {}).leads, 80, 1e-9); // vazio = premissa ideal
 });
+
+test("goalPace: (meta − realizado) ÷ dias restantes; meta batida ou sem meta", async () => {
+  const { goalPace } = await import("../src/lib/economics.js");
+  assert.equal(goalPace(10000, 4000, 10), 600);
+  assert.equal(goalPace(10000, 12000, 10), 0);
+  assert.equal(goalPace(0, 100, 10), null);
+});

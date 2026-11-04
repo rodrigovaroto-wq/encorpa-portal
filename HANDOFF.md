@@ -3,6 +3,23 @@
 > Atualizado em 04/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
 
+## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal, para o operador avaliar
+
+- Referência em `dashboard-portal-references/` (protótipo `index.html`, `FUNCIONALIDADES.md` com a coluna Decisão preenchida, capturas).
+  O upload tinha trocado o `index.html` do Portal pelo protótipo; o original voltou à raiz.
+- **Painel:** embaixo do que já existia, Hoje (24 h e 7 dias), Meta do mês (anel, ritmo diário = (meta − realizado) ÷ dias restantes,
+  `goalPace`; a meta fica no navegador até o operador decidir entre tabela no Supabase e variável no Vercel), Origem das vendas
+  (WhatsApp por anúncio × Site ou orgânico, pelo `ctwa_clid` do lead), Últimos pedidos e Mais vendidos (kit e tamanho).
+- **Pedidos:** busca, filtro de canal e de período, paginação de 25 e gaveta do pedido (`OrderDrawer`). Só leitura: status, cancelamento e
+  devolução continuam na Logzz/Coinzz.
+- **Clientes › Lista e segmentos:** `customerList` no servidor (cliente = lead com venda; Novo < 45 dias, Em risco > 75, VIP top 20%, Recorrente),
+  com busca, ordenação, CSV e gaveta com o histórico.
+- **Financeiro › Vendas:** 60 dias contra os 60 anteriores, faturamento por dia/semana/mês e mês a mês contra o mesmo mês do ano anterior
+  (`salesByMonth`).
+- Busca (⌘K) acha clientes e abre o pedido direto.
+- Pendente do operador: o que entra depois de navegar na prévia; onde guardar a meta; comparação de 6M com o ano anterior (hoje é o período
+  imediatamente anterior em todas as telas).
+
 ## Feito em 04/11 (branch `claude/keen-mccarthy-ecydee`)
 
 - **Teste A/B em 7 dias (operador, 04/11, por falta de caixa):** a mesma verba (R$ 125 por conjunto, R$ 250 no total) em 7 dias, R$ 17,86/dia

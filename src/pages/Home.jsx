@@ -3,9 +3,11 @@
 // As cores dos minigráficos seguem a referência do operador, nesta ordem: azul, verde, laranja, roxo.
 import { useState } from "react";
 import { BUCKETS, PERIODS } from "../lib/constants.js";
-import { bucketLabels, fmt, metricBy, store } from "../lib/format.js";
-import { Donut, NeonSpark, TrendLine } from "../components/charts.jsx";
-import { Card, Kpi } from "../components/ui.jsx";
+import { bucketLabels, fmt, metricBy, parseBrl, store, when } from "../lib/format.js";
+import { goalPace } from "../lib/economics.js";
+import { Donut, Gauge, NeonSpark, TrendLine } from "../components/charts.jsx";
+import { Card, Chip, Kpi, Kv } from "../components/ui.jsx";
+import { CHANNEL } from "./Orders.jsx";
 import { Icon } from "../components/icons.jsx";
 import { INBOX, inboxCounts } from "../lib/inbox.js";
 
@@ -40,7 +42,76 @@ export function Home({ data, period }) {
         <DonutBlock title="Forma de pagamento" items={pay} href={HREF.pay} />
         <DonutBlock title="Peças por pedido" items={units} href={HREF.units} />
       </div>
+      <Today data={data} />
+      <div className="row r-2-1">
+        <MonthGoal g={data.global} />
+        <DonutBlock title="Origem das vendas" items={[{ label: CHANNEL.whatsapp, value: p.mix?.channel?.whatsapp, color: "var(--neon-green)" }, { label: CHANNEL.site, value: p.mix?.channel?.site, color: "var(--neon-blue)" }]} href="#/orders" />
+      </div>
+      <div className="row r-2-1">
+        <LastOrders orders={data.global.orders || []} />
+        <BestSellers orders={data.global.orders || []} since={Date.parse(data.updated) - (BUCKETS[period][0] * BUCKETS[period][1]) * 864e5} />
+      </div>
     </div>
+  );
+}
+
+// Hoje (protótipo, item 7): faturamento de hoje e dos 7 dias e pedidos de hoje, cada um contra o intervalo anterior, seja qual for o período do topo.
+function Today({ data }) {
+  const d = data.periods.day?.metrics || {}, w = data.periods.week?.metrics || {};
+  return (
+    <div className="kpis k3">
+      <Kpi id="revenue" label="Faturamento nas últimas 24 h" metric={d.revenue} unit="brl" color="var(--neon-blue)" spark={<NeonSpark values={d.revenue?.series} color="var(--neon-blue)" />} />
+      <Kpi id="revenue" label="Faturamento em 7 dias" metric={w.revenue} unit="brl" color="var(--neon-green)" spark={<NeonSpark values={w.revenue?.series} color="var(--neon-green)" />} />
+      <Kpi id="orders" label="Pedidos nas últimas 24 h" metric={d.orders} unit="n" color="var(--neon-orange)" spark={<NeonSpark values={d.orders?.series} color="var(--neon-orange)" />} />
+    </div>
+  );
+}
+
+// Meta do mês (item 9): anel de progresso, ritmo diário necessário e o mês anterior. Faturamento só de venda, mês de Brasília.
+// shortcut: a meta fica neste navegador, como as Notas; vira tabela no Supabase ou variável no Vercel quando o operador decidir.
+function MonthGoal({ g }) {
+  const [goal, setGoalState] = useState(() => Number(store.get("goal:month")) || 0), [edit, setEdit] = useState(false);
+  const setGoal = (v) => { const n = parseBrl(v); if (Number.isFinite(n) && n >= 0) { setGoalState(n); store.set("goal:month", String(n)); } setEdit(false); };
+  const months = g.months || [], done = months.at(-1)?.revenue ?? 0, last = months.at(-2)?.revenue, left = g.month_days_left ?? 1;
+  const name = new Date().toLocaleDateString("pt-BR", { month: "long", timeZone: "America/Sao_Paulo" });
+  return (
+    <Card title={`Meta de ${name}`} sub={`faltam ${left} dia${left > 1 ? "s" : ""}`} action={<button className="glass pill" onClick={() => setEdit(!edit)}>{goal ? "Editar meta" : "Definir meta"}</button>}>
+      {edit && <form className="cash-input" onSubmit={(e) => { e.preventDefault(); setGoal(new FormData(e.currentTarget).get("goal")); }}>
+        <span>Meta de faturamento do mês (R$)</span><input name="goal" inputMode="decimal" autoFocus defaultValue={goal || ""} placeholder="ex.: 5.000" aria-label="Meta do mês em reais" />
+      </form>}
+      <div className="goal-card">
+        <Gauge value={goal ? (done / goal) * 100 : null} sub={goal ? `de ${fmt(goal, "brl")}` : "sem meta"} />
+        <Kv items={[["Realizado no mês", fmt(done, "brl")], ["Ritmo diário necessário", fmt(goalPace(goal, done, left), "brl")], ["Mês anterior fechou em", fmt(last, "brl")]]} />
+      </div>
+    </Card>
+  );
+}
+
+// Últimos pedidos (item 14): os 6 mais recentes; cada um abre a gaveta em Pedidos.
+function LastOrders({ orders }) {
+  return (
+    <Card title="Últimos pedidos" action={<a className="round" href="#/orders" aria-label="Abrir Pedidos"><Icon name="arrow" /></a>}>
+      {orders.slice(0, 6).map((o) => (
+        <a key={o.id} className="list-row" href={`#/orders?o=${o.id}`}>
+          <span><b>#{o.id}</b><small>{o.name || "Cliente"}{o.state ? ` · ${o.state}` : ""} · {when(o.created)}</small></span>
+          <span><b>{fmt(o.amount, "brl")}</b><small><Chip>{o.status}</Chip></small></span>
+        </a>
+      ))}
+      {!orders.length && <p className="empty">Nenhum pedido ainda.</p>}
+    </Card>
+  );
+}
+
+// Mais vendidos (item 14): kit e tamanho dos pedidos feitos no período (sem cancelado e sem antecipado não pago).
+function BestSellers({ orders, since }) {
+  const n = {};
+  for (const o of orders) if (Date.parse(o.created) >= since && !["void", "unpaid"].includes(o.step)) { const k = `${o.units} peça${o.units > 1 ? "s" : ""}${o.size ? ` · ${o.size}` : ""}`; n[k] = (n[k] || 0) + 1; }
+  const top = Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  return (
+    <Card title="Mais vendidos" sub="kit e tamanho, no período">
+      {top.map(([k, v]) => <div key={k} className="list-row"><span>{k}</span><b>{v}</b></div>)}
+      {!top.length && <p className="empty">Sem pedidos no período.</p>}
+    </Card>
   );
 }
 

@@ -70,3 +70,6 @@ export function cashPlan(daily, days, { cpl = IDEAL.cpl, conversion = IDEAL.conv
   const total = ad + api + upfront, cycle = DELIVERY_DAYS + RELEASE_DAYS;
   return { daily, days, cpl, conversion, spend, leads, orders, cod_orders: cod, ad, api, upfront, total, cycle, need: total * Math.min(1, cycle / days) };
 }
+
+// Meta do mês (protótipo do painel, 04/11): ritmo diário necessário = (meta − realizado no mês) ÷ dias restantes; meta batida = 0.
+export const goalPace = (goal, done, daysLeft) => (goal > 0 ? Math.max(0, (goal - done) / Math.max(1, daysLeft)) : null);

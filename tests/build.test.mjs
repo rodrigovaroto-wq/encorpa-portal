@@ -178,3 +178,30 @@ test("resultado do mês em que o número vence: entra a mensalidade de R$ 35 int
   const s = data.periods.month.metrics.fixed_cost.series;
   assert.equal(s.filter((v) => v > 0).length, 1, "só o dia do vencimento tem valor");
 });
+
+// Painel do protótipo (04/11): segmentos de cliente, vendas por mês e meta do mês.
+const DAYMS = 86400000;
+const sale = (lead, daysAgo, amount = 109.9, status = "Completo") => ({ id: `${lead}-${daysAgo}`, lead_id: lead, created_at: new Date(NOW - daysAgo * DAYMS).toISOString(), amount_brl: amount, status, payment_method: "cod", units: 1 });
+
+test("customerList: Novo < 45 dias, Em risco > 75 dias, VIP top 20% em gasto, o resto Recorrente; sem venda não é cliente", async () => {
+  const { customerList } = await import("../lib/build.mjs");
+  const leads = ["n", "r", "v", "a", "b", "x"].map((id) => ({ id, name: id }));
+  const orders = [sale("n", 10), sale("r", 100), sale("r", 200), sale("v", 50, 900), sale("v", 60), sale("a", 50), sale("a", 70), sale("b", 60), sale("b", 70),
+    sale("x", 5, 109.9, "Frustrado")];
+  const seg = Object.fromEntries(customerList({ leads, orders }, NOW).map((c) => [c.id, c.seg]));
+  assert.deepEqual(seg, { n: "new", r: "risk", v: "vip", a: "regular", b: "regular" });
+});
+
+test("customerList: Novo vence VIP (a precedência do protótipo)", async () => {
+  const { customerList } = await import("../lib/build.mjs");
+  const rows = customerList({ leads: [{ id: "n" }, { id: "o" }], orders: [sale("n", 3, 500), sale("o", 60)] }, NOW);
+  assert.equal(rows.find((c) => c.id === "n").seg, "new");
+});
+
+test("salesByMonth: só venda soma faturamento; recusa conta como pedido, cancelado não", async () => {
+  const { salesByMonth, monthStart } = await import("../lib/build.mjs");
+  const a = monthStart(NOW), mid = (a + NOW) / 2;
+  const at = (ts, status) => ({ lead_id: "l", created_at: new Date(ts).toISOString(), amount_brl: 100, status, payment_method: "cod", units: 1 });
+  const m = salesByMonth({ orders: [at(mid, "Completo"), at(mid, "Frustrado"), at(mid, "Cancelado"), at(a - DAYMS, "Completo")] }, NOW, 2);
+  assert.deepEqual(m.map((x) => [x.revenue, x.orders]), [[100, 1], [100, 2]]);
+});

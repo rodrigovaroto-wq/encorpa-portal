@@ -25,7 +25,7 @@ const REFRESH = 5 * 60 * 1000; // o servidor guarda a resposta 5 min
 export function App() {
   const [route, setRoute] = useState(() => parseRoute(location.hash));
   const [period, setPeriodState] = useState(() => store.get("period") || "week");
-  const [demo, setDemoState] = useState(() => store.get("demo") === "1");
+  const [demo, setDemoState] = useState(() => import.meta.env.VITE_PREVIEW === "1" || store.get("demo") === "1"); // prévia publicada: sempre os dados de exemplo
   const [prefs, setPrefsState] = useState(() => { try { return { theme: "dark", motion: "on", ...JSON.parse(store.get("prefs") || "{}") }; } catch { return { theme: "dark", motion: "on" }; } });
   const [collapsed, setCollapsed] = useState(() => store.get("side") === "1");
   const [palette, setPalette] = useState(false), [settings, setSettings] = useState(false);

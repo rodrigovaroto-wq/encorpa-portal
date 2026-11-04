@@ -36,7 +36,7 @@ export function Topbar({ route, period, setPeriod, data, onSearch, onSettings })
   const live = data?.source === "live";
   return (
     <header className="topbar">
-      <a href="#/home" className="m-brand" aria-label="Painel"><img src="/wordmark.svg" alt="" className="wordmark" /></a>
+      <a href="#/home" className="m-brand" aria-label="Painel"><img src={`${import.meta.env.BASE_URL}wordmark.svg`} alt="" className="wordmark" /></a>
       <button className="glass search" onClick={onSearch} aria-label="Buscar"><Icon name="search" /><span>Buscar conversas, anúncios, páginas…</span><kbd>⌘K</kbd></button>
       <span className="today"><Icon name="calendar" size={15} /> Hoje, {today}</span>
       <span className={`status-dot ${live ? "live" : ""}`} title={data?.updated ? `Atualizado ${ago(data.updated)}` : ""}>

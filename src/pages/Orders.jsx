@@ -5,17 +5,26 @@ import { BUCKETS } from "../lib/constants.js";
 import { periodDays } from "../lib/data.js";
 import { bucketLabels, fmt, when } from "../lib/format.js";
 import { HBars, Lines } from "../components/charts.jsx";
-import { Card, Chip, PageHead, Table, Tabs, Kpi } from "../components/ui.jsx";
+import { Card, Chip, Drawer, Kv, PageHead, Pager, Table, Tabs, Kpi } from "../components/ui.jsx";
+import { Icon } from "../components/icons.jsx";
 
 const STEPS = [["all", "Todos"], ["created", "Criados"], ["en_route", "A caminho"], ["delivered", "Entregues"], ["refused", "Recusados"], ["returned", "Devolvidos"], ["unpaid", "Pix pendente"], ["void", "Cancelados"]];
 const TONE = { created: "", en_route: "warn", delivered: "ok", refused: "bad", returned: "bad", unpaid: "", void: "" };
 const LABEL = Object.fromEntries(STEPS);
+export const CHANNEL = { whatsapp: "WhatsApp (anúncio)", site: "Site ou orgânico" }; // pelo clique no anúncio de WhatsApp no lead (ctwa_clid)
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const PER = 25;
 
-export function Orders({ data, period }) {
+export function Orders({ data, period, route }) {
   const orders = data.global.orders || [], p = data.periods[period] || {}, m = p.metrics || {};
-  const [tab, setTab] = useState("all");
-  const counts = Object.fromEntries(STEPS.map(([k]) => [k, k === "all" ? orders.length : orders.filter((o) => o.step === k).length]));
-  const rows = orders.filter((o) => tab === "all" || o.step === tab);
+  const [tab, setTabState] = useState("all"), [q, setQ] = useState(""), [ch, setCh] = useState("all"), [inPeriod, setInPeriod] = useState(false), [page, setPage] = useState(1);
+  const setTab = (k) => { setTabState(k); setPage(1); };
+  const since = Date.parse(data.updated) - periodDays(period) * 864e5, t = norm(q).trim();
+  // Filtros do protótipo (canal, período, busca); as abas contam só o que passa nos outros filtros.
+  const base = orders.filter((o) => (ch === "all" || o.channel === ch) && (!inPeriod || Date.parse(o.created) >= since) && (!t || norm(`${o.id} ${o.name} ${o.state} ${o.status}`).includes(t)));
+  const counts = Object.fromEntries(STEPS.map(([k]) => [k, k === "all" ? base.length : base.filter((o) => o.step === k).length]));
+  const rows = base.filter((o) => tab === "all" || o.step === tab);
+  const open = orders.find((o) => o.id === route?.query?.o);
   const created = m.orders?.series || [], delivered = m.delivered_orders?.series || [];
   const labels = bucketLabels(period, BUCKETS, created.length, data.updated);
   // Pedidos criados no período escolhido, como os outros números da tela. A data de entrega é a última atualização do pedido.
@@ -32,18 +41,24 @@ export function Orders({ data, period }) {
       </div>
       <div className="row r-2-1">
         <Card title="Terminal de pedidos" sub="os 200 mais recentes" className="terminal">
+          <div className="filters">
+            <label className="chat-search"><Icon name="search" /><input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Buscar pedido, cliente, UF ou status" aria-label="Buscar pedido" /></label>
+            <select value={ch} onChange={(e) => { setCh(e.target.value); setPage(1); }} aria-label="Canal"><option value="all">Todos os canais</option>{Object.entries(CHANNEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+            <select value={inPeriod ? "period" : "all"} onChange={(e) => { setInPeriod(e.target.value === "period"); setPage(1); }} aria-label="Período"><option value="all">Qualquer data</option><option value="period">Criados no período do topo</option></select>
+          </div>
           <Tabs items={STEPS} value={tab} onChange={setTab} counts={counts} />
           <div className="order-list">
-            {rows.map((o, i) => (
-              <div key={i} className="order">
+            {rows.slice((page - 1) * PER, page * PER).map((o, i) => (
+              <div key={i} className="order" role="button" tabIndex={0} aria-label={`Abrir pedido ${o.id}`} onClick={() => (location.hash = `#/orders?o=${o.id}`)} onKeyDown={(e) => e.key === "Enter" && (location.hash = `#/orders?o=${o.id}`)}>
                 <div><b>#{o.id}</b><small>{o.name || "Cliente"}{o.state ? ` · ${o.state}` : ""}</small></div>
                 <div><span>{o.units} peça{o.units > 1 ? "s" : ""}{o.size ? ` ${o.size}` : ""} · {o.method === "prepay" ? "antecipado" : "na entrega"}</span><small>{when(o.created)}</small></div>
                 <div className="r"><b>{fmt(o.amount, "brl")}</b><small className={o.value < 0 ? "neg" : ""}>vale {fmt(o.value, "brl")}</small></div>
                 <Chip tone={TONE[o.step]}>{LABEL[o.step] || o.status}</Chip>
               </div>
             ))}
-            {!rows.length && <p className="empty">Nenhum pedido nesta etapa.</p>}
+            {!rows.length && <p className="empty">Nenhum pedido com esses filtros.</p>}
           </div>
+          <Pager page={page} per={PER} total={rows.length} onPage={setPage} />
         </Card>
         <Agenda orders={orders} />
       </div>
@@ -57,10 +72,24 @@ export function Orders({ data, period }) {
             { label: "1 peça", value: p.mix?.units?.[0] || 0 }, { label: "2 peças", value: p.mix?.units?.[1] || 0 }, { label: "3 peças", value: p.mix?.units?.[2] || 0 }]} />
         </Card>
       </div>
-      <Table name="pedidos" head={["Pedido", "Cliente", "UF", "Status", "Forma", "Peças", "Valor", "Vale", "Criado", "Agendado"]}
-        rows={rows.map((o) => [`#${o.id}`, o.name || "—", o.state || "—", o.status, o.method === "prepay" ? "antecipado" : "na entrega", o.units, fmt(o.amount, "brl"), fmt(o.value, "brl"), when(o.created), o.scheduled || "—"])}
-        csv={rows.map((o) => [o.id, o.name, o.state, o.status, o.method, o.units, o.amount, o.value, o.created, o.scheduled])} />
+      <Table name="pedidos" head={["Pedido", "Cliente", "UF", "Canal", "Status", "Forma", "Peças", "Valor", "Vale", "Criado", "Agendado"]}
+        rows={rows.map((o) => [`#${o.id}`, o.name || "—", o.state || "—", CHANNEL[o.channel] || "—", o.status, o.method === "prepay" ? "antecipado" : "na entrega", o.units, fmt(o.amount, "brl"), fmt(o.value, "brl"), when(o.created), o.scheduled || "—"])}
+        csv={rows.map((o) => [o.id, o.name, o.state, CHANNEL[o.channel], o.status, o.method, o.units, o.amount, o.value, o.created, o.scheduled])} />
+      {open && <OrderDrawer o={open} onClose={() => (location.hash = "#/orders")} />}
     </div>
+  );
+}
+
+// Gaveta do pedido. O status vem do webhook da Logzz/Coinzz: mudar, cancelar ou devolver é na plataforma (decisão de 04/11).
+export function OrderDrawer({ o, onClose }) {
+  return (
+    <Drawer title={`Pedido #${o.id}`} onClose={onClose}>
+      <Chip tone={TONE[o.step]}>{LABEL[o.step] || o.status}</Chip>
+      <Kv items={[["Cliente", `${o.name || "Cliente"}${o.state ? ` · ${o.state}` : ""}`], ["Canal", CHANNEL[o.channel] || "—"], ["Status na plataforma", o.status],
+        ["Forma", o.method === "prepay" ? "antecipado (Coinzz)" : "na entrega (Logzz)"], ["Kit", `${o.units} peça${o.units > 1 ? "s" : ""}${o.size ? ` · tamanho ${o.size}` : ""}`],
+        ["Valor", fmt(o.amount, "brl")], ["Vale hoje", fmt(o.value, "brl")], ["Criado", when(o.created)], ["Atualizado", when(o.updated)], ["Entrega agendada", o.scheduled || "—"]]} />
+      <p className="note">O status muda pelo webhook da plataforma. Cancelar ou devolver é feito na Logzz ou na Coinzz.</p>
+    </Drawer>
   );
 }
 
