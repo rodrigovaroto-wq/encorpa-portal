@@ -19,13 +19,22 @@ export function usePopover() {
 }
 
 // Avisos a partir do que os dados já dizem: pedido novo, conversa não resolvida, workflow com erro, fonte fora.
-export function notifications(data) {
-  const g = data?.global || {}, out = [], day = Date.now() - 86400000;
-  for (const o of g.orders || []) if (new Date(o.created).getTime() > day) out.push({ at: o.created, text: `Pedido novo ${o.id}${o.name ? ` — ${o.name}` : ""}`, href: "#/orders", tone: "ok" });
-  for (const c of g.chats || []) if (c.status === "unresolved") out.push({ at: c.flaggedAt || c.last, text: `${c.name || "Cliente"}: a Malu avisou o operador (${c.reasons.at(-1) || "sem motivo"})`, href: `#/chat?c=${c.id}`, tone: "bad" });
-  for (const w of g.automations?.workflows || []) if (w.active && w.errors) out.push({ at: w.last?.at, text: `${w.name.replace(/^Encorpa — /, "")}: ${w.errors} execução com erro`, href: "#/auto/runs", tone: "bad" });
-  for (const [k, h] of Object.entries(g.health || {})) if (h.ok === false) out.push({ at: g.updated, text: `${k}: ${h.detail}`, href: "#/integrations", tone: "bad" });
+export function notifications(data, on = {}) {
+  const g = data?.global || {}, out = [], day = Date.now() - 86400000, want = (k) => on[k] !== false; // Configurações › Notificações
+  for (const o of want("order") ? g.orders || [] : []) if (new Date(o.created).getTime() > day) out.push({ at: o.created, text: `Pedido novo ${o.id}${o.name ? ` — ${o.name}` : ""}`, href: "#/orders", tone: "ok" });
+  for (const c of want("chat") ? g.chats || [] : []) if (c.status === "unresolved") out.push({ at: c.flaggedAt || c.last, text: `${c.name || "Cliente"}: a Malu avisou o operador (${c.reasons.at(-1) || "sem motivo"})`, href: `#/chat?c=${c.id}`, tone: "bad" });
+  for (const w of want("workflow") ? g.automations?.workflows || [] : []) if (w.active && w.errors) out.push({ at: w.last?.at, text: `${w.name.replace(/^Encorpa — /, "")}: ${w.errors} execução com erro`, href: "#/auto/runs", tone: "bad" });
+  for (const [k, h] of want("source") ? Object.entries(g.health || {}) : []) if (h.ok === false) out.push({ at: g.updated, text: `${k}: ${h.detail}`, href: "#/integrations", tone: "bad" });
   return out.sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0)).slice(0, 12);
+}
+
+function chime() {
+  try {
+    const a = new AudioContext(), o = a.createOscillator(), g = a.createGain();
+    o.frequency.setValueAtTime(880, a.currentTime); o.frequency.exponentialRampToValueAtTime(660, a.currentTime + 0.25);
+    g.gain.setValueAtTime(0.08, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.4);
+    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + 0.4);
+  } catch { /* sem áudio: segue sem som */ }
 }
 
 // Escolha do período (operador, 04/11): os fixos ou um período livre de/até, no topo e no topo de cada gráfico.
@@ -62,10 +71,13 @@ export function useChartPeriod(data, period) {
 
 export function Topbar({ route, period, setPeriod, data, onSearch, onSettings, prefs, setPrefs }) {
   const bell = usePopover();
-  const dark = prefs?.theme !== "light";
-  const list = notifications(data);
+  const dark = (typeof document !== "undefined" ? document.documentElement.dataset.theme : prefs?.theme) !== "light";
+  const list = notifications(data, prefs?.notify);
   const seen = Number(store.get("seen:notif") || 0);
   const unseen = list.filter((n) => new Date(n.at || 0).getTime() > seen).length;
+  // Som do aviso novo (Configurações › Notificações): um toque curto; o navegador só toca depois de um clique na página.
+  const before = useRef(unseen);
+  useEffect(() => { if (prefs?.notify?.sound && unseen > before.current) chime(); before.current = unseen; }, [unseen, prefs?.notify?.sound]);
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Sao_Paulo" });
   const live = data?.source === "live";
   return (

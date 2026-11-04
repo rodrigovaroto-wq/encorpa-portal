@@ -3,6 +3,18 @@
 > Atualizado em 04/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
 
+## Feito em 04/11, segunda rodada (branch `claude/exciting-bardeen-4qpqmk`)
+
+- **Site e vendas** (página nova): Site ao vivo (`api/site.js`, a cada 5 s), Funil do checkout por aparelho, Checkout abandonado
+  (`leads.cart` da Coinzz; recuperado = pedido depois) e Quando os leads compram (`buyHeat`, dia × faixa de 3 h, com o valor).
+  O Site ao vivo também está na Home.
+- **Financeiro › Resultado:** Fluxo de dinheiro (entrou × saiu e a linha do resultado) e a DRE em tópicos e subtópicos (`orderCosts`,
+  imposto da Meta `META_TAX`, fixos por `fixedPayments`).
+- **Configurações** virou página (`#/settings`) no formato do vídeo: Empresa, Equipe (`api/team.js`), Aparência (Claro, Escuro, Igual ao
+  aparelho; menu compacto; reduzir animação), Notificações (por tipo, com som) e Dados (exportar JSON, atividade).
+- **Pendente do operador:** (1) aplicar a migração **0034** do Ricos-com-AI no SQL editor do Supabase; (2) instalar o `track.js` no site
+  (README; o Claude não tem acesso ao repositório Encorpa-Website nesta sessão); (3) criar `PORTAL_MONTH_GOAL` no Vercel.
+
 ## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal e os comentários do operador na prévia
 
 - Referência em `dashboard-portal-references/` (protótipo, `FUNCIONALIDADES.md` com a Decisão, capturas). O `index.html` do Portal voltou à raiz.

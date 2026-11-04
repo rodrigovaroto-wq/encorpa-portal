@@ -22,6 +22,7 @@ export const RETURN_COST = { cod: 30, prepay: 50 }; // estimativa do operador (1
 // WhatsApp: R$ 0 por lead dentro das janelas de 24 h e 72 h; só o template UTILITY do pós-venda fora da janela, ~R$ 0,04 por pedido
 // (Ricos-com-AI, 06-modelo-economico.md, 02/10).
 export const WA_PER_ORDER = 0.04;
+export const META_TAX = 0.1383; // o imposto dentro do gasto da Meta: imposto = gasto − gasto ÷ 1,1383 (a DRE mostra separado, 04/11)
 // Custos fixos (operador, 20/10), no cartão: PikaPods (n8n) cobra por hora, US$ 3,73 por mês, de um saldo que recarrega US$ 10 sozinho
 // abaixo de US$ 1; número do WhatsApp R$ 35 por mês, vence dia 5. Entram no resultado só quando vencem e são pagos de novo
 // (operador, 20/10): nada de rateio por dia. O que já estava pago em 20/10 (US$ 10 e R$ 55) fica só no "Investido até agora".

@@ -56,6 +56,11 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     `whatsapp` do Ricos-com-AI gravar esse id (hoje ela descreve a imagem com o modelo e descarta o id).
   - `INBOUND_SIGNING_SECRET` (desde 23/10, o mesmo do Supabase): selo das mensagens de Malu › Teste. Sem ele, a turn recusa o teste
     se o selo estiver ligado na produção.
+  - **Site e vendas (04/11):** o coletor `public/track.js` vai no `<head>` do encorpa-fashion.com.br:
+    `<script src="https://<domínio do portal>/track.js" defer></script>`. Ele manda a visita, "viu o produto" (elemento com
+    `data-encorpa="produto"` na tela; sem ele, 35% da página rolada) e "abriu o checkout" (clique em link da Coinzz/Logzz ou em
+    `data-encorpa="checkout"`) para `api/track.js`, que fica fora do login, aceita só a origem do site e grava em `site_sessions`.
+    Pede a migração 0034 do Ricos-com-AI (também cria `portal_users` e `portal_activity`, de Configurações › Equipe).
   - `PORTAL_MONTH_GOAL` (opcional, desde 04/11): a meta de faturamento do mês em reais (ex.: `5000`), para a Meta do mês na Home.
     Sem ela, o cartão mostra "sem meta". Mudou, Redeploy.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1:papel,email2:senha2`. **Sem ela ninguém entra.** Papel (desde 23/10,

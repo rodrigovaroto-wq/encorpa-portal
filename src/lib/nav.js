@@ -7,6 +7,7 @@ export const NAV = [
     { id: "orders", label: "Pedidos", icon: "box", desc: "Cada pedido na Logzz e na Coinzz, onde está e a agenda de entregas.", badge: (g) => g.orders?.filter((o) => ["created", "en_route"].includes(o.step)).length },
   ] },
   { sec: "Análise", items: [
+    { id: "site", label: "Site e vendas", icon: "live", desc: "Quem está no site agora, onde as visitas param, o checkout que ficou para trás e a hora em que as clientes compram." },
     { id: "malu", label: "Malu", icon: "agent", badge: (g, p) => p?.gaps?.length, subs: [
       ["results", "Resultados", "Quantas conversas a Malu resolveu sozinha, por desfecho e por versão."],
       ["gaps", "Lacunas", "O que a Malu ainda não resolve sozinha: cada linha é um contorno a construir."],
@@ -38,6 +39,7 @@ export const NAV = [
       ["flow", "Fluxo da Malu", "O caminho de uma mensagem dela até a resposta, e onde cada desfecho nasce."],
       ["runs", "Execuções", "As últimas execuções do n8n, com estado e duração."]] },
     { id: "integrations", label: "Integrações", icon: "plug", desc: "Cada fonte que o portal lê, se está respondendo e o que trouxe na última leitura.", badge: (g) => Object.values(g.health || {}).filter((h) => h.ok === false).length },
+    { id: "settings", label: "Configurações", icon: "gear", desc: "Empresa, equipe, aparência, notificações e dados." },
     { id: "notes", label: "Notas", icon: "note", desc: "Anotações do operador, com etiqueta. Ficam guardadas neste navegador." },
   ] },
 ];

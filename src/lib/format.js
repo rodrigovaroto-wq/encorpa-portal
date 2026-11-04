@@ -56,6 +56,15 @@ export function downloadCsv(name, head, rows) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000); // revogar na hora cancela o download no Safari e no Firefox
 }
 
+// Baixa um objeto como JSON (Configurações › Dados).
+export function downloadJson(name, obj) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" }));
+  a.download = `${name}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 export const initials = (name) => (name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
 
 // Rótulo de cada intervalo do período (o gráfico mostra a data de início do intervalo). end = hora em que o servidor

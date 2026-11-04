@@ -90,3 +90,45 @@ test("desfazer a pausa só apaga a pausa deste envio (PATCH condicional)", async
   assert.equal(patches.length, 2);
   assert.match(patches[1].url, /&handoff_at=eq\./);
 });
+
+// Coletor do site, "Site ao vivo" e equipe (04/11).
+test("visitRow: aceita só o formato de uma visita e grava o carimbo do passo", async () => {
+  const { visitRow } = await import("../api/track.js");
+  const ok = { id: "abcdefghij0123456789", kind: "checkout", device: "phone", path: "/" };
+  assert.deepEqual(Object.keys(visitRow(ok, "T")).sort(), ["checkout_at", "device", "id", "last_at"]);
+  assert.equal(visitRow({ ...ok, kind: "view", ad: true }, "T").from_ad, true);
+  for (const bad of [null, { ...ok, id: "curto" }, { ...ok, id: "ABCDEFGHIJ0123456789" }, { ...ok, kind: "order" }, { ...ok, device: "tv" }, { ...ok, kind: "__proto__" }]) assert.equal(visitRow(bad), null);
+  assert.equal(visitRow({ ...ok, kind: "view", path: "javascript:x" }).path, "/");
+});
+
+test("api/track: recusa outra origem e só grava a visita do site da Encorpa", async () => {
+  const { default: track } = await import("../api/track.js");
+  const run = (headers, body) => new Promise((done) => { const res = { code: 0, status(c) { this.code = c; return this; }, setHeader() {}, end() { done({ code: this.code }); }, json(b) { done({ code: this.code, body: b }); } }; track({ method: "POST", headers, body }, res); });
+  const body = JSON.stringify({ id: "abcdefghij0123456789", kind: "view", device: "desktop", path: "/" });
+  globalThis.fetch = async (url, init = {}) => { calls.push({ url: String(url), method: init.method, body: JSON.parse(init.body) }); return { ok: true, status: 201 }; };
+  assert.equal((await run({ origin: "https://golpe.com" }, body)).code, 403);
+  assert.equal((await run({ origin: "https://encorpa-fashion.com.br" }, "{quebrado")).code, 400);
+  assert.equal((await run({ origin: "https://www.encorpa-fashion.com.br" }, body)).code, 204);
+  assert.ok(calls.at(-1).url.includes("site_sessions?on_conflict=id"));
+});
+
+test("middleware: só o coletor fica fora do login", async () => {
+  process.env.PORTAL_USERS = "a@b.com:x";
+  const { default: mw } = await import("../middleware.js");
+  const at = (p) => mw(new Request(`https://portal.test${p}`)).status;
+  assert.equal(at("/api/data"), 401); assert.equal(at("/"), 401); assert.equal(at("/track.js/../api/data"), 401);
+  assert.notEqual(at("/api/track"), 401); assert.notEqual(at("/track.js"), 401);
+});
+
+test("liveStats: agora = sinal nos últimos 2 min; chegadas por minuto", async () => {
+  const { liveStats } = await import("../api/site.js");
+  const now = Date.parse("2026-11-04T20:00:00Z"), ago = (m) => new Date(now - m * 60000).toISOString();
+  const s = liveStats([{ created_at: ago(5), last_at: ago(0.5), device: "phone", product_at: ago(4) }, { created_at: ago(20), last_at: ago(10), device: "desktop", checkout_at: ago(12) }], now);
+  assert.equal(s.now, 1); assert.equal(s.phone, 1); assert.equal(s.checkout, 1); assert.equal(s.arrivals[29 - 5], 1);
+});
+
+test("teamList: login com perfil, e convidado sem login no fim", async () => {
+  const { teamList } = await import("../api/team.js");
+  const t = teamList([{ email: "Op@Encorpa.com", role: "operador" }], [{ email: "op@encorpa.com", name: "Ana", title: "Atendimento" }, { email: "novo@encorpa.com", name: "Bia" }]);
+  assert.deepEqual(t.map((u) => [u.email, u.name, u.role, u.login]), [["Op@Encorpa.com", "Ana", "operador", true], ["novo@encorpa.com", "Bia", null, false]]);
+});

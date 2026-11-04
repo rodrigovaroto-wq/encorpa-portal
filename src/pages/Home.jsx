@@ -10,6 +10,7 @@ import { Donut, Gauge, NeonSpark, TrendLine } from "../components/charts.jsx";
 import { Card, Chip, Kpi, Kv } from "../components/ui.jsx";
 import { CHANNEL } from "./Orders.jsx";
 import { useChartPeriod } from "../components/Topbar.jsx";
+import { SiteLive } from "./Site.jsx";
 import { Icon } from "../components/icons.jsx";
 import { INBOX, inboxCounts } from "../lib/inbox.js";
 
@@ -46,6 +47,7 @@ export function Home({ data, period }) {
         <DonutBlock title="Peças por pedido" items={units} href={HREF.units} />
       </div>
       <Today data={data} />
+      <SiteLive data={data} compact />
       <div className="row r-2-1">
         <MonthGoal g={data.global} />
         <DonutBlock title="Origem das vendas" items={[["whatsapp", "var(--neon-green)"], ["site", "var(--neon-blue)"], ["organic", "var(--neon-purple)"]].map(([k, c]) => ({ label: CHANNEL[k], value: p.mix?.channel?.[k], color: c }))} href="#/orders" />

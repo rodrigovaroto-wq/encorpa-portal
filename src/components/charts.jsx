@@ -232,3 +232,56 @@ export function TrendLine({ values, labels, unit = "n", color, height = 300, com
     </div>
   );
 }
+
+// Barras agrupadas com linha opcional (04/11): o fluxo de dinheiro (entradas × saídas e a linha do resultado) e o checkout
+// abandonado (ghost: a barra de trás é o total, a da frente o recuperado). items: [{ label, [key]: valor }]; series: [{ key, name, color }].
+export function GroupBars({ items, series, line, unit = "n", height = 260, ghost = false }) {
+  const [hover, setHover] = useState(null);
+  const vals = items.flatMap((x) => [...series.map((s) => x[s.key] || 0), ...(line ? [x[line.key] || 0] : [])]);
+  if (!items.length || vals.every((v) => !v)) return <Empty />;
+  const max = niceMax(Math.max(0, ...vals)), min = Math.min(0, ...vals), span = max - min || 1, w = 100 / items.length;
+  const Y = (v) => 100 - ((v - min) / span) * 100, k = ghost ? 1 : series.length, bw = (w * 0.64) / k;
+  const pts = line ? items.map((x, i) => `${(i + 0.5) * w},${Y(x[line.key] || 0)}`).join(" ") : "";
+  return (
+    <div className="bars-chart group-bars" style={{ height }} onMouseLeave={() => setHover(null)}>
+      <div className="bars-grid">{[1, 0.75, 0.5, 0.25, 0].map((f) => <span key={f}><em>{fmt(min + span * f, unit)}</em></span>)}</div>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="bars-svg">
+        {min < 0 && <line x1="0" x2="100" y1={Y(0)} y2={Y(0)} className="zero-line" />}
+        {items.map((x, i) => (
+          <g key={i} className={hover === i ? "on" : ""} onMouseEnter={() => setHover(i)} onClick={() => setHover(hover === i ? null : i)}>
+            <rect x={i * w} y="0" width={w} height="100" fill="transparent" />
+            {series.map((s, j) => { const v = x[s.key] || 0, top = Y(Math.max(v, 0)), h = Math.abs(Y(v) - Y(0));
+              return <rect key={s.key} x={i * w + w * 0.18 + (ghost ? 0 : j * bw)} y={top} width={bw} height={Math.max(h, 0.4)} rx="1.2" fill={s.color} style={{ opacity: ghost && j === 0 ? 0.25 : 0.9 }} />; })}
+          </g>
+        ))}
+        {line && <polyline points={pts} fill="none" stroke={line.color} className="combo-line" />}
+      </svg>
+      {hover != null && (
+        <div className="chart-tip" style={{ left: `${(hover + 0.5) * w}%`, top: 0 }}>
+          <span>{items[hover].label}</span>
+          {[...series, ...(line ? [line] : [])].map((s) => <b key={s.key} style={{ color: s.color }}>{s.name}: {fmt(items[hover][s.key], s.unit || unit)}</b>)}
+        </div>
+      )}
+      <div className="bars-labels">{items.map((x, i) => <span key={i} className={hover === i ? "on" : ""}>{i % Math.ceil(items.length / 8) === 0 ? x.label : ""}</span>)}</div>
+      <div className="legend group-legend">{[...series, ...(line ? [line] : [])].map((s, j) => <span key={s.key}><i style={{ background: s.color, opacity: ghost && j === 0 ? 0.35 : 1 }} />{s.name}</span>)}</div>
+    </div>
+  );
+}
+
+// Mapa de calor (04/11): linhas × colunas, a cor pela contagem; passar o mouse ou tocar mostra a contagem e o valor.
+export function Heatmap({ rows, cols, cells, unit = "brl" }) {
+  const [sel, setSel] = useState(null);
+  const max = Math.max(1, ...cells.flat().map((c) => c.n));
+  const cur = sel && cells[sel[0]][sel[1]];
+  return (
+    <div className="heatmap">
+      <div className="heat-grid" style={{ gridTemplateColumns: `44px repeat(${cols.length}, minmax(0, 1fr))` }} onMouseLeave={() => setSel(null)}>
+        <span />{cols.map((c) => <span key={c} className="heat-col">{c}</span>)}
+        {rows.map((r, i) => [<span key={`r${i}`} className="heat-row">{r}</span>, ...cols.map((c, j) => { const x = cells[i][j];
+          return <button key={`${i}-${j}`} className={`heat-cell ${sel?.[0] === i && sel?.[1] === j ? "on" : ""}`} style={{ "--a": x.n / max }} aria-label={`${r}, ${c}: ${x.n} pedidos, ${fmt(x.revenue, unit)}`}
+            onMouseEnter={() => setSel([i, j])} onFocus={() => setSel([i, j])} onClick={() => setSel([i, j])} />; })])}
+      </div>
+      <p className="heat-tip">{cur ? <><b>{rows[sel[0]]}, {cols[sel[1]]}</b> · {cur.n} pedido{cur.n === 1 ? "" : "s"} · {fmt(cur.revenue, unit)}</> : "Passe o mouse ou toque num quadrado para ver os pedidos e o valor."}</p>
+    </div>
+  );
+}

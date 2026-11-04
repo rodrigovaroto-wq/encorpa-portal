@@ -222,3 +222,33 @@ test("monthGoal: só número positivo vira meta", async () => {
   assert.equal(monthGoal("5000"), 5000); assert.equal(monthGoal("5000.5"), 5000.5);
   for (const x of [undefined, "", "abc", "0", "-3"]) assert.equal(monthGoal(x), null);
 });
+
+test("orderCosts: as partes somam faturamento − margem em cada tipo de pedido", async () => {
+  const { orderCosts } = await import("../lib/build.mjs");
+  for (const o of [{ status: "Completo", payment_method: "cod", amount_brl: 197.82, units: 2 }, { status: "Pagamento aprovado", payment_method: "prepay", amount_brl: 109.9, units: 1 },
+    { status: "Frustrado", payment_method: "cod", amount_brl: 109.9, units: 1 }, { status: "Reembolsado", payment_method: "prepay", amount_brl: 109.9, units: 1 }, { status: "Cancelado", payment_method: "cod", amount_brl: 109.9, units: 1 }]) {
+    const v = orderValue(o), c = orderCosts(o, v), parts = Object.values(c).reduce((a, b) => a + b, 0);
+    near(parts, v.revenue - v.contribution);
+  }
+  const c = orderCosts({ status: "Completo", payment_method: "cod", amount_brl: 109.9, units: 1 });
+  assert.deepEqual([c.product, c.freight, c.handling], [30, 19.99, 5]);
+});
+
+test("buyHeat: dia da semana e faixa de 3 h no horário de Brasília, com o valor", async () => {
+  const { buyHeat } = await import("../lib/build.mjs");
+  // 2026-11-07 é sábado; 12:30 UTC = 09:30 em Brasília → faixa 9–12 h (3).
+  const h = buyHeat([{ created_at: "2026-11-07T12:30:00Z", amount_brl: 109.9 }, { created_at: "2026-11-07T13:10:00Z", amount_brl: 197.82 }, { created_at: "2026-11-08T02:00:00Z", amount_brl: 50 }]);
+  assert.deepEqual(h[6][3], { n: 2, revenue: 307.72 });
+  assert.deepEqual(h[6][7], { n: 1, revenue: 50 }, "23 h de sábado em Brasília, não domingo");
+});
+
+test("build: DRE em partes fecha com a margem; carrinhos e funil do site", async () => {
+  const { build } = await import("../lib/build.mjs");
+  const D = dropSynthetic(fixture());
+  D.leads[0].cart_at = new Date(NOW - 2 * DAYMS).toISOString();
+  D.site_sessions = [{ id: "a", created_at: new Date(NOW - DAYMS).toISOString(), device: "phone", product_at: "x", checkout_at: "x" }, { id: "b", created_at: new Date(NOW - DAYMS).toISOString(), device: "desktop" }];
+  const p = build(D, NOW).periods.week, m = p.metrics;
+  near(Object.values(p.money.costs).reduce((a, b) => a + b, 0), (m.revenue?.value ?? 0) - (m.gross_profit?.value ?? 0));
+  assert.equal(m.carts_abandoned.value, 1);
+  assert.deepEqual(p.site.all.visits, 2); assert.equal(p.site.phone.checkout, 1); assert.equal(p.site.desktop.product, 0);
+});
