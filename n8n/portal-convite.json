@@ -1,0 +1,171 @@
+{
+  "name": "Encorpa — Portal convite",
+  "nodes": [
+    {
+      "name": "Pedido do portal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portal-convite",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "name": "Confere a chave",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        200
+      ],
+      "onError": "continueErrorOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "https://encorpa-fashion.pikapod.net/api/v1/workflows?limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $json.headers['x-n8n-api-key'] ?? '' }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "name": "Envia o convite",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        100
+      ],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "smtp": {
+          "id": "clsHlXLQ1IwxQpqE",
+          "name": "SMTP e-mail"
+        }
+      },
+      "parameters": {
+        "fromEmail": "Portal Encorpa <rodrigo.varoto@gmail.com>",
+        "toEmail": "={{ $('Pedido do portal').first().json.body.to }}",
+        "subject": "={{ $('Pedido do portal').first().json.body.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $('Pedido do portal').first().json.body.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "name": "Enviado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: \"sent\" }) }}",
+        "options": {}
+      }
+    },
+    {
+      "name": "Não enviado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: \"error\", message: \"o e-mail não saiu: \" + String($json.error?.message ?? \"erro do SMTP\") }) }}",
+        "options": {
+          "responseCode": 502
+        }
+      }
+    },
+    {
+      "name": "Sem permissão",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        440,
+        350
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: \"error\", message: \"chave do portal recusada\" }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Pedido do portal": {
+      "main": [
+        [
+          {
+            "node": "Confere a chave",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confere a chave": {
+      "main": [
+        [
+          {
+            "node": "Envia o convite",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sem permissão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia o convite": {
+      "main": [
+        [
+          {
+            "node": "Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Não enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

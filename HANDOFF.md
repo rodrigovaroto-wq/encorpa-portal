@@ -12,8 +12,11 @@
   imposto da Meta `META_TAX`, fixos por `fixedPayments`).
 - **Configurações** virou página (`#/settings`) no formato do vídeo: Empresa, Equipe (`api/team.js`), Aparência (Claro, Escuro, Igual ao
   aparelho; menu compacto; reduzir animação), Notificações (por tipo, com som) e Dados (exportar JSON, atividade).
-- **Pendente do operador:** (1) aplicar a migração **0034** do Ricos-com-AI no SQL editor do Supabase; (2) instalar o `track.js` no site
-  (README; o Claude não tem acesso ao repositório Encorpa-Website nesta sessão); (3) criar `PORTAL_MONTH_GOAL` no Vercel.
+- **05/11:** migração **0034 aplicada** em produção (API de gerência). Convite com e-mail: `api/team.js` grava o SHA-256 do token e manda
+  o link pelo workflow novo **"Encorpa — Portal convite"** (n8n, ativo, id `YW7KFNoqaduO8QOe`, cópia em `n8n/portal-convite.json`); a pessoa
+  cria a senha em `convite.html` (`api/invite.js`) e entra pelo banco (`whoIs` em `lib/auth.mjs`, PBKDF2). Meta do mês editada na Home
+  (`api/settings.js` → `portal_settings`). O site carrega o `track.js` na branch `claude/exciting-bardeen-4qpqmk` do Encorpa-Website.
+- **Pendente do operador:** publicar o portal (merge) antes do site, para o `track.js` e o `api/track` existirem quando o site os chamar.
 
 ## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal e os comentários do operador na prévia
 

@@ -115,9 +115,9 @@ test("api/track: recusa outra origem e só grava a visita do site da Encorpa", a
 test("middleware: só o coletor fica fora do login", async () => {
   process.env.PORTAL_USERS = "a@b.com:x";
   const { default: mw } = await import("../middleware.js");
-  const at = (p) => mw(new Request(`https://portal.test${p}`)).status;
-  assert.equal(at("/api/data"), 401); assert.equal(at("/"), 401); assert.equal(at("/track.js/../api/data"), 401);
-  assert.notEqual(at("/api/track"), 401); assert.notEqual(at("/track.js"), 401);
+  const at = async (p) => (await mw(new Request(`https://portal.test${p}`)))?.status;
+  assert.equal(await at("/api/data"), 401); assert.equal(await at("/"), 401); assert.equal(await at("/track.js/../api/data"), 401);
+  for (const p of ["/api/track", "/track.js", "/convite.html", "/api/invite"]) assert.notEqual(await at(p), 401, p);
 });
 
 test("liveStats: agora = sinal nos últimos 2 min; chegadas por minuto", async () => {
@@ -129,6 +129,54 @@ test("liveStats: agora = sinal nos últimos 2 min; chegadas por minuto", async (
 
 test("teamList: login com perfil, e convidado sem login no fim", async () => {
   const { teamList } = await import("../api/team.js");
-  const t = teamList([{ email: "Op@Encorpa.com", role: "operador" }], [{ email: "op@encorpa.com", name: "Ana", title: "Atendimento" }, { email: "novo@encorpa.com", name: "Bia" }]);
-  assert.deepEqual(t.map((u) => [u.email, u.name, u.role, u.login]), [["Op@Encorpa.com", "Ana", "operador", true], ["novo@encorpa.com", "Bia", null, false]]);
+  const t = teamList([{ email: "Op@Encorpa.com", role: "operador" }], [{ email: "op@encorpa.com", name: "Ana", title: "Atendimento" }, { email: "novo@encorpa.com", name: "Bia", role: "leitura", invite_token_hash: "h" }, { email: "ja@encorpa.com", role: "admin", password_hash: "pbkdf2$x" }]);
+  assert.deepEqual(t.map((u) => [u.email, u.name, u.role, u.login]), [["Op@Encorpa.com", "Ana", "operador", true], ["novo@encorpa.com", "Bia", "leitura", false], ["ja@encorpa.com", undefined, "admin", true]]);
+  assert.ok(t.every((u) => !("password_hash" in u) && !("invite_token_hash" in u)), "hash nunca vai ao navegador");
+});
+
+test("senha: hash PBKDF2 confere a certa e recusa a errada; whoIs entra pelo banco só com a senha certa", async () => {
+  const { hashPassword, verifyPassword, whoIs } = await import("../lib/auth.mjs");
+  const h = await hashPassword("senha-forte-123");
+  assert.ok(h.startsWith("pbkdf2$") && !h.includes("senha-forte"));
+  assert.equal(await verifyPassword("senha-forte-123", h), true); assert.equal(await verifyPassword("senha-forte-124", h), false); assert.equal(await verifyPassword("x", "lixo"), false);
+  const db = async () => ({ ok: true, json: async () => [{ email: "bia@encorpa.com", role: "leitura", password_hash: h }] });
+  const basic = (e, p) => `Basic ${btoa(`${e}:${p}`)}`;
+  assert.deepEqual(await whoIs(basic("Bia@Encorpa.com", "senha-forte-123"), { raw: "", url: "u", key: "k", fetchImpl: db }), { email: "bia@encorpa.com", role: "leitura" });
+  assert.equal(await whoIs(basic("bia@encorpa.com", "errada-errada"), { raw: "", url: "u", key: "k", fetchImpl: db }), null);
+  assert.deepEqual(await whoIs(basic("op@encorpa.com", "segredo"), { raw: "op@encorpa.com:segredo:operador", url: "u", key: "k", fetchImpl: () => { throw new Error("não devia ir ao banco"); } }), { email: "op@encorpa.com", role: "operador" });
+});
+
+test("convite: o token vale uma vez, a senha fraca é recusada e o banco recebe só o hash", async () => {
+  const { default: invite, passwordProblem } = await import("../api/invite.js");
+  assert.ok(passwordProblem("curta")); assert.ok(passwordProblem("tem:dois-pontos")); assert.equal(passwordProblem("uma senha boa"), null);
+  const token = "a".repeat(64);
+  let row = { email: "bia@encorpa.com", name: "Bia" }, patched = null;
+  globalThis.fetch = async (url, init = {}) => {
+    if (init.method === "PATCH") { patched = JSON.parse(init.body); const out = row ? [row] : []; row = null; return { ok: true, json: async () => out }; }
+    if (init.method === "POST") return { ok: true, json: async () => ({}) };
+    return { ok: true, json: async () => (row ? [row] : []) };
+  };
+  const run = (method, body, q) => new Promise((done) => { const res = { code: 0, status(c) { this.code = c; return this; }, setHeader() {}, json(b) { done({ code: this.code, body: b }); } };
+    invite({ method, headers: { "content-type": "application/json" }, body, query: q, url: "/api/invite" }, res); });
+  assert.equal((await run("GET", null, { t: "nao-e-token" })).code, 400);
+  assert.equal((await run("GET", null, { t: token })).body.email, "bia@encorpa.com");
+  assert.equal((await run("POST", { token, password: "curta" })).code, 400);
+  const ok = await run("POST", { token, password: "uma senha boa" });
+  assert.equal(ok.code, 200); assert.ok(patched.password_hash.startsWith("pbkdf2$")); assert.equal(patched.invite_token_hash, null);
+  assert.equal((await run("POST", { token, password: "uma senha boa" })).code, 410, "segunda vez: o convite já foi usado");
+});
+
+test("api/team: convidar grava só o hash do token e manda o link pelo n8n", async () => {
+  process.env.PORTAL_USERS = "adm@encorpa.com:x:admin";
+  const { default: team } = await import("../api/team.js");
+  const sent = [];
+  globalThis.fetch = async (url, init = {}) => { sent.push({ url: String(url), body: init.body ? JSON.parse(init.body) : null }); return { ok: true, status: 201, json: async () => (String(url).includes("portal-convite") ? { status: "sent" } : []) }; };
+  const out = await new Promise((done) => { const res = { code: 0, status(c) { this.code = c; return this; }, setHeader() {}, json(b) { done({ code: this.code, body: b }); } };
+    team({ method: "POST", headers: { "content-type": "application/json", authorization: `Basic ${btoa("adm@encorpa.com:x")}` }, body: { action: "invite", email: "Nova@Encorpa.com", name: "Nova", role: "operador" } }, res); });
+  assert.deepEqual(out.body, { status: "sent" });
+  const row = sent.find((c) => c.url.includes("portal_users?on_conflict")).body, mail = sent.find((c) => c.url.includes("portal-convite")).body;
+  assert.equal(row.email, "nova@encorpa.com"); assert.match(row.invite_token_hash, /^[0-9a-f]{64}$/);
+  const token = mail.text.match(/convite\.html#([0-9a-f]{64})/)[1];
+  assert.notEqual(token, row.invite_token_hash, "o banco guarda o hash, não o token");
+  assert.equal(mail.to, "nova@encorpa.com");
 });

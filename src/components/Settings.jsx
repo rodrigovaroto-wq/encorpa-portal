@@ -59,7 +59,7 @@ function Company({ data }) {
 }
 
 function Team({ me, demo, say }) {
-  const [st, setSt] = useState(null), [edit, setEdit] = useState(null), [busy, setBusy] = useState(false);
+  const [st, setSt] = useState(null), [edit, setEdit] = useState(null), [busy, setBusy] = useState(false), [link, setLink] = useState(null);
   const load = () => (demo || location.protocol === "file:" ? Promise.resolve({ available: true, demo: true, me: { email: DEMO_TEAM[0].email, role: "admin" }, users: DEMO_TEAM }) : fetch("api/team", { cache: "no-store", credentials: "same-origin" }).then((r) => r.json())).then(setSt).catch(() => setSt({ error: true }));
   useEffect(() => { load(); }, [demo]); // eslint-disable-line react-hooks/exhaustive-deps
   const admin = st?.me?.role === "admin";
@@ -69,7 +69,8 @@ function Team({ me, demo, say }) {
     const r = await fetch("api/team", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({ error: "sem conexão" }));
     setBusy(false);
     if (r.error) return say(`Não salvou: ${r.error}`);
-    setEdit(null); say(ok); load();
+    if (r.status === "not_sent") { setLink(r.link); say(`${r.error} Mande o link do convite por fora.`); } else say(r.status === "sent" ? `Convite enviado para ${body.email}` : ok);
+    setEdit(null); load();
   };
   if (!st) return <div className="loading"><span className="spinner" /> Carregando a equipe…</div>;
   if (st.error) return <p className="note">Não consegui ler a equipe agora.</p>;
@@ -84,7 +85,9 @@ function Team({ me, demo, say }) {
               <div className="who"><b>{u.name || u.email.split("@")[0]}</b><small>{[u.title, u.email].filter(Boolean).join(" · ")}</small>
                 {u.email.toLowerCase() === st.me.email.toLowerCase() && <Chip tone="ok">Você</Chip>}</div>
               <span className="team-ctl">
-                {u.login ? <Chip tone={u.role === "admin" ? "ok" : u.role === "leitura" ? "" : "warn"} title={ROLE_WHAT[u.role]}>{ROLE_LABEL[u.role]}</Chip> : <Chip title="Falta o login em PORTAL_USERS">Convite pendente</Chip>}
+                {u.login ? <Chip tone={u.role === "admin" ? "ok" : u.role === "leitura" ? "" : "warn"} title={`${ROLE_WHAT[u.role]}${u.vercel ? " · definido no Vercel" : ""}`}>{ROLE_LABEL[u.role]}</Chip>
+                  : <Chip title={u.invite_expires_at ? `vale até ${new Date(u.invite_expires_at).toLocaleString("pt-BR")}` : "venceu"}>{u.invite_expires_at && Date.parse(u.invite_expires_at) > Date.now() ? "Convite enviado" : "Convite vencido"}</Chip>}
+                {admin && !u.login && <button className="round" aria-label={`Reenviar o convite de ${u.name || u.email}`} title="Reenviar o convite" onClick={() => post({ action: "invite", email: u.email, name: u.name, title: u.title, role: u.role || "operador" }, "Convite reenviado")}><Icon name="send" size={14} /></button>}
                 {admin && <button className="round" aria-label={`Editar ${u.name || u.email}`} onClick={() => setEdit(edit === u.email ? null : u.email)}><Icon name="note" size={14} /></button>}
                 {admin && u.email.toLowerCase() !== st.me.email.toLowerCase() && <button className="round" aria-label={`Tirar ${u.name || u.email}`} onClick={() => post({ action: "remove", email: u.email }, `Perfil de ${u.name || u.email} tirado`)}><Icon name="trash" size={14} /></button>}
               </span>
@@ -92,7 +95,8 @@ function Team({ me, demo, say }) {
             </li>
           ))}
         </ul>
-        <p className="note">O acesso (Administrador, Operador ou Só leitura) e a senha ficam na variável PORTAL_USERS do Vercel; aqui ficam nome, cargo e telefone.</p>
+        <p className="note">Quem foi convidado por aqui cria a senha pelo link do e-mail, e o acesso muda em Editar. Quem entra pela variável PORTAL_USERS do Vercel tem o acesso e a senha definidos lá.</p>
+        {link && <p className="note">Link do convite (vale 72 h, uma vez): <code className="copy">{link}</code> <button className="ghost" onClick={() => navigator.clipboard?.writeText(link).then(() => say("Link copiado"), () => {})}>Copiar</button></p>}
       </Box>
       {admin && <Invite busy={busy} onInvite={(x) => post({ action: "invite", ...x }, `Convite de ${x.name || x.email} salvo`)} />}
     </>
@@ -104,22 +108,21 @@ function Person({ u, busy, onSave }) {
       <label>Nome<input name="name" defaultValue={u.name || ""} maxLength={120} /></label>
       <label>Cargo<input name="title" defaultValue={u.title || ""} maxLength={120} /></label>
       <label>Telefone<input name="phone" defaultValue={u.phone || ""} maxLength={40} inputMode="tel" /></label>
+      <label>Acesso<select name="role" defaultValue={u.role || "operador"} disabled={u.vercel} title={u.vercel ? "Definido no Vercel (PORTAL_USERS)" : undefined}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
       <button className="primary" disabled={busy}><Icon name="check" size={14} /> Salvar</button>
     </form>
   );
 }
 function Invite({ busy, onInvite }) {
-  const [last, setLast] = useState(null);
   return (
-    <Box title="Convidar alguém" sub="O perfil fica salvo aqui; o login entra pela variável PORTAL_USERS do Vercel">
-      <form className="set-form" onSubmit={(e) => { e.preventDefault(); const x = Object.fromEntries(new FormData(e.currentTarget)); setLast(x); onInvite(x); e.currentTarget.reset(); }}>
+    <Box title="Convidar alguém" sub="A pessoa recebe um e-mail com o link para criar a senha (vale 72 h)">
+      <form className="set-form" onSubmit={(e) => { e.preventDefault(); const x = Object.fromEntries(new FormData(e.currentTarget)); onInvite(x); e.currentTarget.reset(); }}>
         <label>Nome<input name="name" required maxLength={120} /></label>
         <label>E-mail<input name="email" type="email" required maxLength={200} /></label>
         <label>Cargo<input name="title" maxLength={120} placeholder="ex.: Atendimento" /></label>
         <label>Acesso<select name="role" defaultValue="operador">{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l} — {ROLE_WHAT[k]}</option>)}</select></label>
-        <button className="primary" disabled={busy}><Icon name="send" size={14} /> Convidar</button>
+        <button className="primary" disabled={busy}><Icon name="send" size={14} /> Enviar convite</button>
       </form>
-      {last && <p className="note">Para liberar a entrada, inclua <code>{last.email}:SENHA:{last.role}</code> em PORTAL_USERS no Vercel (troque SENHA) e faça o Redeploy. Mande a senha para a pessoa por fora do portal.</p>}
     </Box>
   );
 }

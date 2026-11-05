@@ -2,7 +2,7 @@
 //   <script src="https://SEU-PORTAL.vercel.app/track.js" defer></script>
 // Conta a visita, quem viu o produto e quem abriu o checkout. Nada pessoal: um id aleatório por visita (30 min), o aparelho e o caminho.
 // "Viu o produto": um elemento com data-encorpa="produto" apareceu na tela; sem ele, rolou 35% da página.
-// "Abriu o checkout": clicou num link para a Coinzz ou a Logzz, ou num elemento com data-encorpa="checkout".
+// "Abriu o checkout": window.encorpaTrack("checkout"), ou um clique num link da Coinzz/Logzz ou em data-encorpa="checkout".
 (() => {
   const api = new URL("/api/track", document.currentScript.src).href, KEY = "encorpa:visit", TTL = 30 * 60000;
   let v = null;
@@ -14,8 +14,10 @@
   const once = (kind) => { if (!v.sent[kind]) { v.sent[kind] = 1; send(kind); } };
   send("view");
   setInterval(() => document.visibilityState === "visible" && send("ping"), 30000);
-  const marks = document.querySelectorAll('[data-encorpa="produto"]');
-  if (marks.length && "IntersectionObserver" in window) { const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && (once("product"), io.disconnect())); marks.forEach((m) => io.observe(m)); }
-  else addEventListener("scroll", function f() { if (scrollY + innerHeight >= document.documentElement.scrollHeight * 0.35) { once("product"); removeEventListener("scroll", f); } }, { passive: true });
-  addEventListener("click", (e) => { const a = e.target.closest?.('a[href*="coinzz"], a[href*="logzz"], [data-encorpa="checkout"]'); if (a) { once("product"); once("checkout"); } }, true);
+  // A página é React: a oferta aparece depois deste script, então a conta é feita a cada rolagem, não uma vez só.
+  const look = () => { const el = document.querySelector('[data-encorpa="produto"]'); if (el ? el.getBoundingClientRect().top < innerHeight * 0.8 : scrollY + innerHeight >= document.documentElement.scrollHeight * 0.35) { once("product"); removeEventListener("scroll", look); } };
+  addEventListener("scroll", look, { passive: true }); setTimeout(look, 2000);
+  addEventListener("click", (e) => { if (e.target.closest?.('a[href*="coinzz"], a[href*="logzz"], [data-encorpa="checkout"]')) { once("product"); once("checkout"); } }, true);
+  // O site chama window.encorpaTrack("checkout") antes de ir para o checkout (o botão de compra não é um link).
+  window.encorpaTrack = (kind) => { if (kind === "checkout") { once("product"); once("checkout"); } };
 })();

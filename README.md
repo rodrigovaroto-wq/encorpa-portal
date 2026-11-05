@@ -61,8 +61,10 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     `data-encorpa="produto"` na tela; sem ele, 35% da página rolada) e "abriu o checkout" (clique em link da Coinzz/Logzz ou em
     `data-encorpa="checkout"`) para `api/track.js`, que fica fora do login, aceita só a origem do site e grava em `site_sessions`.
     Pede a migração 0034 do Ricos-com-AI (também cria `portal_users` e `portal_activity`, de Configurações › Equipe).
-  - `PORTAL_MONTH_GOAL` (opcional, desde 04/11): a meta de faturamento do mês em reais (ex.: `5000`), para a Meta do mês na Home.
-    Sem ela, o cartão mostra "sem meta". Mudou, Redeploy.
+  - **Meta do mês e convites (04/11):** a meta muda na Home (admin ou operador; `api/settings.js` → `portal_settings`). Convidar, em
+    Configurações › Equipe, manda um e-mail pelo workflow "Encorpa — Portal convite" do n8n (precisa de `N8N_API_KEY`) com o link
+    `convite.html#<token>`; a pessoa cria a senha ali (`api/invite.js`) e entra com e-mail e senha. Os logins de `PORTAL_USERS` continuam.
+    `PORTAL_URL` (opcional) é o endereço usado no link; padrão `https://encorpa-portal.vercel.app`.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1:papel,email2:senha2`. **Sem ela ninguém entra.** Papel (desde 23/10,
     `lib/auth.mjs`): `admin` (tudo, e vê os usuários em Configurações), `operador` (responde, pausa a Malu, usa Malu › Teste) ou
     `leitura` (só vê). Sem papel, admin. Responder (`api/chat.js`) e testar (`api/test.js`) conferem o papel no servidor.

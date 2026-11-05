@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     for (const [k, v] of memo) if (Date.now() - v.at > TTL) memo.delete(k);
     if (!memo.has(id)) {
       const promise = buildAll({ url: SUPABASE_URL, key, n8nUrl: process.env.N8N_API_KEY ? N8N_URL : null, n8nKey: process.env.N8N_API_KEY, metaToken: process.env.META_ACCESS_TOKEN, metaAccount: process.env.META_AD_ACCOUNT_ID,
-        waToken: process.env.WHATSAPP_TOKEN, waPhoneId: process.env.WHATSAPP_PHONE_NUMBER_ID, waWabaId: process.env.WHATSAPP_WABA_ID, goal: process.env.PORTAL_MONTH_GOAL }, Date.now(), custom);
+        waToken: process.env.WHATSAPP_TOKEN, waPhoneId: process.env.WHATSAPP_PHONE_NUMBER_ID, waWabaId: process.env.WHATSAPP_WABA_ID}, Date.now(), custom);
       memo.set(id, { at: Date.now(), promise });
       promise.catch(() => { if (memo.get(id)?.promise === promise) memo.delete(id); }); // falha não fica guardada
     }

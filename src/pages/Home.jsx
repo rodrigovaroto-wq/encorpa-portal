@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { BUCKETS, COMPARE_LABEL, periodLabel } from "../lib/constants.js";
 import { periodRange } from "../lib/data.js";
-import { bucketLabels, fmt, metricBy, store, when } from "../lib/format.js";
+import { bucketLabels, fmt, metricBy, parseBrl, store, when } from "../lib/format.js";
 import { goalPace } from "../lib/economics.js";
 import { Donut, Gauge, NeonSpark, TrendLine } from "../components/charts.jsx";
 import { Card, Chip, Kpi, Kv } from "../components/ui.jsx";
@@ -49,7 +49,7 @@ export function Home({ data, period }) {
       <Today data={data} />
       <SiteLive data={data} compact />
       <div className="row r-2-1">
-        <MonthGoal g={data.global} />
+        <MonthGoal g={data.global} demo={data.demo} />
         <DonutBlock title="Origem das vendas" items={[["whatsapp", "var(--neon-green)"], ["site", "var(--neon-blue)"], ["organic", "var(--neon-purple)"]].map(([k, c]) => ({ label: CHANNEL[k], value: p.mix?.channel?.[k], color: c }))} href="#/orders" />
       </div>
       <div className="row r-2-1">
@@ -73,17 +73,27 @@ function Today({ data }) {
 }
 
 // Meta do mês (item 9): anel de progresso, ritmo diário necessário e o mês anterior. Faturamento só de venda, mês de Brasília.
-// A meta é a variável PORTAL_MONTH_GOAL do Vercel (operador, 04/11): muda lá, com Redeploy.
-function MonthGoal({ g }) {
-  const goal = g.goal || 0, months = g.months || [], done = months.at(-1)?.revenue ?? 0, last = months.at(-2)?.revenue, left = g.month_days_left ?? 1;
+// A meta muda aqui mesmo (operador, 04/11): admin ou operador salva em portal_settings (api/settings.js).
+function MonthGoal({ g, demo }) {
+  const [own, setOwn] = useState(null), [edit, setEdit] = useState(false), [err, setErr] = useState(null);
+  const goal = own ?? g.goal ?? 0, months = g.months || [], done = months.at(-1)?.revenue ?? 0, last = months.at(-2)?.revenue, left = g.month_days_left ?? 1;
   const name = new Date().toLocaleDateString("pt-BR", { month: "long", timeZone: "America/Sao_Paulo" });
   return (
-    <Card title={`Meta de ${name}`} sub={`faltam ${left} dia${left > 1 ? "s" : ""}`}>
+    <Card title={`Meta de ${name}`} sub={`faltam ${left} dia${left > 1 ? "s" : ""}`} action={<button className="glass pill small" onClick={() => setEdit(!edit)}>{goal ? "Editar meta" : "Definir meta"}</button>}>
+      {edit && <form className="cash-input" onSubmit={async (e) => {
+        e.preventDefault(); const v = parseBrl(new FormData(e.currentTarget).get("goal"));
+        if (!Number.isFinite(v) || v < 0) return setErr("Digite um valor em reais, ex.: 5.000");
+        const r = demo ? { status: "ok" } : await fetch("api/settings", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ month_goal: v }) }).then((x) => x.json()).catch(() => ({ error: "sem conexão" }));
+        if (r.error) return setErr(r.error);
+        setOwn(v); setEdit(false); setErr(null);
+      }}>
+        <span>Meta de faturamento do mês (R$){demo ? " · exemplo: não salva" : ""}</span><input name="goal" inputMode="decimal" autoFocus defaultValue={goal || ""} placeholder="ex.: 5.000" aria-label="Meta do mês em reais" />
+        {err && <span className="neg">{err}</span>}
+      </form>}
       <div className="goal-card">
         <Gauge value={goal ? (done / goal) * 100 : null} sub={goal ? `de ${fmt(goal, "brl")}` : "sem meta"} />
         <Kv items={[["Realizado no mês", fmt(done, "brl")], ["Ritmo diário necessário", fmt(goalPace(goal, done, left), "brl")], ["Mês anterior fechou em", fmt(last, "brl")]]} />
       </div>
-      {!goal && <p className="note">Defina a meta na variável PORTAL_MONTH_GOAL do Vercel (em reais, ex.: 5000) e faça o Redeploy.</p>}
     </Card>
   );
 }
