@@ -15,7 +15,7 @@
 - **05/11:** migração **0034 aplicada** em produção (API de gerência). Convite com e-mail: `api/team.js` grava o SHA-256 do token e manda
   o link pelo workflow novo **"Encorpa — Portal convite"** (n8n, ativo, id `YW7KFNoqaduO8QOe`, cópia em `n8n/portal-convite.json`); a pessoa
   cria a senha em `convite.html` (`api/invite.js`) e entra pelo banco (`whoIs` em `lib/auth.mjs`, PBKDF2). Meta do mês editada na Home
-  (`api/settings.js` → `portal_settings`). O site carrega o `track.js` na branch `claude/exciting-bardeen-4qpqmk` do Encorpa-Website.
+  (`api/team.js`, ação `goal` → `portal_settings`). O site carrega o `track.js` na branch `claude/exciting-bardeen-4qpqmk` do Encorpa-Website.
 - **Pendente do operador:** publicar o portal (merge) antes do site, para o `track.js` e o `api/track` existirem quando o site os chamar.
 
 ## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal e os comentários do operador na prévia

@@ -73,7 +73,7 @@ function Today({ data }) {
 }
 
 // Meta do mês (item 9): anel de progresso, ritmo diário necessário e o mês anterior. Faturamento só de venda, mês de Brasília.
-// A meta muda aqui mesmo (operador, 04/11): admin ou operador salva em portal_settings (api/settings.js).
+// A meta muda aqui mesmo (operador, 04/11): admin ou operador salva em portal_settings (api/team.js, ação "goal").
 function MonthGoal({ g, demo }) {
   const [own, setOwn] = useState(null), [edit, setEdit] = useState(false), [err, setErr] = useState(null);
   const goal = own ?? g.goal ?? 0, months = g.months || [], done = months.at(-1)?.revenue ?? 0, last = months.at(-2)?.revenue, left = g.month_days_left ?? 1;
@@ -83,7 +83,7 @@ function MonthGoal({ g, demo }) {
       {edit && <form className="cash-input" onSubmit={async (e) => {
         e.preventDefault(); const v = parseBrl(new FormData(e.currentTarget).get("goal"));
         if (!Number.isFinite(v) || v < 0) return setErr("Digite um valor em reais, ex.: 5.000");
-        const r = demo ? { status: "ok" } : await fetch("api/settings", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ month_goal: v }) }).then((x) => x.json()).catch(() => ({ error: "sem conexão" }));
+        const r = demo ? { status: "ok" } : await fetch("api/team", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "goal", month_goal: v }) }).then((x) => x.json()).catch(() => ({ error: "sem conexão" }));
         if (r.error) return setErr(r.error);
         setOwn(v); setEdit(false); setErr(null);
       }}>

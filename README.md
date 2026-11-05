@@ -61,7 +61,7 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     `data-encorpa="produto"` na tela; sem ele, 35% da página rolada) e "abriu o checkout" (clique em link da Coinzz/Logzz ou em
     `data-encorpa="checkout"`) para `api/track.js`, que fica fora do login, aceita só a origem do site e grava em `site_sessions`.
     Pede a migração 0034 do Ricos-com-AI (também cria `portal_users` e `portal_activity`, de Configurações › Equipe).
-  - **Meta do mês e convites (04/11):** a meta muda na Home (admin ou operador; `api/settings.js` → `portal_settings`). Convidar, em
+  - **Meta do mês e convites (04/11):** a meta muda na Home (admin ou operador; `api/team.js`, ação `goal` → `portal_settings`). Convidar, em
     Configurações › Equipe, manda um e-mail pelo workflow "Encorpa — Portal convite" do n8n (precisa de `N8N_API_KEY`) com o link
     `convite.html#<token>`; a pessoa cria a senha ali (`api/invite.js`) e entra com e-mail e senha. Os logins de `PORTAL_USERS` continuam.
     `PORTAL_URL` (opcional) é o endereço usado no link; padrão `https://encorpa-portal.vercel.app`.

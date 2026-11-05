@@ -180,3 +180,23 @@ test("api/team: convidar grava só o hash do token e manda o link pelo n8n", asy
   assert.notEqual(token, row.invite_token_hash, "o banco guarda o hash, não o token");
   assert.equal(mail.to, "nova@encorpa.com");
 });
+
+test("api/: no máximo 11 funções (o plano Hobby do Vercel recusou o deploy com 12, 05/11)", async () => {
+  const { readdirSync } = await import("node:fs");
+  const fns = readdirSync(new URL("../api/", import.meta.url)).filter((f) => /\.(m?js|ts)$/.test(f));
+  assert.ok(fns.length <= 11, `${fns.length} funções em api/: ${fns.join(", ")} — junte uma numa função que já existe`);
+});
+
+test("api/team: meta do mês com operador; leitura e valor inválido recusados", async () => {
+  process.env.PORTAL_USERS = "op@encorpa.com:x:operador,ver@encorpa.com:y:leitura";
+  const { default: team } = await import("../api/team.js");
+  const writes = [];
+  globalThis.fetch = async (url, init = {}) => { writes.push({ url: String(url), body: init.body ? JSON.parse(init.body) : null }); return { ok: true, status: 201, json: async () => [] }; };
+  const run = (who, body) => new Promise((done) => { const res = { code: 0, status(c) { this.code = c; return this; }, setHeader() {}, json(b) { done({ code: this.code, body: b }); } };
+    team({ method: "POST", headers: { "content-type": "application/json", authorization: `Basic ${btoa(who)}` }, body }, res); });
+  assert.equal((await run("ver@encorpa.com:y", { action: "goal", month_goal: 5000 })).code, 403);
+  assert.equal((await run("op@encorpa.com:x", { action: "goal", month_goal: "abc" })).code, 400);
+  const ok = await run("op@encorpa.com:x", { action: "goal", month_goal: 5000.555 });
+  assert.equal(ok.code, 200); assert.equal(ok.body.month_goal, 5000.56);
+  assert.deepEqual(writes.find((w) => w.url.includes("portal_settings")).body.value, { brl: 5000.56 });
+});

@@ -2,9 +2,11 @@
 // foi convidado pelo portal, de portal_users; nome, cargo e telefone, de portal_users; o que mudou, de portal_activity (migração 0034 do
 // Ricos-com-AI). Só o admin vê a lista e muda; os demais veem só a si mesmos. Toda mudança entra na atividade com quem fez.
 //   POST { action: "save", email, name, title, phone, role? }  ·  { action: "invite", email, name, title, role }  ·  { action: "remove", email }
+//   POST { action: "goal", month_goal } — a meta do mês da Home, em portal_settings (admin ou operador). Mora aqui, e não numa função
+//   própria, porque o plano Hobby do Vercel limita as funções por deploy (com 12 em api/ o deploy falhou, 05/11).
 // O convite guarda só o SHA-256 de um token de uso único (72 h) e manda o link por e-mail pelo n8n ("Encorpa — Portal convite").
 import { N8N_URL, NO_KEY, SUPABASE_URL, serviceKey } from "../lib/env.mjs";
-import { ROLES, parseUsers, sha256Hex, whoIs } from "../lib/auth.mjs";
+import { ROLES, canWrite, parseUsers, sha256Hex, whoIs } from "../lib/auth.mjs";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export const PORTAL = process.env.PORTAL_URL || "https://encorpa-portal.vercel.app";
@@ -47,8 +49,10 @@ export default async function handler(req, res) {
     }
     if (req.method !== "POST") return res.status(405).json({ error: "use GET ou POST" });
     if (!String(req.headers["content-type"] || "").startsWith("application/json")) return res.status(415).json({ error: "use JSON" }); // CSRF
+    const b = req.body || {};
+    if (b.action === "goal") return goal(b, me, db, res);
     if (me.role !== "admin") return res.status(403).json({ error: "Só o administrador muda a equipe." });
-    const b = req.body || {}, email = text(b.email, 200)?.toLowerCase(), role = ROLES.includes(b.role) ? b.role : null;
+    const email = text(b.email, 200)?.toLowerCase(), role = ROLES.includes(b.role) ? b.role : null;
     if (!["save", "invite", "remove"].includes(b.action) || !email || !EMAIL.test(email)) return res.status(400).json({ error: "pedido inválido" });
     const inVercel = logins.some((u) => u.email.toLowerCase() === email);
     const log = (action) => db("portal_activity", { method: "POST", body: JSON.stringify({ actor: me.email, action: action.slice(0, 300) }), headers: { Prefer: "return=minimal" } });
@@ -77,4 +81,14 @@ export default async function handler(req, res) {
     if (e.missing) return res.status(200).json({ available: false });
     return res.status(502).json({ error: String(e.message || e).slice(0, 200) });
   }
+}
+
+async function goal(b, me, db, res) {
+  if (!canWrite(me.role)) return res.status(403).json({ error: "Seu usuário é só de leitura: a meta fica com operador ou admin." });
+  const brl = Number(b.month_goal);
+  if (!Number.isFinite(brl) || brl < 0 || brl > 100_000_000) return res.status(400).json({ error: "Meta inválida." });
+  const value = Math.round(brl * 100) / 100;
+  await db("portal_settings?on_conflict=key", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ key: "month_goal", value: { brl: value }, updated_at: new Date().toISOString(), updated_by: me.email }) });
+  await db("portal_activity", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor: me.email, action: `Mudou a meta do mês para R$ ${value.toLocaleString("pt-BR")}` }) });
+  return res.status(200).json({ status: "ok", month_goal: value });
 }
