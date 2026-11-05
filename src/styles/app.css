@@ -591,7 +591,7 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
    Com minigráfico (Malu › Saúde) e no celular o bloco segue o conteúdo: lá o número vem logo depois do título, também na mesma altura. */
 .kpi-foot { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin-top: auto; }
 @media (min-width: 561px) {
-  .kpi:has(> .kpi-value):not(.inbox-block):not(:has(.spark)) > .kpi-value { position: absolute; left: 20px; right: 20px; top: 41%; transform: translateY(-50%); margin: 0; } /* 41%: abaixo do título e acima da variação com meta */
+  .kpi:has(> .kpi-value):not(.inbox-block):not(.flow-kpi):not(:has(.spark)) > .kpi-value { position: absolute; left: 20px; right: 20px; top: 41%; transform: translateY(-50%); margin: 0; } /* 41%: abaixo do título e acima da variação com meta */
   .kpis.k3 > .kpi:not(.inbox-block) > .kpi-value { top: 50%; } /* Painel: texto 10% maior e sem meta embaixo */
 }
 .kpi:has(.spark) > .kpi-value { margin-top: 0; }
@@ -786,3 +786,5 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
 @media (max-width: 900px) { .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); } }
 @media (max-width: 560px) { .set-form { grid-template-columns: 1fr; } .set-form .primary { grid-column: 1; } .theme-cards { gap: 8px; } }
 @media (max-width: 560px) { .card-head { flex-wrap: wrap; } .card-head .card-actions { width: 100%; justify-content: flex-start; } }
+/* Automações › Onde cada desfecho nasce (05/11): título de duas linhas e legenda longa; o número segue o título em vez da altura fixa. */
+.flow-kpi > .kpi-value { margin-top: 4px; }
