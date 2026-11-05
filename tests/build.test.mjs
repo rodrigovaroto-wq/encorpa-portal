@@ -178,3 +178,77 @@ test("resultado do mês em que o número vence: entra a mensalidade de R$ 35 int
   const s = data.periods.month.metrics.fixed_cost.series;
   assert.equal(s.filter((v) => v > 0).length, 1, "só o dia do vencimento tem valor");
 });
+
+// Painel do protótipo (04/11): segmentos de cliente, vendas por mês e meta do mês.
+const DAYMS = 86400000;
+
+test("salesByMonth: só venda soma faturamento; recusa conta como pedido, cancelado não", async () => {
+  const { salesByMonth, monthStart } = await import("../lib/build.mjs");
+  const a = monthStart(NOW), mid = (a + NOW) / 2;
+  const at = (ts, status) => ({ lead_id: "l", created_at: new Date(ts).toISOString(), amount_brl: 100, status, payment_method: "cod", units: 1 });
+  const m = salesByMonth({ orders: [at(mid, "Completo"), at(mid, "Frustrado"), at(mid, "Cancelado"), at(a - DAYMS, "Completo")] }, NOW, 2);
+  assert.deepEqual(m.map((x) => [x.revenue, x.orders]), [[100, 1], [100, 2]]);
+});
+
+test("leadOrigins: WhatsApp pelo clique, Site pelo conjunto Site, Orgânico sem anúncio; pedido sem lead é Site", async () => {
+  const { leadOrigins, build } = await import("../lib/build.mjs");
+  const meta = { adsets: [{ id: "s", destination: "WEBSITE" }, { id: "w", destination: "WHATSAPP" }], ads: [{ id: "as", adset_id: "s" }, { id: "aw", adset_id: "w" }] };
+  const leads = [{ id: "a", ctwa: "x", ad: "aw" }, { id: "b", ad: "as" }, { id: "c" }, { id: "d", ad: "aw" }];
+  assert.deepEqual(leadOrigins({ leads, meta }), { a: "whatsapp", b: "site", c: "organic", d: "whatsapp" });
+  const D = dropSynthetic(fixture());
+  const out = build(D, NOW);
+  const m = out.periods["12m"].metrics;
+  assert.equal(m.leads_whatsapp.value + m.leads_site.value + m.leads_organic.value, m.leads.value);
+});
+
+test("build: período livre e a série tracejada (ano anterior de 6 meses para cima)", async () => {
+  const { build } = await import("../lib/build.mjs");
+  const { customPeriod } = await import("../src/lib/constants.js");
+  const d = (ms) => new Date(ms - 3 * 3600000).toISOString().slice(0, 10);
+  const c = customPeriod(`c:${d(NOW - 9 * DAYMS)}:${d(NOW)}`);
+  assert.equal(c.n, 10); assert.equal(c.days, 1);
+  const out = build(dropSynthetic(fixture()), NOW, c);
+  assert.ok(out.periods[c.id], "o período livre vem junto");
+  assert.equal(out.periods[c.id].compare, "previous");
+  assert.equal(out.periods["12m"].compare, "year");
+  assert.equal(out.periods.week.compare, "previous");
+  assert.equal(customPeriod("c:2026-10-20:2026-10-01"), null, "fim antes do começo");
+  assert.equal(customPeriod("c:2020-01-01:2026-01-01"), null, "mais de 3 anos");
+  assert.equal(customPeriod("week"), null);
+});
+
+test("monthGoal: só número positivo vira meta", async () => {
+  const { monthGoal } = await import("../lib/build.mjs");
+  assert.equal(monthGoal("5000"), 5000); assert.equal(monthGoal("5000.5"), 5000.5);
+  for (const x of [undefined, "", "abc", "0", "-3"]) assert.equal(monthGoal(x), null);
+});
+
+test("orderCosts: as partes somam faturamento − margem em cada tipo de pedido", async () => {
+  const { orderCosts } = await import("../lib/build.mjs");
+  for (const o of [{ status: "Completo", payment_method: "cod", amount_brl: 197.82, units: 2 }, { status: "Pagamento aprovado", payment_method: "prepay", amount_brl: 109.9, units: 1 },
+    { status: "Frustrado", payment_method: "cod", amount_brl: 109.9, units: 1 }, { status: "Reembolsado", payment_method: "prepay", amount_brl: 109.9, units: 1 }, { status: "Cancelado", payment_method: "cod", amount_brl: 109.9, units: 1 }]) {
+    const v = orderValue(o), c = orderCosts(o, v), parts = Object.values(c).reduce((a, b) => a + b, 0);
+    near(parts, v.revenue - v.contribution);
+  }
+  const c = orderCosts({ status: "Completo", payment_method: "cod", amount_brl: 109.9, units: 1 });
+  assert.deepEqual([c.product, c.freight, c.handling], [30, 19.99, 5]);
+});
+
+test("buyHeat: dia da semana e faixa de 3 h no horário de Brasília, com o valor", async () => {
+  const { buyHeat } = await import("../lib/build.mjs");
+  // 2026-11-07 é sábado; 12:30 UTC = 09:30 em Brasília → faixa 9–12 h (3).
+  const h = buyHeat([{ created_at: "2026-11-07T12:30:00Z", amount_brl: 109.9 }, { created_at: "2026-11-07T13:10:00Z", amount_brl: 197.82 }, { created_at: "2026-11-08T02:00:00Z", amount_brl: 50 }]);
+  assert.deepEqual(h[6][3], { n: 2, revenue: 307.72 });
+  assert.deepEqual(h[6][7], { n: 1, revenue: 50 }, "23 h de sábado em Brasília, não domingo");
+});
+
+test("build: DRE em partes fecha com a margem; carrinhos e funil do site", async () => {
+  const { build } = await import("../lib/build.mjs");
+  const D = dropSynthetic(fixture());
+  D.leads[0].cart_at = new Date(NOW - 2 * DAYMS).toISOString();
+  D.site_sessions = [{ id: "a", created_at: new Date(NOW - DAYMS).toISOString(), device: "phone", product_at: "x", checkout_at: "x" }, { id: "b", created_at: new Date(NOW - DAYMS).toISOString(), device: "desktop" }];
+  const p = build(D, NOW).periods.week, m = p.metrics;
+  near(Object.values(p.money.costs).reduce((a, b) => a + b, 0), (m.revenue?.value ?? 0) - (m.gross_profit?.value ?? 0));
+  assert.equal(m.carts_abandoned.value, 1);
+  assert.deepEqual(p.site.all.visits, 2); assert.equal(p.site.phone.checkout, 1); assert.equal(p.site.desktop.product, 0);
+});

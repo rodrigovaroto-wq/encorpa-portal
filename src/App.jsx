@@ -7,6 +7,7 @@ import { Topbar } from "./components/Topbar.jsx";
 import { demoData, loadData } from "./lib/data.js";
 import { useLiveChats, withLive } from "./lib/live.js";
 import { store } from "./lib/format.js";
+import { customPeriod } from "./lib/constants.js";
 import { parseRoute } from "./lib/nav.js";
 import { Ads } from "./pages/Ads.jsx";
 import { Automations } from "./pages/Automations.jsx";
@@ -18,17 +19,18 @@ import { Integrations } from "./pages/Integrations.jsx";
 import { Malu } from "./pages/Malu.jsx";
 import { Notes } from "./pages/Notes.jsx";
 import { Orders } from "./pages/Orders.jsx";
+import { Site } from "./pages/Site.jsx";
 
-const VIEWS = { home: Home, chat: Chat, orders: Orders, malu: Malu, ads: Ads, customers: Customers, money: Finance, auto: Automations, integrations: Integrations, notes: Notes };
+const VIEWS = { home: Home, chat: Chat, orders: Orders, site: Site, malu: Malu, ads: Ads, customers: Customers, money: Finance, auto: Automations, integrations: Integrations, notes: Notes };
 const REFRESH = 5 * 60 * 1000; // o servidor guarda a resposta 5 min
 
 export function App() {
   const [route, setRoute] = useState(() => parseRoute(location.hash));
   const [period, setPeriodState] = useState(() => store.get("period") || "week");
-  const [demo, setDemoState] = useState(() => store.get("demo") === "1");
+  const [demo, setDemoState] = useState(() => import.meta.env.VITE_PREVIEW === "1" || store.get("demo") === "1"); // prévia publicada: sempre os dados de exemplo
   const [prefs, setPrefsState] = useState(() => { try { return { theme: "dark", motion: "on", ...JSON.parse(store.get("prefs") || "{}") }; } catch { return { theme: "dark", motion: "on" }; } });
   const [collapsed, setCollapsed] = useState(() => store.get("side") === "1");
-  const [palette, setPalette] = useState(false), [settings, setSettings] = useState(false);
+  const [palette, setPalette] = useState(false);
   // Quem está logado e o papel (api/me.js). Sem o servidor (arquivo local ou teste), fica sem: as funções que escrevem conferem de novo.
   const [me, setMe] = useState(null);
   useEffect(() => { if (location.protocol !== "file:") fetch("api/me", { cache: "no-store", credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)).then(setMe).catch(() => setMe(null)); }, []);
@@ -40,10 +42,11 @@ export function App() {
 
   // Uma carga que cai no retrato do navegador (sem conversas) mantém as conversas da última carga ao vivo: antes, uma falha
   // de rede esvaziava a tela Conversas e a conversa aberta "sumia" no meio do atendimento.
+  const custom = customPeriod(period) ? period : null; // período livre do topo: o servidor conta junto com os fixos
   const refresh = useCallback(async () => {
-    const next = demo ? await demoData() : (await loadData()) || false;
+    const next = demo ? await demoData(custom) : (await loadData(custom)) || false;
     setData((prev) => (next && next.source !== "live" && !next.demo && !prev?.demo && prev?.global?.chats?.length ? { ...next, global: { ...next.global, chats: prev.global.chats } } : next));
-  }, [demo]);
+  }, [demo, custom]);
   // Com a aba escondida não busca; ao voltar, busca se o último retrato passou de 5 min.
   useEffect(() => {
     let at = 0;
@@ -56,24 +59,31 @@ export function App() {
   }, [refresh]);
   useEffect(() => { const on = () => { setRoute(parseRoute(location.hash)); window.scrollTo(0, 0); }; window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((x) => !x); } }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
-  useEffect(() => { const d = document.documentElement.dataset; d.theme = prefs.theme === "light" ? "light" : "dark"; d.motion = prefs.motion; }, [prefs]); // só Escuro ou Claro (03/11)
+  // Tema: Claro, Escuro ou Igual ao aparelho (Configurações › Aparência, 04/11), que segue o aparelho na hora.
+  useEffect(() => {
+    const d = document.documentElement.dataset, mq = matchMedia("(prefers-color-scheme: light)");
+    const apply = () => { d.theme = prefs.theme === "system" ? (mq.matches ? "light" : "dark") : prefs.theme === "light" ? "light" : "dark"; d.motion = prefs.motion; };
+    apply(); mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [prefs]);
 
   const [live, reloadChats] = useLiveChats(!demo && location.protocol !== "file:", route.page.id === "chat" ? 15_000 : 60_000);
   const shown = useMemo(() => withLive(data, live), [data, live]);
 
+  const setSide = (v) => { setCollapsed(v); store.set("side", v ? "1" : "0"); };
   const View = VIEWS[route.page.id] || Home;
   return (
     <>
       <div className={`shell ${collapsed ? "side-collapsed" : ""}`}>
         <Sidebar route={route} collapsed={collapsed} onToggle={() => { setCollapsed(!collapsed); store.set("side", collapsed ? "0" : "1"); }} data={shown} period={period} />
         <main className="main">
-          <Topbar route={route} period={period} setPeriod={setPeriod} data={shown} onSearch={() => setPalette(true)} onSettings={() => setSettings(true)} />
-          {shown ? <View key={route.page.id} data={shown} period={period} route={route} live={live} reloadChats={reloadChats} role={me?.role} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
+          <Topbar route={route} period={period} setPeriod={setPeriod} data={shown} onSearch={() => setPalette(true)} onSettings={() => (location.hash = "#/settings")} prefs={prefs} setPrefs={setPrefs} />
+          {route.page.id === "settings" ? <Settings prefs={prefs} setPrefs={setPrefs} demo={demo} setDemo={setDemo} data={shown} me={me} collapsed={collapsed} setCollapsed={setSide} />
+            : shown ? <View key={route.page.id} data={shown} period={period} route={route} live={live} reloadChats={reloadChats} role={me?.role} tabs={route.page.subs?.map(([k, l]) => [k, l])} /> : data === false ? <div className="loading">Não consegui carregar os dados agora. O portal tenta de novo em 5 minutos.</div> : <div className="loading"><span className="spinner" /> Carregando os dados…</div>}
         </main>
       </div>
       <MobileNav route={route} data={shown} period={period} />
       <Palette open={palette} onClose={() => setPalette(false)} data={shown} period={period} />
-      <Settings open={settings} onClose={() => setSettings(false)} prefs={prefs} setPrefs={setPrefs} demo={demo} setDemo={setDemo} data={shown} me={me} />
     </>
   );
 }

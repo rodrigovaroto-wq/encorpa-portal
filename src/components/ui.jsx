@@ -109,3 +109,35 @@ export function PageHead({ crumb, title, desc, tabs, tab, onTab, counts, right }
 }
 
 export const Note = ({ children }) => <p className="note">{children}</p>;
+
+// Gaveta lateral (protótipo do painel, 04/11): detalhe do pedido ou da cliente. Esc ou clique fora fecha.
+export function Drawer({ title, onClose, children }) {
+  useEffect(() => { const k = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  return (
+    <div className="overlay drawer-overlay" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+      <aside className="glass drawer" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="drawer-head"><h2>{title}</h2><button className="glass round" aria-label="Fechar" autoFocus onClick={onClose}><Icon name="x" /></button></div>
+        {children}
+      </aside>
+    </div>
+  );
+}
+
+// Paginação: "1–25 de 180", as setas e, com numbered, as páginas 1, 2, 3… (as vizinhas da atual, a primeira e a última).
+export function Pager({ page, per, total, onPage, numbered = false }) {
+  const pages = Math.max(1, Math.ceil(total / per));
+  const nums = [...new Set([1, page - 1, page, page + 1, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  return (
+    <div className="pager">
+      <span>{total ? (page - 1) * per + 1 : 0}–{Math.min(total, page * per)} de {total}</span>
+      <span className="seg small">
+        <button disabled={page <= 1} aria-label="Página anterior" onClick={() => onPage(page - 1)}>‹</button>
+        {numbered && nums.flatMap((n, i) => [...(i && n - nums[i - 1] > 1 ? [<span key={`g${n}`} className="gap">…</span>] : []), <button key={n} className={n === page ? "on" : ""} aria-current={n === page ? "page" : undefined} aria-label={`Página ${n}`} onClick={() => onPage(n)}>{n}</button>])}
+        <button disabled={page >= pages} aria-label="Próxima página" onClick={() => onPage(page + 1)}>›</button>
+      </span>
+    </div>
+  );
+}
+
+// Lista de definição do protótipo: rótulo à esquerda, valor à direita.
+export const Kv = ({ items }) => <ul className="kv">{items.map(([k, v]) => <li key={k}><span>{k}</span><b>{v}</b></li>)}</ul>;

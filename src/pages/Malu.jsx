@@ -1,9 +1,10 @@
 // Malu: resultados por desfecho, lacunas, atendimento e saúde. Desfecho de cada conversa em lib/build.mjs › conversationStatus.
-import { AGENT_HEALTH, BUCKETS, CHANNEL, FUNNEL, OUTCOMES, SERVICE } from "../lib/constants.js";
+import { AGENT_HEALTH, BUCKETS, CHANNEL, COMPARE_LABEL, FUNNEL, OUTCOMES, SERVICE, periodLabel } from "../lib/constants.js";
+import { useChartPeriod } from "../components/Topbar.jsx";
 import { ago, bucketLabels, fmt, metricBy, when } from "../lib/format.js";
 import { Bars, Donut, Gauge, HBars, Lines, Spark } from "../components/charts.jsx";
 import { useState } from "react";
-import { periodDays } from "../lib/data.js";
+import { periodRange } from "../lib/data.js";
 import { Card, Chip, DeltaBadge, Kpi, Note, PageHead, Table, Tabs } from "../components/ui.jsx";
 import { MaluTest } from "./MaluTest.jsx";
 
@@ -15,7 +16,7 @@ export function Malu({ data, period, route, tabs, role }) {
   return (
     <div className="page">
       <PageHead crumb="Análise › Malu" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/malu/${k}`)} counts={{ gaps: p.gaps?.length || null }} />
-      {sub === "results" && <Results p={p} g={g} period={period} />}
+      {sub === "results" && <Results p={p} g={g} period={period} data={data} />}
       {sub === "gaps" && <Gaps p={p} />}
       {sub === "service" && <Service p={p} g={g} />}
       {sub === "health" && <Health p={p} g={g} />}
@@ -26,8 +27,9 @@ export function Malu({ data, period, route, tabs, role }) {
   );
 }
 
-function Results({ p, g, period }) {
-  const o = p.outcomes || {}, m = p.metrics || {}, res = m.resolution?.series || [];
+function Results({ p, g, period, data }) {
+  const o = p.outcomes || {}, m = p.metrics || {};
+  const cp = useChartPeriod(data, period), cr = cp.p?.metrics?.resolution, res = cr?.series || [];
   const card = (label, v, sub) => <div className="glass kpi"><div className="kpi-top"><h3>{label}</h3></div><div className="kpi-value">{fmt(v, "n")}</div><div className="kpi-foot"><span className="delta none">{sub}</span></div></div>;
   return (
     <>
@@ -47,7 +49,7 @@ function Results({ p, g, period }) {
           <Donut items={OUTCOMES.map(([id, l]) => ({ label: l, value: o[id], color: COLOR[id] }))} />
         </Card>
       </div>
-      <Card title="Resolução por intervalo do período"><Lines series={[{ name: "Resolução", values: res, color: "var(--neon-blue)" }]} labels={bucketLabels(period, BUCKETS, res.length, g.updated)} unit="pct" axes /></Card>
+      <Card title="Resolução por intervalo do período" sub={periodLabel(cp.id)} action={cp.picker}><Lines series={[{ name: "Resolução", values: res, color: "var(--neon-blue)" }, ...(cr?.compare ? [{ name: COMPARE_LABEL[cp.p.compare], values: cr.compare, color: "var(--neon-blue)", dashed: true }] : [])]} labels={bucketLabels(cp.id, BUCKETS, res.length, g.updated)} unit="pct" axes /></Card>
       <h2 className="section-title">Resultado por versão da Malu</h2>
       <Table name="versoes" head={["Versão", "Publicada em", "Conversas", "Resolução", "Venda", "Não resolvidas", "Abandonadas", "Resposta pronta", "Custo"]}
         rows={(g.versions || []).map((r) => [r.version, when(r.published), fmt(r.conversations, "n"), fmt(r.resolution, "pct"), r.conversations ? `${fmt(r.conversion, "pct")} (${fmt(r.bought, "n")})` : "—", fmt(r.unresolved, "n"), fmt(r.abandoned, "n"), fmt(r.fallback, "pct"), fmt(r.cost, "brl")])}
@@ -164,8 +166,8 @@ const KIND = { mentira: "Informação errada", resposta_pronta: "Resposta pronta
 function Hermes({ h, period, now }) {
   const [filter, setFilter] = useState("all");
   if (!h) return <Note>Os dados do Hermes ainda não chegaram. Eles vêm das tabelas hermes_runs, hermes_proposals e hermes_backlog do Supabase.</Note>;
-  const from = new Date(now || Date.now()).getTime() - periodDays(period) * 864e5;
-  const inPeriod = (x) => new Date(x.created_at).getTime() >= from;
+  const [from, to] = periodRange(period, now);
+  const inPeriod = (x) => { const t = new Date(x.created_at).getTime(); return t >= from && t < to; };
   const props = (h.proposals || []).filter(inPeriod), runs = (h.runs || []).filter(inPeriod), b = h.backlog, everRan = (h.runs || []).length > 0;
   const count = (st) => props.filter((x) => x.status === st).length;
   const list = props.filter((x) => filter === "all" || x.status === filter);

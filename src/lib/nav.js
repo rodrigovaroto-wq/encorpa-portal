@@ -2,11 +2,12 @@
 // desc = a linha que explica a página; badge(data, p) = contador ao lado do item, só quando pede atenção.
 export const NAV = [
   { sec: "Operação", items: [
-    { id: "home", label: "Painel", icon: "home", desc: "Os números que mandam no período, a variação de cada um e para onde estão indo." },
+    { id: "home", label: "Home", icon: "home", desc: "Os números que mandam no período, a variação de cada um e para onde estão indo." },
     { id: "chat", label: "Conversas", icon: "chat", desc: "Todas as conversas da Malu com as clientes, com a ficha de cada uma.", badge: (g) => g.chats?.filter((c) => c.status === "unresolved").length },
     { id: "orders", label: "Pedidos", icon: "box", desc: "Cada pedido na Logzz e na Coinzz, onde está e a agenda de entregas.", badge: (g) => g.orders?.filter((o) => ["created", "en_route"].includes(o.step)).length },
   ] },
   { sec: "Análise", items: [
+    { id: "site", label: "Site e vendas", icon: "live", desc: "Quem está no site agora, onde as visitas param, o checkout que ficou para trás e a hora em que as clientes compram." },
     { id: "malu", label: "Malu", icon: "agent", badge: (g, p) => p?.gaps?.length, subs: [
       ["results", "Resultados", "Quantas conversas a Malu resolveu sozinha, por desfecho e por versão."],
       ["gaps", "Lacunas", "O que a Malu ainda não resolve sozinha: cada linha é um contorno a construir."],
@@ -23,10 +24,11 @@ export const NAV = [
       ["goals", "Metas", "Cada meta do teste contra o valor de agora."],
       ["ref", "Premissas", "Oferta, economia por pedido e premissas do teste, com a data de cada fonte."]] },
     { id: "customers", label: "Clientes", icon: "users", subs: [
-      ["origin", "Origem e recompra", "De onde vêm as clientes, em que estado compram mais e quantas voltam."],
+      ["origin", "Origem Leads", "De onde vêm os leads (WhatsApp, Site ou orgânico) e em que estado compram mais."],
       ["score", "Score e Perfil", "Quão perto de comprar cada lead está, o que ela objeta e onde a conversa para. Sem telefone e sem nome."]] },
     { id: "money", label: "Financeiro", icon: "money", subs: [
       ["result", "Resultado", "Do faturamento ao resultado, com anúncio, IA, WhatsApp e custos fixos, e o investido até agora."],
+      ["sales", "Vendas", "Faturamento e pedidos por dia, semana e mês, e cada mês contra o mesmo mês do ano anterior."],
       ["api", "Consumo de API", "Custo do modelo (chamadas dos leads) e do WhatsApp no período, por dia, por lead e a projeção do mês."],
       ["cash", "Caixa", "Quanto caixa o gasto com anúncios pede para rodar a operação no período, com CPL e conversão ideais ou digitados."],
       ["compare", "Comparação", "Todas as métricas contra o período anterior."]] },
@@ -37,6 +39,7 @@ export const NAV = [
       ["flow", "Fluxo da Malu", "O caminho de uma mensagem dela até a resposta, e onde cada desfecho nasce."],
       ["runs", "Execuções", "As últimas execuções do n8n, com estado e duração."]] },
     { id: "integrations", label: "Integrações", icon: "plug", desc: "Cada fonte que o portal lê, se está respondendo e o que trouxe na última leitura.", badge: (g) => Object.values(g.health || {}).filter((h) => h.ok === false).length },
+    { id: "settings", label: "Configurações", icon: "gear", desc: "Empresa, equipe, aparência, notificações e dados." },
     { id: "notes", label: "Notas", icon: "note", desc: "Anotações do operador, com etiqueta. Ficam guardadas neste navegador." },
   ] },
 ];

@@ -75,7 +75,7 @@ function LinesPlot({ series, labels, unit = "n", height = 220, legend = true }) 
         {series.map((s, k) => (
           <g key={k}>
             {runs(s.values).map((p, j) => p.length > 1 ? (
-              <g key={j}><path d={`${smooth(p)} L${p.at(-1)[0]},100 L${p[0][0]},100 Z`} fill={`url(#lg${id}${k})`} /><path d={smooth(p)} stroke={s.color} className="line" /></g>
+              <g key={j}>{!s.dashed && <path d={`${smooth(p)} L${p.at(-1)[0]},100 L${p[0][0]},100 Z`} fill={`url(#lg${id}${k})`} />}<path d={smooth(p)} stroke={s.color} className={`line ${s.dashed ? "dashed" : ""}`} /></g>
             ) : <circle key={j} cx={p[0][0]} cy={p[0][1]} r="1.2" fill={s.color} />)}
           </g>
         ))}
@@ -91,7 +91,7 @@ function LinesPlot({ series, labels, unit = "n", height = 220, legend = true }) 
     </div>
   );
 }
-const Legend = ({ series }) => <div className="legend">{series.map((s, k) => <span key={k}><i style={{ background: s.color }} />{s.name}</span>)}</div>;
+const Legend = ({ series }) => <div className="legend">{series.map((s, k) => <span key={k}><i className={s.dashed ? "dashed" : ""} style={{ background: s.dashed ? "none" : s.color, borderColor: s.color }} />{s.name}</span>)}</div>;
 
 // Rosca com legenda. items: [{ label, value, color }]
 export function Donut({ items, unit = "n", size = 170, center }) {
@@ -192,15 +192,18 @@ export function NeonSpark({ values, color }) {
 }
 
 // Gráfico de linha do Painel: escala pelo yScale (topo +10%, piso zero ou −10% do menor), 5 marcas no eixo, dica ao passar o mouse.
-export function TrendLine({ values, labels, unit = "n", color, height = 300 }) {
+// compare: a mesma métrica no período de comparação, desenhada tracejada (operador, 04/11); compareLabel diz qual é.
+export function TrendLine({ values, labels, unit = "n", color, height = 300, compare, compareLabel }) {
   const [hover, setHover] = useState(null);
   const id = useId().replace(/:/g, "");
-  const v = (values || []).map((x) => (x == null || !Number.isFinite(x) ? null : x)), pts = v.filter((x) => x != null);
+  const clean = (xs) => (xs || []).map((x) => (x == null || !Number.isFinite(x) ? null : x));
+  const v = clean(values), pts = v.filter((x) => x != null), cv = clean(compare).slice(0, v.length);
   if (pts.length < 2) return <Empty />;
-  const n = v.length, { min, max } = yScale(pts), span = max - min;
+  const n = v.length, { min, max } = yScale([...pts, ...cv.filter((x) => x != null)]), span = max - min;
   const X = (i) => (n > 1 ? (i / (n - 1)) * 100 : 50), Y = (x) => 100 - ((x - min) / span) * 100;
   const runs = v.reduce((out, x, i) => { if (x == null) return out; const last = out.at(-1); if (last && last.at(-1)[2] === i - 1) last.push([X(i), Y(x), i]); else out.push([[X(i), Y(x), i]]); return out; }, []);
   const path = (p) => p.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+  const cpath = path(cv.map((x, i) => (x == null ? null : [X(i), Y(x)])).filter(Boolean));
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => min + span * f);
   return (
     <div className="trend" style={{ height, "--c": color }}>
@@ -213,16 +216,72 @@ export function TrendLine({ values, labels, unit = "n", color, height = 300 }) {
           {runs.map((p, j) => p.length > 1
             ? <g key={j}><path d={`${path(p)} L${p.at(-1)[0]},${Y(Math.max(min, 0))} L${p[0][0]},${Y(Math.max(min, 0))} Z`} fill={`url(#tl${id})`} /><path d={path(p)} className="trend-line" stroke={color} /></g>
             : <circle key={j} cx={p[0][0]} cy={p[0][1]} r="1" fill={color} />)}
+          {cv.filter((x) => x != null).length > 1 && <path d={cpath} className="trend-line dashed" stroke={color} />}
           {hover != null && <line x1={X(hover)} x2={X(hover)} y1="0" y2="100" className="cross" />}
         </svg>
         {hover != null && v[hover] != null && <i className="trend-dot" style={{ left: `${X(hover)}%`, top: `${Y(v[hover])}%` }} />}
         {hover != null && (
           <div className="chart-tip" style={{ left: `${X(hover)}%`, top: 0 }}>
             {labels?.[hover] && <span>{labels[hover]}</span>}<b style={{ color }}>{fmt(v[hover], unit)}</b>
+            {cv[hover] != null && <small>{compareLabel || "Comparação"}: {fmt(cv[hover], unit)}</small>}
           </div>
         )}
       </div>
+      {cv.some((x) => x != null) && <div className="legend trend-legend"><span><i className="dashed" style={{ borderColor: color }} />{compareLabel || "Comparação"}</span></div>}
       <div className="trend-x">{(labels || []).map((l, i, a) => { const step = Math.ceil(a.length / 8); return (i === a.length - 1 || (i % step === 0 && a.length - 1 - i >= step / 2)) && <span key={i} style={{ left: `${X(i)}%` }}>{l}</span>; })}</div>
+    </div>
+  );
+}
+
+// Barras agrupadas com linha opcional (04/11): o fluxo de dinheiro (entradas × saídas e a linha do resultado) e o checkout
+// abandonado (ghost: a barra de trás é o total, a da frente o recuperado). items: [{ label, [key]: valor }]; series: [{ key, name, color }].
+export function GroupBars({ items, series, line, unit = "n", height = 260, ghost = false }) {
+  const [hover, setHover] = useState(null);
+  const vals = items.flatMap((x) => [...series.map((s) => x[s.key] || 0), ...(line ? [x[line.key] || 0] : [])]);
+  if (!items.length || vals.every((v) => !v)) return <Empty />;
+  const max = niceMax(Math.max(0, ...vals)), min = Math.min(0, ...vals), span = max - min || 1, w = 100 / items.length;
+  const Y = (v) => 100 - ((v - min) / span) * 100, k = ghost ? 1 : series.length, bw = (w * 0.64) / k;
+  const pts = line ? items.map((x, i) => `${(i + 0.5) * w},${Y(x[line.key] || 0)}`).join(" ") : "";
+  return (
+    <div className="bars-chart group-bars" style={{ height }} onMouseLeave={() => setHover(null)}>
+      <div className="bars-grid">{[1, 0.75, 0.5, 0.25, 0].map((f) => <span key={f}><em>{fmt(min + span * f, unit)}</em></span>)}</div>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="bars-svg">
+        {min < 0 && <line x1="0" x2="100" y1={Y(0)} y2={Y(0)} className="zero-line" />}
+        {items.map((x, i) => (
+          <g key={i} className={hover === i ? "on" : ""} onMouseEnter={() => setHover(i)} onClick={() => setHover(hover === i ? null : i)}>
+            <rect x={i * w} y="0" width={w} height="100" fill="transparent" />
+            {series.map((s, j) => { const v = x[s.key] || 0, top = Y(Math.max(v, 0)), h = Math.abs(Y(v) - Y(0));
+              return <rect key={s.key} x={i * w + w * 0.18 + (ghost ? 0 : j * bw)} y={top} width={bw} height={Math.max(h, 0.4)} rx="1.2" fill={s.color} style={{ opacity: ghost && j === 0 ? 0.25 : 0.9 }} />; })}
+          </g>
+        ))}
+        {line && <polyline points={pts} fill="none" stroke={line.color} className="combo-line" />}
+      </svg>
+      {hover != null && (
+        <div className="chart-tip" style={{ left: `${(hover + 0.5) * w}%`, top: 0 }}>
+          <span>{items[hover].label}</span>
+          {[...series, ...(line ? [line] : [])].map((s) => <b key={s.key} style={{ color: s.color }}>{s.name}: {fmt(items[hover][s.key], s.unit || unit)}</b>)}
+        </div>
+      )}
+      <div className="bars-labels">{items.map((x, i) => <span key={i} className={hover === i ? "on" : ""}>{i % Math.ceil(items.length / 8) === 0 ? x.label : ""}</span>)}</div>
+      <div className="legend group-legend">{[...series, ...(line ? [line] : [])].map((s, j) => <span key={s.key}><i style={{ background: s.color, opacity: ghost && j === 0 ? 0.35 : 1 }} />{s.name}</span>)}</div>
+    </div>
+  );
+}
+
+// Mapa de calor (04/11): linhas × colunas, a cor pela contagem; passar o mouse ou tocar mostra a contagem e o valor.
+export function Heatmap({ rows, cols, cells, unit = "brl" }) {
+  const [sel, setSel] = useState(null);
+  const max = Math.max(1, ...cells.flat().map((c) => c.n));
+  const cur = sel && cells[sel[0]][sel[1]];
+  return (
+    <div className="heatmap">
+      <div className="heat-grid" style={{ gridTemplateColumns: `44px repeat(${cols.length}, minmax(0, 1fr))` }} onMouseLeave={() => setSel(null)}>
+        <span />{cols.map((c) => <span key={c} className="heat-col">{c}</span>)}
+        {rows.map((r, i) => [<span key={`r${i}`} className="heat-row">{r}</span>, ...cols.map((c, j) => { const x = cells[i][j];
+          return <button key={`${i}-${j}`} className={`heat-cell ${sel?.[0] === i && sel?.[1] === j ? "on" : ""}`} style={{ "--a": x.n / max }} aria-label={`${r}, ${c}: ${x.n} pedidos, ${fmt(x.revenue, unit)}`}
+            onMouseEnter={() => setSel([i, j])} onFocus={() => setSel([i, j])} onClick={() => setSel([i, j])} />; })])}
+      </div>
+      <p className="heat-tip">{cur ? <><b>{rows[sel[0]]}, {cols[sel[1]]}</b> · {cur.n} pedido{cur.n === 1 ? "" : "s"} · {fmt(cur.revenue, unit)}</> : "Passe o mouse ou toque num quadrado para ver os pedidos e o valor."}</p>
     </div>
   );
 }

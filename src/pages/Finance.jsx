@@ -1,10 +1,11 @@
 // Financeiro: demonstrativo de resultado (o "P&L ledger" do Glassy CRM), consumo de API, caixa e comparação entre períodos.
 import { useState } from "react";
-import { ALL, BUCKETS, PERIODS } from "../lib/constants.js";
+import { ALL, BUCKETS, COMPARE_LABEL, PERIODS, periodLabel } from "../lib/constants.js";
+import { useChartPeriod } from "../components/Topbar.jsx";
 import { periodDays } from "../lib/data.js";
 import { DELIVERY_DAYS, IDEAL, RELEASE_DAYS, cashPlan, codUpfront } from "../lib/economics.js";
 import { bucketLabels, fmt, metricBy, parseBrl } from "../lib/format.js";
-import { HBars, Lines } from "../components/charts.jsx";
+import { Bars, GroupBars, HBars, Lines } from "../components/charts.jsx";
 import { Card, DeltaBadge, Kpi, Note, PageHead, Table } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
@@ -15,8 +16,9 @@ export function Finance({ data, period, route, tabs }) {
     <div className="page">
       <PageHead crumb="Análise › Financeiro" title={route.sub[1]} desc={route.sub[2]} tabs={tabs} tab={sub} onTab={(k) => (location.hash = `#/money/${k}`)}
         right={sub === "result" ? <button className="glass pill print-btn" onClick={() => window.print()}><Icon name="print" size={15} /> Exportar PDF</button> : null} />
-      {sub === "result" && <Result p={p} g={g} />}
-      {sub === "api" && <Api p={p} period={period} updated={data.updated} />}
+      {sub === "sales" && <Sales data={data} />}
+      {sub === "result" && <Result p={p} g={g} data={data} period={period} />}
+      {sub === "api" && <Api p={p} period={period} updated={data.updated} data={data} />}
       {sub === "cash" && <Cash p={p} period={period} />}
       {sub === "compare" && <Compare p={p} />}
     </div>
@@ -26,19 +28,24 @@ export function Finance({ data, period, route, tabs }) {
 // Margem dos pedidos ÷ pedidos, no período e no anterior (a variação do cartão compara os dois).
 const perOrder = (gross, orders) => (gross?.value != null && orders?.value ? { value: gross.value / orders.value, ...(gross.previous != null && orders.previous ? { previous: gross.previous / orders.previous } : {}) } : null);
 
-function Result({ p, g }) {
+function Result({ p, g, data, period }) {
   // Os mesmos números dos cartões (lib/build.mjs › profit): nenhuma conta própria aqui, para nunca divergirem.
-  // Retrato antigo (sem a abertura de custos): IA cai no total de API e WhatsApp e fixos ficam "—".
-  const m = p.metrics || {}, v = (id) => m[id]?.value, money = p.money || {};
-  const rev = v("revenue") ?? 0, contrib = v("gross_profit");
+  // DRE em tópicos (operador, 04/11): o tópico soma os subtópicos (lib/build.mjs › orderCosts, fixedPayments e o imposto da Meta).
+  const m = p.metrics || {}, v = (id) => m[id]?.value, money = p.money || {}, c = money.costs || {}, fx = money.fixed_parts || {};
+  const rev = v("revenue") ?? 0, contrib = v("gross_profit"), spend = v("spend") ?? null;
   const lines = [
-    { label: "Faturamento (pedidos válidos)", value: rev, sign: 1 },
-    { label: "Custo dos pedidos (produto, entrega, manuseio, taxa, recusas e devoluções)", value: contrib == null ? null : rev - contrib, sign: -1 },
+    { label: "Faturamento", value: rev, sign: 1 },
+    { label: "Custo dos pedidos", value: contrib == null ? null : rev - contrib, sign: -1, group: true },
+    ...[["product", "Produto"], ["freight", "Frete"], ["handling", "Manuseio"], ["fees", "Taxas (Logzz e Mercado Pago)"], ["refusals", "Recusas na porta"], ["returns", "Devoluções"]].map(([k, label]) => ({ label, value: c[k] ?? null, sign: -1, child: true })),
     { label: "= Margem dos pedidos", value: contrib, sum: true },
-    { label: "Anúncio na Meta (imposto já incluído no gasto)", value: v("spend") ?? null, sign: -1 },
-    { label: "Modelo de IA (chamadas dos leads)", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
-    { label: "WhatsApp (template de pós-venda)", value: money.whatsapp ?? null, sign: -1 },
-    { label: "Custos fixos que venceram (recarga da PikaPods, mensalidade do número)", value: money.fixed ?? null, sign: -1 },
+    { label: "Anúncios na Meta", value: spend, sign: -1, group: true },
+    { label: "Anúncios", value: spend == null ? null : spend - (money.ads_tax ?? 0), sign: -1, child: true },
+    { label: "Impostos (13,83%)", value: money.ads_tax ?? null, sign: -1, child: true },
+    { label: "API AI", value: money.ai ?? money.api_cost ?? 0, sign: -1 },
+    { label: "API WhatsApp", value: money.whatsapp ?? null, sign: -1 },
+    { label: "Custos fixos", value: money.fixed ?? null, sign: -1, group: true },
+    { label: "VPS (PikaPods)", value: fx.pikapods ?? null, sign: -1, child: true },
+    { label: "Número do WhatsApp", value: fx.wa_number ?? null, sign: -1, child: true },
     { label: "= Resultado", value: v("net_profit") ?? null, sum: true },
   ];
   const max = Math.max(1, ...lines.map((l) => Math.abs(l.value || 0)));
@@ -57,10 +64,11 @@ function Result({ p, g }) {
         <Kpi label="IA por pedido" id="ai_per_order" metric={m.ai_per_order} unit="brl" />
         <Kpi label="Pedidos" id="orders" metric={m.orders} unit="n" />
       </div>
+      <MoneyFlow data={data} period={period} />
       <Card title="Demonstrativo de resultado" sub="do faturamento ao que sobra, no período">
         <div className="ledger">
           {lines.map((l, i) => (
-            <div key={i} className={`ledger-row ${l.sum ? "sum" : ""}`}>
+            <div key={i} className={`ledger-row ${l.sum ? "sum" : ""} ${l.child ? "child" : ""} ${l.group ? "group" : ""}`}>
               <span>{l.label}</span>
               <div className="ledger-bar"><i className={l.sum ? ((l.value || 0) >= 0 ? "ok" : "bad") : l.sign < 0 ? "neg" : ""} style={{ width: `${Math.max(1, (Math.abs(l.value || 0) / max) * 100)}%` }} /></div>
               <b className={(l.value || 0) < 0 || l.sign < 0 ? "neg" : ""}>{l.value == null ? "—" : `${l.sign < 0 ? "− " : ""}${fmt(Math.abs(l.value), "brl")}`}</b>
@@ -90,15 +98,15 @@ function Invested({ inv }) {
   );
 }
 
-function Api({ p, period, updated }) {
-  const m = p.money || {}, s = p.metrics?.api_per_lead;
+function Api({ p, period, updated, data }) {
+  const m = p.money || {}, s = p.metrics?.api_per_lead, cp = useChartPeriod(data, period), cs = cp.p?.metrics?.api_per_lead;
   return (
     <>
       <div className="kpis">
         {[["api_cost", "No período"], ["api_per_day", "Média por dia"], ["api_30d", "Projeção para 30 dias"]].map(([id, l]) => <div key={id} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(m[id], "brl")}</div></div>)}
         <Kpi label="Custo de API por lead" id="api_per_lead" metric={s} unit="brl" goal="teto R$ 1,00" />
       </div>
-      <Card title="Custo de API por lead" sub="por intervalo do período"><Lines series={[{ name: "Por lead", values: s?.series || [], color: "var(--neon-blue)" }]} labels={bucketLabels(period, BUCKETS, (s?.series || []).length, updated)} unit="brl" axes /></Card>
+      <Card title="Custo de API por lead" sub={periodLabel(cp.id)} action={cp.picker}><Lines series={[{ name: "Por lead", values: cs?.series || [], color: "var(--neon-blue)" }, ...(cs?.compare ? [{ name: COMPARE_LABEL[cp.p.compare], values: cs.compare, color: "var(--neon-blue)", dashed: true }] : [])]} labels={bucketLabels(cp.id, BUCKETS, (cs?.series || []).length, updated)} unit="brl" axes /></Card>
     </>
   );
 }
@@ -115,7 +123,7 @@ function Cash({ p, period }) {
   const sim = { cpl: typedOr(cplText, IDEAL.cpl, (v) => v > 0), conversion: typedOr(convText, IDEAL.conversion, (v) => v >= 0 && v <= 100) };
   const simulated = sim.cpl !== IDEAL.cpl || sim.conversion !== IDEAL.conversion;
   const ownDays = typedOr(daysText, 0, (v) => v > 0 && Number.isInteger(v)), days = ownDays || periodDays(period);
-  const label = ownDays ? `${ownDays} ${ownDays === 1 ? "dia" : "dias"}` : PERIODS.find((x) => x.id === period)?.label.toLowerCase();
+  const label = ownDays ? `${ownDays} ${ownDays === 1 ? "dia" : "dias"}` : periodLabel(period)?.toLowerCase();
   const plan = cashPlan(daily, days, sim);
   const rows = [...(ownDays ? [[`${label} (digitado)`, ownDays]] : []), ...PERIODS.map((x) => [x.label, periodDays(x.id)])].map(([l, d]) => [l, cashPlan(daily, d, sim)]);
   return (
@@ -166,4 +174,49 @@ function Compare({ p }) {
   return <Table name="comparacao-periodos" head={["Métrica", "Período atual", "Período anterior", "Variação"]}
     rows={rows.map((x) => [x.label, fmt(m[x.id]?.value, x.unit), fmt(m[x.id]?.previous, x.unit), <DeltaBadge key={x.id} metric={m[x.id]} unit={x.unit} id={x.id} label={false} />])}
     csv={rows.map((x) => [x.label, m[x.id]?.value, m[x.id]?.previous])} />;
+}
+
+// Vendas (protótipo do painel, item 22): 60 dias contra os 60 anteriores, faturamento por dia, semana ou mês e a tabela mês a mês
+// contra o mesmo mês do ano anterior. Faturamento só de venda; pedidos = pedidos feitos (lib/build.mjs › salesByMonth).
+const MONTH = (k) => new Date(`${k}-15T12:00:00Z`).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+function Sales({ data }) {
+  const g = data.global, s = g.sales60 || {}, months = g.months || [];
+  const [range, setRange] = useState("30");
+  const series = (id) => data.periods[id]?.metrics?.revenue?.series || [];
+  const bars = range === "365" ? months.slice(-12).map((m) => ({ label: MONTH(m.month), value: m.revenue }))
+    : ((id) => { const v = series(id); return bucketLabels(id, BUCKETS, v.length, data.updated).map((label, i) => ({ label, value: v[i] || 0 })); })(range === "90" ? "3m" : "month");
+  const rows = months.slice(-12).map((m, i) => ({ ...m, ly: months[i]?.revenue ?? null })).reverse();
+  const per = (r, o) => (o ? r / o : null);
+  return (
+    <>
+      <div className="kpis k3">
+        <Kpi id="revenue" label="Faturamento em 60 dias" metric={{ value: s.revenue, previous: s.prev_revenue }} unit="brl" />
+        <Kpi id="orders" label="Pedidos em 60 dias" metric={{ value: s.orders, previous: s.prev_orders }} unit="n" />
+        <Kpi id="revenue" label="Faturamento por pedido" metric={{ value: per(s.revenue, s.orders), previous: per(s.prev_revenue, s.prev_orders) }} unit="brl" />
+      </div>
+      <Card title="Faturamento" sub={{ 30: "por dia, últimos 30 dias", 90: "por semana, últimas 13 semanas", 365: "por mês, últimos 12 meses" }[range]}
+        action={<span className="seg small">{[["30", "30 dias"], ["90", "13 semanas"], ["365", "12 meses"]].map(([k, l]) => <button key={k} className={range === k ? "on" : ""} aria-pressed={range === k} onClick={() => setRange(k)}>{l}</button>)}</span>}>
+        <Bars items={bars} unit="brl" />
+      </Card>
+      <Table name="vendas-mes-a-mes" head={["Mês", "Faturamento", "Pedidos", "Mesmo mês do ano anterior", "Variação"]}
+        rows={rows.map((m, i) => [`${MONTH(m.month)}${i ? "" : " (até hoje)"}`, fmt(m.revenue, "brl"), m.orders, fmt(m.ly, "brl"), m.ly ? <DeltaBadge key={m.month} metric={{ value: m.revenue, previous: m.ly }} unit="brl" id="revenue" label={false} /> : "—"])}
+        csv={rows.map((m) => [m.month, m.revenue, m.orders, m.ly])} />
+      <Note>Os 60 dias comparam com os 60 dias imediatamente anteriores. A tabela compara cada mês com o mesmo mês do ano anterior.</Note>
+    </>
+  );
+}
+
+// Fluxo de dinheiro (operador, 04/11): o que entrou (faturamento) e o que saiu (custo dos pedidos, anúncio, IA, WhatsApp e fixos) em
+// cada intervalo, com a linha do resultado. Saiu = faturamento − resultado: a mesma conta da DRE, sem nada próprio aqui.
+function MoneyFlow({ data, period }) {
+  const cp = useChartPeriod(data, period), m = cp.p?.metrics || {};
+  const rev = m.revenue?.series || [], net = m.net_profit?.series || [], labels = bucketLabels(cp.id, BUCKETS, rev.length, data.updated);
+  const items = rev.map((r, i) => ({ label: labels[i], in: r || 0, out: net[i] == null ? null : (r || 0) - net[i], net: net[i] }));
+  const margin = m.op_margin?.value;
+  return (
+    <Card title="Fluxo de dinheiro" sub={`${periodLabel(cp.id)} · entrou ${fmt(m.revenue?.value, "brl")}, saiu ${fmt(m.net_profit?.value == null ? null : (m.revenue?.value || 0) - m.net_profit.value, "brl")}, margem ${fmt(margin, "pct")}`} action={cp.picker}>
+      {net.some((x) => x != null) ? <GroupBars items={items} unit="brl" series={[{ key: "in", name: "Entrou", color: "var(--neon-green)" }, { key: "out", name: "Saiu", color: "var(--bad)" }]} line={{ key: "net", name: "Resultado", color: "var(--neon-blue)" }} />
+        : <p className="empty">Sem o gasto da Meta no período, o resultado e o que saiu ficam sem conta.</p>}
+    </Card>
+  );
 }

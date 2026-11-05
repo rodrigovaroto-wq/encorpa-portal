@@ -3,6 +3,37 @@
 > Atualizado em 04/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
 
+## Feito em 04/11, segunda rodada (branch `claude/exciting-bardeen-4qpqmk`)
+
+- **Site e vendas** (página nova): Site ao vivo (`api/site.js`, a cada 5 s), Funil do checkout por aparelho, Checkout abandonado
+  (`leads.cart` da Coinzz; recuperado = pedido depois) e Quando os leads compram (`buyHeat`, dia × faixa de 3 h, com o valor).
+  O Site ao vivo também está na Home.
+- **Financeiro › Resultado:** Fluxo de dinheiro (entrou × saiu e a linha do resultado) e a DRE em tópicos e subtópicos (`orderCosts`,
+  imposto da Meta `META_TAX`, fixos por `fixedPayments`).
+- **Configurações** virou página (`#/settings`) no formato do vídeo: Empresa, Equipe (`api/team.js`), Aparência (Claro, Escuro, Igual ao
+  aparelho; menu compacto; reduzir animação), Notificações (por tipo, com som) e Dados (exportar JSON, atividade).
+- **05/11:** migração **0034 aplicada** em produção (API de gerência). Convite com e-mail: `api/team.js` grava o SHA-256 do token e manda
+  o link pelo workflow novo **"Encorpa — Portal convite"** (n8n, ativo, id `YW7KFNoqaduO8QOe`, cópia em `n8n/portal-convite.json`); a pessoa
+  cria a senha em `convite.html` (`api/invite.js`) e entra pelo banco (`whoIs` em `lib/auth.mjs`, PBKDF2). Meta do mês editada na Home
+  (`api/team.js`, ação `goal` → `portal_settings`). O site carrega o `track.js` na branch `claude/exciting-bardeen-4qpqmk` do Encorpa-Website.
+- **Pendente do operador:** publicar o portal (merge) antes do site, para o `track.js` e o `api/track` existirem quando o site os chamar.
+
+## Feito em 04/11 (branch `claude/exciting-bardeen-4qpqmk`): protótipo do painel no Portal e os comentários do operador na prévia
+
+- Referência em `dashboard-portal-references/` (protótipo, `FUNCIONALIDADES.md` com a Decisão, capturas). O `index.html` do Portal voltou à raiz.
+- **Home** (era Painel): Hoje (24 h e 7 dias), Meta do mês pela variável **`PORTAL_MONTH_GOAL`** do Vercel (operador; ritmo diário `goalPace`),
+  Origem das vendas, Últimos pedidos e Mais vendidos.
+- **Origem em três frentes** (`leadOrigins`): WhatsApp = clique em anúncio de WhatsApp; Site = anúncio de conjunto Site (destino WEBSITE);
+  Orgânico = lead que não veio de anúncio. Pedido sem lead conta como Site. Clientes › **Origem Leads** (era Origem e recompra) mostra
+  Leads → WhatsApp, → Site e → Orgânico; Recompra e a aba Lista e segmentos saíram (operador).
+- **Período livre** (`customPeriod`, `c:AAAA-MM-DD:AAAA-MM-DD`): no topo e em cada gráfico (`useChartPeriod`); o servidor conta o período em
+  `/api/data?period=`. **Linha tracejada** em todo gráfico de linha: de 6 meses para cima, o mesmo período do ano anterior; abaixo, o anterior.
+- **Pedidos:** todos, não só os 200 mais recentes; busca, filtros, paginação e gaveta (só leitura: status muda na Logzz/Coinzz).
+- **Score e Perfil:** filtro por faixa, páginas numeradas, contorno vermelho/amarelo/azul nas faixas. Tema: um botão só no topo.
+- **Teste de interface:** passa com `CHROMIUM_PATH=/opt/pw-browsers/chromium` na nuvem do Claude; sem o navegador, falha em vez de travar.
+- Pendente do operador: a nota de segmentação (fica no navegador dele, o Claude não lê) para conferir a regra de Site; onde guardar cargo e
+  dados pessoais em Configurações › Usuários e acesso.
+
 ## Feito em 04/11 (branch `claude/keen-mccarthy-ecydee`)
 
 - **Teste A/B em 7 dias (operador, 04/11, por falta de caixa):** a mesma verba (R$ 125 por conjunto, R$ 250 no total) em 7 dias, R$ 17,86/dia

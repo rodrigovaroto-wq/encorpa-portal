@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Criar senha · Encorpa Portal</title>
+<link rel="icon" href="/logo.svg">
+<style>
+  :root { --bg: #000; --card: #0d0d12; --line: rgba(255,255,255,.12); --text: #f4f4f7; --dim: #9a9aab; --blue: #2f7bff; --bad: #ff5c6c; --ok: #2fd27a; color-scheme: dark; }
+  @media (prefers-color-scheme: light) { :root { --bg: #f4f5f8; --card: #fff; --line: rgba(15,23,42,.12); --text: #0f172a; --dim: #55627a; color-scheme: light; } }
+  * { box-sizing: border-box; } body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-left)); background: var(--bg); color: var(--text); font: 15px/1.5 Inter, system-ui, sans-serif; }
+  main { width: min(420px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 14px; animation: in .4s ease-out both; }
+  @keyframes in { from { opacity: 0; transform: translateY(12px); } } @media (prefers-reduced-motion: reduce) { main { animation: none; } }
+  h1 { margin: 0; font-size: 1.35rem; } p { margin: 0; color: var(--dim); } label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; color: var(--dim); }
+  input { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; } input:focus { outline: 2px solid var(--blue); border-color: transparent; }
+  button { padding: 12px; border: 0; border-radius: 99px; background: var(--blue); color: #fff; font: inherit; font-weight: 600; cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
+  .msg { min-height: 1.5em; } .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); } a { color: var(--blue); }
+</style>
+</head>
+<body>
+<main>
+  <img src="/wordmark.svg" alt="Encorpa Dashboard" height="28" style="align-self:flex-start">
+  <h1>Criar sua senha</h1>
+  <p id="who">Conferindo o convite…</p>
+  <form id="f" hidden>
+    <label>Senha (pelo menos 10 caracteres)<input id="p1" type="password" autocomplete="new-password" minlength="10" required></label>
+    <label>Repita a senha<input id="p2" type="password" autocomplete="new-password" minlength="10" required></label>
+    <button id="go">Criar senha</button>
+  </form>
+  <p class="msg" id="msg" role="status"></p>
+</main>
+<script>
+  // O token vem depois do # no link do e-mail: o navegador nunca o manda ao servidor nem a outro site.
+  const t = location.hash.slice(1), $ = (id) => document.getElementById(id), say = (text, kind = "bad") => { $("msg").textContent = text; $("msg").className = `msg ${kind}`; };
+  fetch(`/api/invite?t=${encodeURIComponent(t)}`).then((r) => r.json()).then((x) => {
+    if (x.error) { $("who").textContent = x.error; return; }
+    $("who").textContent = `${x.name ? `${x.name}, crie` : "Crie"} a senha do e-mail ${x.email}.`; $("f").hidden = false; $("p1").focus();
+  }).catch(() => { $("who").textContent = "Não consegui conferir o convite. Recarregue a página."; });
+  $("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if ($("p1").value !== $("p2").value) return say("As duas senhas não são iguais.");
+    $("go").disabled = true;
+    const x = await fetch("/api/invite", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: t, password: $("p1").value }) }).then((r) => r.json()).catch(() => ({ error: "Sem conexão. Tente de novo." }));
+    $("go").disabled = false;
+    if (x.error) return say(x.error);
+    $("f").hidden = true; history.replaceState(null, "", location.pathname);
+    $("who").textContent = `Pronto. Entre no portal com ${x.email} e a senha que você criou.`;
+    $("msg").innerHTML = '<a href="/">Abrir o Encorpa Portal</a>'; $("msg").className = "msg ok";
+  });
+</script>
+</body>
+</html>

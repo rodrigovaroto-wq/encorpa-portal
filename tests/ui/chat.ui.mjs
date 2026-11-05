@@ -8,7 +8,8 @@ const POLL = 16_000; // a tela consulta /api/chats a cada 15 s
 
 test("Conversas: abrir, responder, ver a resposta ficar e sobreviver a uma falha de rede", { timeout: 120_000 }, async () => {
   const { server, state, url } = await start();
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  // Sem o navegador, fecha o servidor e falha: antes o servidor aberto prendia o teste para sempre (04/11).
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined }).catch((e) => { server.close(); throw e; });
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -45,7 +46,8 @@ test("Conversas: abrir, responder, ver a resposta ficar e sobreviver a uma falha
 
 test("Conversas: lendo o histórico, mensagem nova não puxa a tela; o menu conta as mesmas conversas", { timeout: 60_000 }, async () => {
   const { server, state, url } = await start();
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  // Sem o navegador, fecha o servidor e falha: antes o servidor aberto prendia o teste para sempre (04/11).
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined }).catch((e) => { server.close(); throw e; });
   const page = await browser.newPage({ viewport: { width: 1400, height: 500 } });
   try {
     const conv = "11111111-1111-4111-8111-111111111111";

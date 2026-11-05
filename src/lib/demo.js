@@ -4,6 +4,7 @@
 // A operação segue o que a Encorpa faz de verdade: anúncio de clique para o WhatsApp de R$ 30 a R$ 50 por dia, a Malu respondendo
 // das 06:00 à 00:00, régua de lembretes até 71 h, 70% na entrega, entrega em ~6 dias, recusa na porta perto de 15%.
 // Cada dia sai de uma semente fixa: recarregar a página não muda o passado, só o que aconteceu desde a última leitura.
+import { customPeriod } from "./constants.js";
 import { build, channel } from "../../lib/build.mjs";
 
 const DAY = 86400000, MIN = 60000, HOUR = 3600000, BRT = 3 * HOUR;
@@ -115,6 +116,7 @@ export function demoRaw(now = Date.now()) {
   for (const [v, x] of Object.entries(byVersion)) D.eval_version_outcomes.push({ agent_version: +v, turns: x.turns, fallbacks: x.fallbacks, handoffs: x.handoffs, avg_rewrites: x.turns ? x.rewrites / x.turns : 0, cost_brl: x.convs ? x.cost / x.convs : 0 });
   hermes(D, versions, now);
   D.meta = metaRaw(daily);
+  D.site_sessions = siteRaw(today0, now);
   return D;
 }
 
@@ -175,7 +177,8 @@ function lead(D, r, n, t0, ad, ver, now, acc) {
     const o = orderFor(r, at, now, units, prepay, size, acc.order());
     D.orders.push({ ...o, id: uuid(r), lead_id: id });
     stage = o.stage;
-  }
+    if (prepay && r() < 0.45) L.cart_at = iso(Date.parse(o.created_at) - between(r, 1, 20) * HOUR); // largou o checkout e voltou: recuperado
+  } else if (ok && fate !== "optout" && r() < 0.14) L.cart_at = iso(at); // largou o checkout da Coinzz e não voltou
   // Sem resposta dela: a régua manda os lembretes (60 min, 9h do dia seguinte, cupom em 71 h) e encerra depois de 72 h.
   if (fate === "silent" || (!ok && fate !== "optout" && !flagged)) {
     remind(`${first}, conseguiu ver? Se ficou alguma dúvida sobre o tamanho é só me falar 💜`, lastOut + 60 * MIN);
@@ -286,10 +289,11 @@ export const DEMO_NUMBER = { ok: true, phone: "+55 11 9XXXX-0000", name: "Encorp
   templates: [{ name: "pos_venda_confirmacao", status: "APPROVED", category: "UTILITY", language: "pt_BR", quality: "GREEN" }, { name: "pedido_a_caminho", status: "APPROVED", category: "UTILITY", language: "pt_BR", quality: "GREEN" }, { name: "lembrete_entrega", status: "APPROVED", category: "UTILITY", language: "pt_BR", quality: "UNKNOWN" }] };
 
 // O retrato do portal com os dados de exemplo. automations: a última leitura do n8n de verdade guardada no navegador, se houver.
-export function demoData(automations, now = Date.now()) {
+export function demoData(automations, now = Date.now(), period = null) {
   const D = demoRaw(now), profiles = D.profiles;
   delete D.profiles;
-  const data = build(D, now);
+  const data = build(D, now, customPeriod(period));
+  data.global.goal = 22000; // no ar, a meta vem da variável PORTAL_MONTH_GOAL do Vercel
   const auto = automations?.workflows ? automations : DEMO_WORKFLOWS(now);
   data.global.automations = auto;
   data.global.number = DEMO_NUMBER;
@@ -299,4 +303,21 @@ export function demoData(automations, now = Date.now()) {
   data.global.health.number = { ok: true, detail: "conectado · qualidade alta · 1.000 conversas por dia" };
   data.global.profiles = profiles;
   return { ...data, demo: true, source: "demo" };
+}
+
+// Visitas ao site (o coletor public/track.js grava em site_sessions): ~50 a 110 por dia, mais à noite; 58% veem o produto,
+// 19% delas abrem o checkout. 70% pelo celular. Só os carimbos e o aparelho, como no banco.
+function siteRaw(today0, now) {
+  const out = [];
+  for (let d = DAYS; d >= 0; d--) {
+    const day0 = today0 - d * DAY, r = rng(`site ${day0}`), n = Math.round(between(r, 50, 110));
+    for (let k = 0; k < n; k++) {
+      const hour = [8, 10, 12, 13, 15, 19, 20, 21, 22][Math.floor(r() * 9)], at = day0 + (hour + r()) * HOUR;
+      if (at > now) continue;
+      const product = r() < 0.58, checkout = product && r() < 0.19;
+      out.push({ id: `s${d}-${k}`, created_at: iso(at), last_at: iso(at + between(r, 0.5, 6) * MIN), device: r() < 0.7 ? "phone" : "desktop", path: "/",
+        product_at: product ? iso(at + MIN) : null, checkout_at: checkout ? iso(at + 3 * MIN) : null });
+    }
+  }
+  return out;
 }

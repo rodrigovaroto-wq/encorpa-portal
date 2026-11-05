@@ -14,7 +14,8 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
   pausar a Malu ficam desligados no exemplo.
 - `npm run build` gera `dist/`, que é o que o Vercel publica.
 - `npm test` roda os testes das contas (`lib/build.mjs`) e das funções (`api/`) com dados sintéticos (`tests/fixture.mjs`);
-  `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build). `npm run check` faz os três.
+  `npm run test:ui` abre a tela Conversas no Chromium contra um servidor de teste (depois do build); fora do CI, aponte
+  `CHROMIUM_PATH` para o Chromium instalado (na nuvem do Claude: `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:ui`). `npm run check` faz os três.
   O GitHub roda o mesmo em todo push e pull request (`.github/workflows/ci.yml`). Mudou uma conta ou uma tela, rode antes de publicar.
 
 ## Estrutura
@@ -55,6 +56,15 @@ vidro, a partir dos templates Glassy Dashboard, Glassy CRM, Chat App UI e Sideba
     `whatsapp` do Ricos-com-AI gravar esse id (hoje ela descreve a imagem com o modelo e descarta o id).
   - `INBOUND_SIGNING_SECRET` (desde 23/10, o mesmo do Supabase): selo das mensagens de Malu › Teste. Sem ele, a turn recusa o teste
     se o selo estiver ligado na produção.
+  - **Site e vendas (04/11):** o coletor `public/track.js` vai no `<head>` do encorpa-fashion.com.br:
+    `<script src="https://<domínio do portal>/track.js" defer></script>`. Ele manda a visita, "viu o produto" (elemento com
+    `data-encorpa="produto"` na tela; sem ele, 35% da página rolada) e "abriu o checkout" (clique em link da Coinzz/Logzz ou em
+    `data-encorpa="checkout"`) para `api/track.js`, que fica fora do login, aceita só a origem do site e grava em `site_sessions`.
+    Pede a migração 0034 do Ricos-com-AI (também cria `portal_users` e `portal_activity`, de Configurações › Equipe).
+  - **Meta do mês e convites (04/11):** a meta muda na Home (admin ou operador; `api/team.js`, ação `goal` → `portal_settings`). Convidar, em
+    Configurações › Equipe, manda um e-mail pelo workflow "Encorpa — Portal convite" do n8n (precisa de `N8N_API_KEY`) com o link
+    `convite.html#<token>`; a pessoa cria a senha ali (`api/invite.js`) e entra com e-mail e senha. Os logins de `PORTAL_USERS` continuam.
+    `PORTAL_URL` (opcional) é o endereço usado no link; padrão `https://encorpa-portal.vercel.app`.
   - `PORTAL_USERS`: quem pode entrar, no formato `email1:senha1:papel,email2:senha2`. **Sem ela ninguém entra.** Papel (desde 23/10,
     `lib/auth.mjs`): `admin` (tudo, e vê os usuários em Configurações), `operador` (responde, pausa a Malu, usa Malu › Teste) ou
     `leitura` (só vê). Sem papel, admin. Responder (`api/chat.js`) e testar (`api/test.js`) conferem o papel no servidor.
