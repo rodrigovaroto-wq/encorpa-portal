@@ -275,7 +275,7 @@ function metaRaw(daily) {
 
 // Workflows de exemplo, só quando o navegador ainda não tem a leitura do n8n de verdade (o operador pediu para manter os dele).
 const DEMO_WORKFLOWS = (now) => ({
-  read: 300,
+  read: 300, hour: 42,
   workflows: [
     { id: "w1", name: "Encorpa — Turno da agente", active: true, runs: 140, errors: 0, last: { status: "success", at: iso(now) }, nodes: [["Mensagem chega", "webhook", 0, 0], ["Chama a função turn", "httpRequest", 220, 0], ["Deu certo?", "if", 440, 0], ["Responde", "respondToWebhook", 660, -80], ["Avisa o operador", "emailSend", 660, 80]].map(([name, type, x, y]) => ({ name, type, x, y })), edges: [["Mensagem chega", "Chama a função turn"], ["Chama a função turn", "Deu certo?"], ["Deu certo?", "Responde"], ["Deu certo?", "Avisa o operador"]] },
     { id: "w2", name: "Encorpa — Relógio da régua", active: true, runs: 96, errors: 0, last: { status: "success", at: iso(now) }, nodes: [["A cada 10 min", "scheduleTrigger", 0, 0], ["Varre follow-ups", "httpRequest", 220, 0], ["Avisa o operador", "emailSend", 440, 0]].map(([name, type, x, y]) => ({ name, type, x, y })), edges: [["A cada 10 min", "Varre follow-ups"], ["Varre follow-ups", "Avisa o operador"]] },

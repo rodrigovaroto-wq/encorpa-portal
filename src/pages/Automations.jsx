@@ -28,7 +28,7 @@ function Workflows({ a }) {
   return (
     <>
       <div className="kpis">
-        {[["Ativos", on.length], ["Desligados", a.workflows.length - on.length], ["Execuções lidas", a.read ?? a.runs.length], ["Ativos com erro recente", on.filter((w) => w.errors).length]].map(([l, v]) => <div key={l} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(v, "n")}</div></div>)}
+        {[["Ativos", on.length], ["Desligados", a.workflows.length - on.length], ["Execuções lidas (1H)", a.hour], ["Ativos com erro recente", on.filter((w) => w.errors).length]].map(([l, v]) => <div key={l} className="glass kpi"><div className="kpi-top"><h3>{l}</h3></div><div className="kpi-value">{fmt(v, "n")}</div></div>)}
       </div>
       <div className="wf-grid">
         {a.workflows.map((w) => (
