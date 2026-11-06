@@ -7,7 +7,7 @@ export const NAV = [
     { id: "orders", label: "Pedidos", icon: "box", desc: "Cada pedido na Logzz e na Coinzz, onde está e a agenda de entregas.", badge: (g) => g.orders?.filter((o) => ["created", "en_route"].includes(o.step)).length },
   ] },
   { sec: "Análise", items: [
-    { id: "site", label: "Site e vendas", icon: "live", desc: "Quem está no site agora, onde as visitas param, o checkout que ficou para trás e a hora em que as clientes compram." },
+    { id: "site", label: "Website", icon: "web", desc: "Quem está no site agora, onde as visitas param, o checkout que ficou para trás e a hora em que as clientes compram." },
     { id: "malu", label: "Malu", icon: "agent", badge: (g, p) => p?.gaps?.length, subs: [
       ["results", "Resultados", "Quantas conversas a Malu resolveu sozinha, por desfecho e por versão."],
       ["gaps", "Lacunas", "O que a Malu ainda não resolve sozinha: cada linha é um contorno a construir."],

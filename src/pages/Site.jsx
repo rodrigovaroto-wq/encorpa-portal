@@ -11,7 +11,7 @@ export function Site({ data, period }) {
   const p = data.periods[period] || {};
   return (
     <div className="page">
-      <PageHead crumb="Análise" title="Site e vendas" desc="Quem está no site agora, onde as visitas param, o checkout que ficou para trás e a hora em que as clientes compram." />
+      <PageHead crumb="Análise" title="Website" desc="Quem está no site agora, onde as visitas param, o checkout que ficou para trás e a hora em que as clientes compram." />
       <div className="row r-1-1">
         <SiteLive data={data} />
         <Funnel site={p.site} label={periodLabel(period)} />

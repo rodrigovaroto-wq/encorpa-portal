@@ -29,6 +29,7 @@ const P = {
   plus: "M12 5v14M5 12h14",
   print: "M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z",
   bolt: "M13 2 4 14h7l-1 8 9-12h-7z",
+  web: "M3 5h18v14H3zM3 9h18M6 7h.01M9 7h.01M12 7h.01",
   live: "M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
 };
 

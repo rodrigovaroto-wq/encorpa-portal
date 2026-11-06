@@ -50,13 +50,13 @@ input, textarea { font: inherit; color: var(--text); }
   backdrop-filter: blur(var(--blur)) saturate(140%); -webkit-backdrop-filter: blur(var(--blur)) saturate(140%); box-shadow: var(--shadow); }
 
 /* ---------- casca: menu lateral + conteúdo ---------- */
-.shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 18px; padding: 16px; min-height: 100vh; transition: grid-template-columns .25s ease; }
+.shell { display: grid; grid-template-columns: 186px minmax(0, 1fr); gap: 18px; padding: 16px; min-height: 100vh; transition: grid-template-columns .25s ease; }
 .shell.side-collapsed { grid-template-columns: 76px minmax(0, 1fr); }
 .side { position: sticky; top: 16px; height: calc(100vh - 32px); overflow-y: auto; overflow-x: hidden; padding: 14px 10px; display: flex; flex-direction: column; gap: 6px; }
 .side-top { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 12px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
 .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
-/* só o wordmark animado (23/10): 50% maior que antes (30 → 45 px); recolhido, cabe na largura do menu */
-.wordmark { height: 45px; width: auto; filter: var(--logo-filter); }
+/* só o wordmark animado: 45 px (23/10) e +35% (06/11) → 61 px; recolhido, cabe na largura do menu */
+.wordmark { height: 61px; width: auto; filter: var(--logo-filter); }
 .side-sec { padding: 6px 0; }
 .side-title { font-size: .66rem; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); padding: 8px 12px 6px; white-space: nowrap; }
 .side-item { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; color: var(--muted); white-space: nowrap; transition: background .15s, color .15s; }
@@ -523,7 +523,7 @@ svg.wf g.nd { cursor: grab; } svg.wf g.nd:active { cursor: grabbing; }
   /* topo numa linha: logo, busca, período, avisos e preferências */
   .topbar { flex-wrap: nowrap; gap: 8px; }
   .m-brand { display: inline-grid; place-items: center; flex: none; }
-  .m-brand .wordmark { height: 38px; }
+  .m-brand .wordmark { height: 51px; }
   .search { flex: none; min-width: 0; width: 42px; height: 42px; padding: 0; justify-content: center; }
   .search span, .search kbd { display: none; }
   .top-right { gap: 8px; }
