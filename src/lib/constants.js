@@ -65,7 +65,7 @@ export const PAUSE = [
 
 
 // Teste A/B (operador, 02 e 03/11; Ricos-com-AI grafo §140): Site × WhatsApp, R$ 125 cada em 7 dias (R$ 17,86/dia; 04/11, era R$ 25/dia em 5 dias, por falta de caixa).
-// As pausas seguem pelo gasto (R$ 50 e R$ 75), que agora cai no dia 3 e no dia 5. Sem data de início ainda.
+// As pausas seguem pelo gasto (R$ 50 e R$ 75), que agora cai no dia 3 e no dia 5. Início em 06/11 (operador), fim em 12/11: dia 3 = 08/11, dia 5 = 10/11.
 export const PHASES = [
   ["Dias 1 a 3 (passa de R$ 50 por conjunto no dia 3)", "ler CTR, CPC e custo por conversa", "com R$ 50 gastos, pausar o conjunto que passar do limite de pausa"],
   ["Dias 4 e 5 (passa de R$ 75 por conjunto no dia 5)", "com R$ 75 gastos, zero pedidos criados pausa o conjunto", "com pedido, segue"],
@@ -146,7 +146,7 @@ export const REF = [
     ["Frete do antecipado", "R$ 17,78 a R$ 44,45 por região nas 22 cidades (média R$ 26,36), medido na Coinzz em 02/11"]]],
   ["Teste A/B: Site × WhatsApp (operador, 02 e 03/11)", [
     ["Estrutura", "1 campanha de Vendas, orçamento por conjunto: Site (conversão no site, evento Compra) e WhatsApp (maximizar conversas)"],
-    ["Verba", "R$ 17,86/dia por conjunto, 7 dias: R$ 125 por conjunto, R$ 250 no total (04/11: eram 5 dias, por falta de caixa). Sem data de início ainda"],
+    ["Verba", "R$ 17,86/dia por conjunto, 7 dias: R$ 125 por conjunto, R$ 250 no total (04/11: eram 5 dias, por falta de caixa). Início em 06/11, fim em 12/11 (dia 3 = 08/11, dia 5 = 10/11)"],
     ["Público", "mulheres de 18 a 55, nas 22 cidades com pagamento na entrega; os mesmos 5 vídeos nos dois conjuntos"],
     ["Metas do Site", "CTR do link ≥ 2% · CPC ≤ R$ 0,60 · 3% das visitas viram pedido → ~R$ 20 por pedido"],
     ["Metas do WhatsApp", "CTR do link > 2% · CPC < R$ 1,50 · conversa < R$ 2,00 · 9% das conversas viram pedido → ~R$ 22,22 por pedido"],
