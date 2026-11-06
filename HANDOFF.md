@@ -1,7 +1,18 @@
 # Handoff — encorpa-portal
 
-> Atualizado em 04/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
+> Atualizado em 06/11/2026. O que já está no código, o que falta e quem faz. Itens que dependem de acesso a uma plataforma
 > (Vercel, Supabase, n8n, Meta) ficam como **pendente**, com o passo a passo.
+
+## Feito em 06/11 (branch `claude/tender-cori-rvdu90`)
+
+- **Teste A/B em duas fases** (Ricos-com-AI grafo §147–§148): fase 1, criativos, de 07 a 13/11 (5 vídeos, R$ 250; passam os 2 de maior CTR
+  do link, com pelo menos R$ 15 gastos cada, empate pelo menor CPC); fase 2, oferta, de 14 a 20/11 (os 2 vídeos, mais R$ 250, o mesmo A/B).
+  Só texto em `REF` e no comentário de `PHASES` (`src/lib/constants.js`); a regra de pausa e `SAMPLE_FLOOR` não mudam. Ler cada fase com o
+  período dela no topo: `armTotals` soma todos os conjuntos do braço no período.
+- **Caixa** (operador, 06/11): R$ 576, mais R$ 200 se precisar, que precisam estar disponíveis desde 14/11 (conta no §148).
+- **Testes "falhando" sem `node_modules`:** sem instalar, `npm test` dá 96 ok e 3 falhas (`middleware: só o coletor fica fora do login`,
+  `pausa pelo caixa: um ciclo inteiro de 21 dias…` e `tests/live.test.mjs`), todas `ERR_MODULE_NOT_FOUND` (`@vercel/functions`, `react`).
+  Não é defeito: rode **`npm ci`** antes (o lockfile é `package-lock.json`, não pnpm). Depois dele: **100 ok, 0 falhas** (06/11).
 
 ## Feito em 04/11, segunda rodada (branch `claude/exciting-bardeen-4qpqmk`)
 
